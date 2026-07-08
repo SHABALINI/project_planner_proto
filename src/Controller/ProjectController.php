@@ -16,18 +16,37 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/dashboard')]
 class ProjectController extends AbstractController
 {
-    #[Route('', name: 'app_dashboard', methods: ['GET'])]
+
+    // 1. Этот роут теперь показывает ТОЛЬКО список проектов (Главный экран)
+    #[Route('/dashboard', name: 'app_dashboard')]
     public function index(EntityManagerInterface $em): Response
     {
         $user = $this->getUser();
-        if (!$user) {
-            return $this->redirectToRoute('app_login');
-        }
-
+        
+        // Получаем только проекты текущего пользователя
         $projects = $em->getRepository(Project::class)->findBy(['owner' => $user]);
 
         return $this->render('project/dashboard.html.twig', [
             'projects' => $projects,
+        ]);
+    }
+
+    // 2. Новый роут для открытия конкретного проекта по его ID
+    #[Route('/dashboard/project/{id}', name: 'app_project_view')]
+    public function viewProject(int $id, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        $project = $em->getRepository(Project::class)->findOneBy([
+            'id' => $id,
+            'owner' => $user // Защита: чужой пользователь не сможет открыть проект по ID
+        ]);
+
+        if (!$project) {
+            throw $this->createNotFoundException('Проект не найден или у вас нет к нему доступа.');
+        }
+
+        return $this->render('project/project_view.html.twig', [
+            'project' => $project,
         ]);
     }
 
@@ -86,13 +105,10 @@ class ProjectController extends AbstractController
         $task->setPriority('medium'); // Дефолтный приоритет
 
         // ИСПРАВЛЕНО: Обработка дедлайна при создании
+        // Находим обработку дедлайна и заменяем на надежную проверку:
         if (!empty($data['deadline']) && trim($data['deadline']) !== '') {
             try {
-                // Создаем объект и явно сбрасываем время в 00:00:00
-                $deadlineDate = new \DateTime($data['deadline']);
-                $deadlineDate->setTime(0, 0, 0);
-                
-                $task->setDeadline($deadlineDate);
+                $task->setDeadline(new \DateTime($data['deadline']));
             } catch (\Exception $e) {
                 $task->setDeadline(null);
             }
@@ -154,11 +170,7 @@ class ProjectController extends AbstractController
         } elseif ($field === 'deadline') {
             if (!empty($value) && trim($value) !== '') {
                 try {
-                    // Создаем объект и явно сбрасываем время в 00:00:00
-                    $deadlineDate = new \DateTime($value);
-                    $deadlineDate->setTime(0, 0, 0);
-                    
-                    $task->setDeadline($deadlineDate);
+                    $task->setDeadline(new \DateTime($value));
                 } catch (\Exception $e) {
                     return new JsonResponse(['success' => false, 'error' => 'Invalid date format'], 400);
                 }
