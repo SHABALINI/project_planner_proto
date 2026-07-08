@@ -86,9 +86,9 @@ class ProjectController extends AbstractController
         $task->setPriority('medium'); // Дефолтный приоритет
 
         // ИСПРАВЛЕНО: Обработка дедлайна при создании
-        // Находим обработку дедлайна и заменяем на надежную проверку:
         if (!empty($data['deadline']) && trim($data['deadline']) !== '') {
             try {
+                // Создаем объект и явно сбрасываем время в 00:00:00
                 $deadlineDate = new \DateTime($data['deadline']);
                 $deadlineDate->setTime(0, 0, 0);
                 
@@ -154,6 +154,7 @@ class ProjectController extends AbstractController
         } elseif ($field === 'deadline') {
             if (!empty($value) && trim($value) !== '') {
                 try {
+                    // Создаем объект и явно сбрасываем время в 00:00:00
                     $deadlineDate = new \DateTime($value);
                     $deadlineDate->setTime(0, 0, 0);
                     
