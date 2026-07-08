@@ -170,13 +170,13 @@
                                                     {# ИСПРАВЛЕНО: Вывод дедлайна и возможность его обновить из карточки #}
                                                     <div class="d-flex align-items-center mb-2 g-2 bg-light p-1 rounded border">
                                                         <span class="badge bg-secondary me-2">
-                                                            📅 Дедлайн: {% if task.deadline %}{{ task.deadline|date('d.m.Y') }}{% else %}Не указан{% endif %}
+                                                            📅 Дедлайн: {% if task.deadline %}{{ task.deadline|date('Y.m.d') }}{% else %}Не указан{% endif %}
                                                         </span>
                                                         <div class="d-flex align-items-center ms-auto">
                                                             <small class="text-muted me-1" style="font-size: 11px;">Изменить:</small>
                                                             <input type="date" class="form-control form-control-sm border-0 bg-transparent p-0" 
                                                                 style="width: 130px; font-size: 12px;"
-                                                                value="{{ task.deadline ? task.deadline|date('Y-m-d') : '' }}"
+                                                                value="{{ task.deadline ? task.deadline|date('d.m.Y') : '' }}"
                                                                 onchange="updateTaskParam({{ task.id }}, 'deadline', this.value)">
                                                         </div>
                                                     </div>

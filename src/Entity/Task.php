@@ -108,7 +108,7 @@ class Task
         return $this;
     }
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[ORM\Column(type: "date", nullable: true)]
     private ?\DateTimeInterface $deadline = null;
 
     public function getDeadline(): ?\DateTimeInterface

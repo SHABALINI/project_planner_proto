@@ -89,7 +89,10 @@ class ProjectController extends AbstractController
         // Находим обработку дедлайна и заменяем на надежную проверку:
         if (!empty($data['deadline']) && trim($data['deadline']) !== '') {
             try {
-                $task->setDeadline(new \DateTime($data['deadline']));
+                $deadlineDate = new \DateTime($data['deadline']);
+                $deadlineDate->setTime(0, 0, 0);
+                
+                $task->setDeadline($deadlineDate);
             } catch (\Exception $e) {
                 $task->setDeadline(null);
             }
@@ -151,7 +154,10 @@ class ProjectController extends AbstractController
         } elseif ($field === 'deadline') {
             if (!empty($value) && trim($value) !== '') {
                 try {
-                    $task->setDeadline(new \DateTime($value));
+                    $deadlineDate = new \DateTime($value);
+                    $deadlineDate->setTime(0, 0, 0);
+                    
+                    $task->setDeadline($deadlineDate);
                 } catch (\Exception $e) {
                     return new JsonResponse(['success' => false, 'error' => 'Invalid date format'], 400);
                 }
