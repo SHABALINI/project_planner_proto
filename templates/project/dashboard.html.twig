@@ -1,3 +1,4 @@
+{# templates/project/dashboard.html.twig #}
 <!DOCTYPE html>
 <html>
 <head>
@@ -31,7 +32,7 @@
         <div id="projectsList">
             {% for project in projects %}
                 
-                {#Проценты для проекта#}
+                {# Проценты для проекта #}
                 {% set totalProjectPoints = 0 %}
                 {% set earnedProjectPoints = 0 %}
                 {% for area in project.areas %}
@@ -40,7 +41,7 @@
                         {% if task.status == 'done' %}
                             {% set earnedProjectPoints = earnedProjectPoints + 100 %}
                         {% elseif task.status == 'progress' %}
-                            {% set earnedProjectPoints = earnedProjectPoints + 50 %}{# 50% за "В работе" #}
+                            {% set earnedProjectPoints = earnedProjectPoints + 50 %}
                         {% endif %}
                     {% endfor %}
                 {% endfor %}
@@ -69,7 +70,7 @@
                                 <div class="col-md-5">
                                     <input type="text" id="areaDesc-{{ project.id }}" class="form-control form-control-sm" placeholder="Описание">
                                 </div>
-                                <div 
+                                <div class="col-md-2">
                                     <button class="btn btn-success btn-sm w-100" onclick="createArea({{ project.id }})">Добавить</button>
                                 </div>
                             </div>
@@ -78,7 +79,7 @@
                         <div class="mt-3">
                             {% for area in project.areas %}
                                 
-                                {# ИСПРАВЛЕНО: РАСЧЕТ ПРОЦЕНТОВ ДЛЯ ОБЛАСТИ #}
+                                {# РАСЧЕТ ПРОЦЕНТОВ ДЛЯ ОБЛАСТИ #}
                                 {% set totalAreaPoints = area.tasks|length * 100 %}
                                 {% set earnedAreaPoints = 0 %}
                                 {% for task in area.tasks %}
@@ -105,15 +106,26 @@
                                         <small class="text-muted" style="font-size: 11px;">Область завершена на {{ areaPercent }}%</small>
                                     </div>
 
-                                    <div class="input-group input-group-sm mb-3">
-                                        <input type="text" id="taskTitle-{{ area.id }}" class="form-control" placeholder="Новая задача...">
-                                        <button class="btn btn-warning text-dark fw-bold" onclick="createTask({{ area.id }})">+ Задача</button>
+                                    {# ИСПРАВЛЕНО: Добавлен выбор Дедлайна при создании задачи #}
+                                    <div class="bg-light p-2 rounded mb-3 border">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <input type="text" id="taskTitle-{{ area.id }}" class="form-control form-control-sm" placeholder="Новая задача...">
+                                            </div>
+                                            <div class="col-md-4 d-flex align-items-center">
+                                                <small class="text-muted me-1 small" style="font-size: 11px; white-space: nowrap;">Срок:</small>
+                                                <input type="date" id="taskDeadline-{{ area.id }}" class="form-control form-control-sm">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button class="btn btn-warning text-dark fw-bold btn-sm w-100" onclick="createTask({{ area.id }})">+ Задача</button>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div id="tasksList-{{ area.id }}">
                                         {% for task in area.tasks %}
                                             
-                                            {# ИСПРАВЛЕНО: РАСЧЕТ ПРОЦЕНТОВ ДЛЯ ЗАДАЧИ ПО ПОДЗАДАЧАМ #}
+                                            {# РАСЧЕТ ПРОЦЕНТОВ ДЛЯ ЗАДАЧИ ПО ПОДЗАДАЧАМ #}
                                             {% set totalSubs = task.subtasks|length %}
                                             {% set doneSubs = 0 %}
                                             {% for sub in task.subtasks %}
@@ -152,6 +164,20 @@
                                                             </select>
 
                                                             <button class="btn btn-link text-danger p-0 border-0" onclick="deleteElement('task', {{ task.id }})">❌</button>
+                                                        </div>
+                                                    </div>
+
+                                                    {# ИСПРАВЛЕНО: Вывод дедлайна и возможность его обновить из карточки #}
+                                                    <div class="d-flex align-items-center mb-2 g-2 bg-light p-1 rounded border">
+                                                        <span class="badge bg-secondary me-2">
+                                                            📅 Дедлайн: {% if task.deadline %}{{ task.deadline|date('d.m.Y') }}{% else %}Не указан{% endif %}
+                                                        </span>
+                                                        <div class="d-flex align-items-center ms-auto">
+                                                            <small class="text-muted me-1" style="font-size: 11px;">Изменить:</small>
+                                                            <input type="date" class="form-control form-control-sm border-0 bg-transparent p-0" 
+                                                                style="width: 130px; font-size: 12px;"
+                                                                value="{{ task.deadline ? task.deadline|date('Y-m-d') : '' }}"
+                                                                onchange="updateTaskParam({{ task.id }}, 'deadline', this.value)">
                                                         </div>
                                                     </div>
 
@@ -224,10 +250,21 @@
             fetch('/dashboard/area/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, title: titleInput.value, description: descInput.value }) }).then(() => location.reload());
         }
 
+        // ИСПРАВЛЕНО: Передаем дедлайн при создании задачи
         function createTask(areaId) {
             const titleInput = document.getElementById(`taskTitle-${areaId}`);
+            const deadlineInput = document.getElementById(`taskDeadline-${areaId}`);
             if (!titleInput.value.trim()) return;
-            fetch('/dashboard/task/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ area_id: areaId, title: titleInput.value }) }).then(() => location.reload());
+            
+            fetch('/dashboard/task/create', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    area_id: areaId, 
+                    title: titleInput.value,
+                    deadline: deadlineInput.value ? deadlineInput.value : null
+                }) 
+            }).then(() => location.reload());
         }
 
         function createSubtask(taskId) {

@@ -65,23 +65,42 @@ class ProjectController extends AbstractController
         return new JsonResponse(['success' => true]);
     }
 
-    #[Route('/task/create', name: 'api_task_create', methods: ['POST'])]
+    #[Route('/task/create', name: 'app_task_create', methods: ['POST'])]
     public function createTask(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+        
+        if (empty($data['title']) || empty($data['area_id'])) {
+            return new JsonResponse(['success' => false, 'error' => 'Missing data'], 400);
+        }
+
         $area = $em->getRepository(Area::class)->find($data['area_id']);
+        if (!$area) {
+            return new JsonResponse(['success' => false, 'error' => 'Area not found'], 404);
+        }
 
         $task = new Task();
         $task->setTitle($data['title']);
-        $task->setDescription('');
-        $task->setPriority('medium');
-        $task->setStatus('todo');
         $task->setArea($area);
+        $task->setStatus('todo'); // Дефолтный статус
+        $task->setPriority('medium'); // Дефолтный приоритет
+
+        // ИСПРАВЛЕНО: Обработка дедлайна при создании
+        // Находим обработку дедлайна и заменяем на надежную проверку:
+        if (!empty($data['deadline']) && trim($data['deadline']) !== '') {
+            try {
+                $task->setDeadline(new \DateTime($data['deadline']));
+            } catch (\Exception $e) {
+                $task->setDeadline(null);
+            }
+        } else {
+            $task->setDeadline(null);
+        }
 
         $em->persist($task);
         $em->flush();
 
-        return new JsonResponse(['success' => true, 'id' => $task->getId()]);
+        return new JsonResponse(['success' => true]);
     }
 
     #[Route('/subtask/create', name: 'api_subtask_create', methods: ['POST'])]
@@ -102,18 +121,47 @@ class ProjectController extends AbstractController
     }
 
     // ОБНОВЛЕНИЕ ПАРАМЕТРОВ ЗАДАЧИ
-    #[Route('/task/update', name: 'api_task_update', methods: ['POST'])]
+    #[Route('/task/update', name: 'app_task_update', methods: ['POST'])]
     public function updateTask(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        $task = $em->getRepository(Task::class)->find($data['task_id']);
-        if (!$task) return new JsonResponse(['success' => false], 404);
 
-        if ($data['field'] === 'status') $task->setStatus($data['value']);
-        if ($data['field'] === 'priority') $task->setPriority($data['value']);
-        if ($data['field'] === 'description') $task->setDescription($data['value']);
+        if (empty($data['task_id']) || empty($data['field'])) {
+            return new JsonResponse(['success' => false, 'error' => 'Missing data'], 400);
+        }
+
+        $task = $em->getRepository(Task::class)->find($data['task_id']);
+        if (!$task) {
+            return new JsonResponse(['success' => false, 'error' => 'Task not found'], 404);
+        }
+
+        $field = $data['field'];
+        $value = $data['value'];
+
+        // ИСПРАВЛЕНО: Добавлена логика для сохранения дедлайна
+        if ($field === 'title') {
+            $task->setTitle($value);
+        } elseif ($field === 'description') {
+            $task->setDescription($value);
+        } elseif ($field === 'status') {
+            $task->setStatus($value);
+        } elseif ($field === 'priority') {
+            $task->setPriority($value);
+        // Находим ветку elseif ($field === 'deadline') и заменяем на:
+        } elseif ($field === 'deadline') {
+            if (!empty($value) && trim($value) !== '') {
+                try {
+                    $task->setDeadline(new \DateTime($value));
+                } catch (\Exception $e) {
+                    return new JsonResponse(['success' => false, 'error' => 'Invalid date format'], 400);
+                }
+            } else {
+                $task->setDeadline(null);
+            }
+        }
 
         $em->flush();
+
         return new JsonResponse(['success' => true]);
     }
 
