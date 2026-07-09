@@ -262,10 +262,10 @@ class ProjectController extends AbstractController
         if ($field === 'status') {
             $task->setStatus($value);
             $statusRu = ($value === 'done' ? 'Выполнено' : ($value === 'progress' ? 'В работе' : 'Не выполнено'));
-            $changeText = "перевел(а) задачу «" . $task->getTitle() . "» в статус «" . $statusRu . "»";
+            $changeText = "→ статус «" . $statusRu . "» у задачи «" . $task->getTitle() . "»";
         } elseif ($field === 'priority') {
             $task->setPriority($value);
-            $changeText = "изменил(а) приоритет задачи «" . $task->getTitle() . "» на «" . $value . "»";
+            $changeText = "→ приоритет «" . $value . "» у задачи «" . $task->getTitle() . "»";
         } elseif ($field === 'description') {
             $task->setDescription($value);
             $changeText = "обновил(а) описание задачи «" . $task->getTitle() . "»";
@@ -286,6 +286,9 @@ class ProjectController extends AbstractController
             $currentUser = $this->getUser();
             $owner = $project->getOwner();
 
+            $notification = new \App\Entity\Notification();
+
+            
             if ($owner && $owner !== $currentUser) {
                 $notification = new \App\Entity\Notification();
                 $notification->setUser($owner);
@@ -297,6 +300,7 @@ class ProjectController extends AbstractController
                 // Используем $this->entityManager, так как свойство объявлено в конструкторе твоего класса
                 $this->entityManager->persist($notification);
             }
+            $notification->setMessage($currentUser->getUserIdentifier() . ": " . $changeText);
         }
 
         $project = $task->getArea()->getProject();
@@ -524,8 +528,10 @@ class ProjectController extends AbstractController
             $notification->setTitle($project->getTitle());
             
             // Используем $submittedText вместо неопределенной $commentText
-            $shortText = mb_strimwidth($submittedText, 0, 50, "...");
-            $notification->setMessage("Новый комментарий от " . $currentUser->getUserIdentifier() . " в задаче «" . $task->getTitle() . "»: " . $shortText);
+            $shortEmail = $currentUser->getUserIdentifier();
+            $shortText = mb_strimwidth($submittedText, 0, 40, "...");
+
+            $notification->setMessage($shortEmail . " 💬 оставил(а) комментарий к задаче «" . $task->getTitle() . "»");
             
             // Ссылка-якорь прямо на карточку задачи
             $notification->setTargetUrl($this->generateUrl('app_project_view', ['id' => $project->getId()]) . '#task-node-' . $task->getId());

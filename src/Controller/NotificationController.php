@@ -7,7 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Attribute\Route; // ИСПРАВЛЕНО ЗДЕСЬ
 
 #[Route('/dashboard/notifications')]
 class NotificationController extends AbstractController
@@ -17,14 +17,11 @@ class NotificationController extends AbstractController
     {
         $user = $this->getUser();
         
-        // 1. Все непрочитанные для счетчиков
         $allUnread = $repo->findBy(['user' => $user, 'isRead' => false], ['createdAt' => 'DESC']);
         $totalUnreadCount = count($allUnread);
 
-        // 2. Все уведомления пользователя (новые сверху)
         $allNotifications = $repo->findBy(['user' => $user], ['createdAt' => 'DESC']);
 
-        // 3. Группировка уведомлений по проектам с сортировкой проектов по дате свежего уведомления
         $grouped = [];
         foreach ($allNotifications as $n) {
             $pId = $n->getProject()->getId();
@@ -42,7 +39,6 @@ class NotificationController extends AbstractController
             }
         }
 
-        // Сортируем группы проектов так, чтобы проект с самым свежим изменением вылетал наверх
         uasort($grouped, function($a, $b) {
             return $b['latestTimestamp'] <=> $a['latestTimestamp'];
         });

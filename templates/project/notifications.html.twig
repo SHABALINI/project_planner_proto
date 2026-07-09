@@ -30,7 +30,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="container mt-5" style="max-width: 950px;">
+<div class="container mt-5" style="max-width: 1200px;">
     
     <nav aria-label="breadcrumb" class="mb-4 bg-white p-3 rounded border shadow-sm">
         <ol class="breadcrumb m-0 fw-bold">
@@ -41,7 +41,7 @@
     </nav>
 
     <div class="row">
-        <div class="col-md-3 mb-4">
+        <div class="col-md-2 mb-4">
             <div class="list-group shadow-sm" id="notificationTabs" role="tablist">
                 <button class="list-group-item list-group-item-action active d-flex justify-content-between align-items-center py-2 fw-bold" 
                         id="tab-all-trigger" data-bs-toggle="list" href="#tab-all" role="tab" onclick="updateBreadcrumbs('all')">
@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <div class="col-md-9">
+        <div class="col-md-10">
             <div class="tab-content bg-white rounded border shadow-sm p-0">
                 
                 <div class="tab-pane fade show active" id="tab-all" role="tabpanel">
@@ -107,21 +107,25 @@
 {# Макрос для рендеринга строки "письма" (чтобы не дублировать верстку) #}
 {% macro renderMailRow(n, prefix) %}
     <div class="mail-item d-flex align-items-center p-3 {% if not n.isRead %}mail-unread{% endif %}" id="node-{{ prefix }}-{{ n.id }}">
-        <div class="mail-project-badge text-truncate pe-2 text-primary fw-bold small">
+
+        <div class="mail-project-badge text-truncate pe-2 text-primary fw-bold small" style="width: 110px; min-width: 110px;">
             📍 {{ n.title }}
         </div>
-        <div class="flex-grow-1 text-dark text-truncate small me-2" title="{{ n.message }}">
+
+        <div class="flex-grow-1 text-dark small me-2" style="word-break: break-word; line-height: 1.4;">
             {{ n.message }}
         </div>
-        <div class="text-muted small me-3 font-monospace" style="font-size: 11px; white-space: nowrap;">
+
+        <div class="text-muted small me-3 font-monospace align-self-center" style="font-size: 11px; white-space: nowrap;">
             {{ n.createdAt|date('H:i d.m.Y') }}
         </div>
-        <div class="d-flex gap-1">
+
+        <div class="d-flex gap-1 align-self-center">
             {% if not n.isRead %}
-                <button class="btn btn-sm btn-success py-0 px-2 btn-mark-read-{{ n.id }}" style="font-size: 11px;" onclick="actionMarkRead({{ n.id }})">Прочитано</button>
+                <button class="btn btn-sm btn-success py-0 px-2 btn-mark-read-{{ n.id }}" style="font-size: 11px; height: 22px;" onclick="actionMarkRead({{ n.id }})">Прочитано</button>
             {% endif %}
             {% if n.targetUrl %}
-                <a href="{{ n.targetUrl }}" class="btn btn-sm btn-primary py-0 px-2 text-white text-decoration-none" style="font-size: 11px;" onclick="actionGoTo({{ n.id }}, '{{ n.targetUrl }}', event)">Перейти</a>
+                <a href="{{ n.targetUrl }}" class="btn btn-sm btn-primary py-0 px-2 text-white text-decoration-none" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="actionGoTo({{ n.id }}, '{{ n.targetUrl }}', event)">Перейти</a>
             {% endif %}
         </div>
     </div>
