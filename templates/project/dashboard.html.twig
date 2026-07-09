@@ -75,7 +75,7 @@
             const titleValue = titleInput.value.trim();
             if (!titleValue) return;
             
-            // Используем встроенный роут Symfony, чтобы не ошибиться в адресах
+            // Используем генератор путей Symfony. Он сам подставит точный URL из debug:router
             fetch('{{ path("api_project_create") }}', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -83,21 +83,22 @@
             })
             .then(res => {
                 if (!res.ok) {
-                    throw new Error('Ошибка сервера: ' + res.status);
+                    alert('Сервер вернул код ошибки: ' + res.status);
+                    throw new Error('Код ответа сервера: ' + res.status);
                 }
                 return res.json();
             })
             .then(data => {
                 if (data.success) {
-                    titleInput.value = ''; // Очищаем поле
-                    location.reload();     // Перезагружаем страницу, чтобы увидеть проект
+                    titleInput.value = '';
+                    location.reload();
                 } else {
-                    alert('Ошибка: ' + (data.error || 'Не удалось создать проект'));
+                    alert('Ошибка логики: ' + (data.error || 'Неизвестно'));
                 }
             })
             .catch(err => {
-                console.error('Ошибка запроса:', err);
-                alert('Не удалось связаться с сервером при создании проекта');
+                console.error('Критическая ошибка fetch:', err);
+                alert('Не удалось связаться с сервером. Проверьте консоль (F12)');
             });
         }
 

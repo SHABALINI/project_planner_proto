@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+
 #[Route('/dashboard')]
 class ProjectController extends AbstractController
 {
@@ -91,33 +92,47 @@ class ProjectController extends AbstractController
         ]);
     }
 
-    #[Route('/project/create', name: 'api_project_create', methods: ['POST'])]
+    #[Route('project/create', name: 'api_project_create', methods: ['POST'])]
     public function createProject(Request $request): JsonResponse
     {
         $user = $this->getUser();
-        if (!$user) return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+        if (!$user) {
+            return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+        }
 
         $data = json_decode($request->getContent(), true);
         if (empty($data['title'])) {
             return new JsonResponse(['success' => false, 'error' => 'Missing title'], 400);
         }
 
-        $project = new Project();
-        $project->setTitle($data['title']);
-        $project->setOwner($user);
+        try {
+            $project = new Project();
+            $project->setTitle($data['title']);
+            $project->setOwner($user);
 
-        $this->entityManager->persist($project);
-        
-        // Сразу создаем запись админа
-        $member = new ProjectMember();
-        $member->setProject($project);
-        $member->setUser($user);
-        $member->setRole('admin');
-        $this->entityManager->persist($member);
+            $this->entityManager->persist($project);
+            $this->entityManager->flush(); // Сначала сохраняем чистый проект
 
-        $this->entityManager->flush();
+            // Создаем запись админа только ЕСЛИ класс ProjectMember полностью готов принимать данные
+            if (class_exists(ProjectMember::class)) {
+                $member = new ProjectMember();
+                $member->setProject($project);
+                $member->setUser($user);
+                $member->setRole('admin');
+                
+                $this->entityManager->persist($member);
+                $this->entityManager->flush();
+            }
 
-        return new JsonResponse(['success' => true]);
+            return new JsonResponse(['success' => true]);
+            
+        } catch (\Exception $e) {
+            // Если что-то пойдет не так, бэкенд не промолчит, а вернет точный текст ошибки базы данных
+            return new JsonResponse([
+                'success' => false, 
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     #[Route('/area/create', name: 'api_area_create', methods: ['POST'])]
