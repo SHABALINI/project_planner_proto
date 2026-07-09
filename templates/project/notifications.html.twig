@@ -1,0 +1,192 @@
+{# templates/project/notifications.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Центр уведомлений — Планировщик{% endblock %}
+
+{% block stylesheets %}
+<style>
+    /* Стиль почтового ящика (Gmail-like) */
+    .mail-item {
+        border-bottom: 1px solid #e0e0e0;
+        transition: background-color 0.15s ease;
+        cursor: pointer;
+    }
+    .mail-item:hover {
+        background-color: #f8f9fa !important;
+    }
+    .mail-unread {
+        background-color: #edf4fc !important; /* Непрочитанные подсвечены синевой */
+        font-weight: 600;
+    }
+    .mail-project-badge {
+        min-width: 120px;
+        max-width: 180px;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "➔" !important;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-5" style="max-width: 950px;">
+    
+    <nav aria-label="breadcrumb" class="mb-4 bg-white p-3 rounded border shadow-sm">
+        <ol class="breadcrumb m-0 fw-bold">
+            <li class="breadcrumb-item"><a href="{{ path('app_dashboard') }}" class="text-decoration-none">🏠 Главная</a></li>
+            <li class="breadcrumb-item active text-secondary" id="bc-root">🔔 Центр уведомлений</li>
+            <li class="breadcrumb-item d-none text-primary" id="bc-project">Проект: ...</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group shadow-sm" id="notificationTabs" role="tablist">
+                <button class="list-group-item list-group-item-action active d-flex justify-content-between align-items-center py-2 fw-bold" 
+                        id="tab-all-trigger" data-bs-toggle="list" href="#tab-all" role="tab" onclick="updateBreadcrumbs('all')">
+                    <span>🌍 Все уведомления</span>
+                    {% if totalUnreadCount > 0 %}
+                        <span class="badge bg-danger rounded-pill unread-global-counter">{{ totalUnreadCount }}</span>
+                    {% endif %}
+                </button>
+
+                {% set totalProjectsCount = groupedProjects|length %}
+                {% for pId, data in groupedProjects %}
+                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2" 
+                            id="tab-project-{{ pId }}-trigger" data-bs-toggle="list" href="#tab-project-{{ pId }}" role="tab" onclick="updateBreadcrumbs('project', '{{ data.project.title }}')">
+                        <span class="text-truncate" style="max-width: 140px;">📁 {{ data.project.title }}</span>
+                        {% if data.unreadCount > 0 %}
+                            <span class="badge bg-danger rounded-pill project-unread-badge-{{ pId }}">{{ data.unreadCount }}</span>
+                        {% endif %}
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="tab-content bg-white rounded border shadow-sm p-0">
+                
+                <div class="tab-pane fade show active" id="tab-all" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
+                        <h6 class="m-0 fw-bold text-secondary">Общий список входящих</h6>
+                        {% if totalUnreadCount > 0 %}
+                            <button class="btn btn-xs btn-outline-primary btn-sm fw-bold" onclick="markGroupAsRead(0)">Прочитать все</button>
+                        {% endif %}
+                    </div>
+                    <div class="mail-list-container">
+                        {% for n in allNotifications %}
+                            {{ _self.renderMailRow(n, 'all') }}
+                        {% else %}
+                            <div class="p-5 text-center text-muted">У вас пока нет уведомлений.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% for pId, data in groupedProjects %}
+                    <div class="tab-pane fade" id="tab-project-{{ pId }}" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
+                            <h6 class="m-0 fw-bold text-primary">Проект: {{ data.project.title }}</h6>
+                            {% if data.unreadCount > 0 %}
+                                <button class="btn btn-xs btn-outline-primary btn-sm fw-bold project-read-all-btn-{{ pId }}" onclick="markGroupAsRead({{ pId }})">Прочитать все по проекту</button>
+                            {% endif %}
+                        </div>
+                        <div class="mail-list-container">
+                            {% for n in data.items %}
+                                {{ _self.renderMailRow(n, 'proj-' ~ pId) }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Макрос для рендеринга строки "письма" (чтобы не дублировать верстку) #}
+{% macro renderMailRow(n, prefix) %}
+    <div class="mail-item d-flex align-items-center p-3 {% if not n.isRead %}mail-unread{% endif %}" id="node-{{ prefix }}-{{ n.id }}">
+        <div class="mail-project-badge text-truncate pe-2 text-primary fw-bold small">
+            📍 {{ n.title }}
+        </div>
+        <div class="flex-grow-1 text-dark text-truncate small me-2" title="{{ n.message }}">
+            {{ n.message }}
+        </div>
+        <div class="text-muted small me-3 font-monospace" style="font-size: 11px; white-space: nowrap;">
+            {{ n.createdAt|date('H:i d.m.Y') }}
+        </div>
+        <div class="d-flex gap-1">
+            {% if not n.isRead %}
+                <button class="btn btn-sm btn-success py-0 px-2 btn-mark-read-{{ n.id }}" style="font-size: 11px;" onclick="actionMarkRead({{ n.id }})">Прочитано</button>
+            {% endif %}
+            {% if n.targetUrl %}
+                <a href="{{ n.targetUrl }}" class="btn btn-sm btn-primary py-0 px-2 text-white text-decoration-none" style="font-size: 11px;" onclick="actionGoTo({{ n.id }}, '{{ n.targetUrl }}', event)">Перейти</a>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+<script>
+    // Динамическое обновление Хлебных Крошек при кликах по табам без перезагрузки
+    function updateBreadcrumbs(type, projectTitle = '') {
+        const bcRoot = document.getElementById('bc-root');
+        const bcProject = document.getElementById('bc-project');
+        
+        if (type === 'all') {
+            bcRoot.classList.remove('text-primary');
+            bcRoot.classList.add('text-secondary');
+            bcProject.classList.add('d-none');
+        } else {
+            bcRoot.classList.remove('text-secondary');
+            bcRoot.classList.add('text-primary');
+            bcProject.innerText = `Проект: ${projectTitle}`;
+            bcProject.classList.remove('d-none');
+        }
+    }
+
+    // Логика нажатия на кнопку "Прочитано" (AJAX)
+    function actionMarkRead(id) {
+        fetch(`/dashboard/notifications/read/${id}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Находим все строчки этого письма (в общем списке и в списке проекта) и убираем жирность/синеву
+                    document.querySelectorAll(`[id$="-${id}"]`).forEach(row => {
+                        row.classList.remove('mail-unread');
+                        const btn = row.querySelector(`.btn-mark-read-${id}`);
+                        if (btn) btn.remove();
+                    });
+                    
+                    // Уменьшаем счетчики уведомлений в шапке/меню динамически
+                    decrementCounters();
+                }
+            });
+    }
+
+    // Логика нажатия на "Перейти"
+    function actionGoTo(id, url, event) {
+        event.preventDefault();
+        fetch(`/dashboard/notifications/read/${id}`, { method: 'POST' })
+            .then(() => {
+                // Перенаправляем пользователя на конкретный элемент проекта
+                window.location.href = url;
+            });
+    }
+
+    // Прочитать группу (все или конкретный проект)
+    function markGroupAsRead(projectId) {
+        fetch(`/dashboard/notifications/read-all/${projectId}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) location.reload(); // Перезагружаем для чистого обновления всех таблиц
+            });
+    }
+
+    function decrementCounters() {
+        // Здесь можно написать микро-логику уменьшения цифр в реальном времени, 
+        // но для полной точности счетчиков сайдбара и табов, если писем прочитано много, 
+        // лучше в конце вызвать обновление или позволить шаблону подхватить это при следующем переходе.
+    }
+</script>
+{% endblock %}

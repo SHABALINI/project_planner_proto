@@ -257,11 +257,64 @@ class ProjectController extends AbstractController
             return new JsonResponse(['success' => false, 'error' => 'Not your area'], 403);
         }
 
-        if ($field === 'status') $task->setStatus($value);
-        if ($field === 'title') $task->setTitle($value);
-        if ($field === 'description') $task->setDescription($value);
-        if ($field === 'priority') $task->setPriority($value);
-        if ($field === 'deadline') $task->setDeadline($value ? new \DateTime($value) : null);
+        $changeText = null;
+
+        if ($field === 'status') {
+            $task->setStatus($value);
+            $statusRu = ($value === 'done' ? 'Выполнено' : ($value === 'progress' ? 'В работе' : 'Не выполнено'));
+            $changeText = "перевел(а) задачу «" . $task->getTitle() . "» в статус «" . $statusRu . "»";
+        } elseif ($field === 'priority') {
+            $task->setPriority($value);
+            $changeText = "изменил(а) приоритет задачи «" . $task->getTitle() . "» на «" . $value . "»";
+        } elseif ($field === 'description') {
+            $task->setDescription($value);
+            $changeText = "обновил(а) описание задачи «" . $task->getTitle() . "»";
+        } elseif ($field === 'deadline') {
+            // Дедлайн приходит строкой "YYYY-MM-DD" или пустой. Превращаем в DateTime или null
+            if (!empty($value)) {
+                $task->setDeadline(new \DateTime($value));
+                $changeText = "изменил(а) дедлайн задачи «" . $task->getTitle() . "» на " . date('d.m.Y', strtotime($value));
+            } else {
+                $task->setDeadline(null);
+                $changeText = "удалил(а) дедлайн у задачи «" . $task->getTitle() . "»";
+            }
+        }
+
+        // ОТПРАВКА УВЕДОМЛЕНИЯ (Выполняется, только если произошло известное нам изменение)
+        if ($changeText !== null) {
+            $project = $task->getArea()->getProject();
+            $currentUser = $this->getUser();
+            $owner = $project->getOwner();
+
+            if ($owner && $owner !== $currentUser) {
+                $notification = new \App\Entity\Notification();
+                $notification->setUser($owner);
+                $notification->setProject($project);
+                $notification->setTitle($project->getTitle());
+                $notification->setMessage("Пользователь " . $currentUser->getUserIdentifier() . " " . $changeText);
+                $notification->setTargetUrl($this->generateUrl('app_project_view', ['id' => $project->getId()]) . '#task-node-' . $task->getId());
+                
+                // Используем $this->entityManager, так как свойство объявлено в конструкторе твоего класса
+                $this->entityManager->persist($notification);
+            }
+        }
+
+        $project = $task->getArea()->getProject();
+        $currentUser = $this->getUser();
+
+        $owner = $project->getOwner();
+        if ($owner && $owner !== $currentUser) {
+            $notification = new \App\Entity\Notification();
+            $notification->setUser($owner);
+            $notification->setProject($project);
+            $notification->setTitle($project->getTitle());
+            $notification->setMessage("Пользователь " . $currentUser->getUserIdentifier() . " " . $changeText);
+            
+            // Генерируем ссылку, чтобы кнопка «Перейти» вела сразу на эту задачу
+            $notification->setTargetUrl($this->generateUrl('app_project_view', ['id' => $project->getId()]) . '#task-node-' . $task->getId());
+            
+            $this->entityManager->persist($notification);
+        }
 
         $this->entityManager->flush();
         return new JsonResponse(['success' => true]);
@@ -453,6 +506,31 @@ class ProjectController extends AbstractController
             } catch (\Exception $e) {
                 return new JsonResponse(['success' => false, 'error' => 'File upload failed'], 500);
             }
+        }
+
+        // ПОДГОТОВКА ТЕКСТА ДЛЯ УВЕДОМЛЕНИЯ
+        // Получаем текст из запроса, если его нет — ставим пустую строку
+        $submittedText = $request->request->get('text', ''); 
+
+        $project = $task->getArea()->getProject();
+        $currentUser = $this->getUser();
+        $owner = $project->getOwner();
+
+        // Отправляем уведомление владельцу проекта (если комментарий написал не он сам)
+        if ($owner && $owner !== $currentUser) {
+            $notification = new \App\Entity\Notification();
+            $notification->setUser($owner);
+            $notification->setProject($project);
+            $notification->setTitle($project->getTitle());
+            
+            // Используем $submittedText вместо неопределенной $commentText
+            $shortText = mb_strimwidth($submittedText, 0, 50, "...");
+            $notification->setMessage("Новый комментарий от " . $currentUser->getUserIdentifier() . " в задаче «" . $task->getTitle() . "»: " . $shortText);
+            
+            // Ссылка-якорь прямо на карточку задачи
+            $notification->setTargetUrl($this->generateUrl('app_project_view', ['id' => $project->getId()]) . '#task-node-' . $task->getId());
+            
+            $this->entityManager->persist($notification);
         }
 
         $this->entityManager->persist($comment);

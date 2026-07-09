@@ -64,7 +64,6 @@
                 .burger-menu-btn {
                     display: block;
                 }
-                /* Если на мобильном принудительно открыли */
                 body.sidebar-mobile-open .custom-sidebar {
                     transform: translateX(0);
                 }
@@ -84,23 +83,13 @@
     <body class="bg-light {% if app.user %}with-sidebar{% endif %}">
         
         {% if app.user %}
-            {# Имитируем количество уведомлений для заглушки (например, 3 новых сообщения/уведомления) #}
-            {% set demoNotificationsCount = 3 %}
-
-            <!-- Плавающая кнопка (видна, когда сайдбар закрыт) с индикатором уведомлений -->
             <button class="btn btn-dark burger-menu-btn rounded-pill px-3 fw-bold position-fixed" type="button" onclick="toggleSidebar()">
                 ☰ Меню
-                {% if demoNotificationsCount > 0 %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        {{ demoNotificationsCount }}
-                    </span>
-                {% endif %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="global-sidebar-badge">0</span>
             </button>
 
-            <!-- Постоянный левый сайдбар -->
             <div class="custom-sidebar bg-dark text-white d-flex flex-column justify-content-between p-3">
                 <div>
-                    <!-- Шапка сайдбара с кнопкой "свернуть" -->
                     <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-secondary">
                         <h5 class="m-0 text-info text-truncate" style="max-width: 180px;">📋 Планировщик</h5>
                         <button type="button" class="btn btn-sm btn-outline-light border-0" onclick="toggleSidebar()" title="Свернуть меню">
@@ -108,30 +97,26 @@
                         </button>
                     </div>
                     
-                    <!-- Навигационные разделы -->
                     <div class="nav flex-column nav-pills">
                         <a href="{{ path('app_dashboard') }}" class="nav-link text-white my-1 py-2 {% if app.request.attributes.get('_route') == 'app_dashboard' or app.request.attributes.get('_route') == 'app_project_view' %}active bg-primary fw-bold{% endif %}">
                             📁 Проекты
                         </a>
                         
-                        <a href="#" class="nav-link text-white my-1 py-2 d-flex justify-content-between align-items-center opacity-75" onclick="alert('Раздел «Уведомления» находится в разработке (Заглушка MVP)'); return false;">
+                        <a href="{{ path('app_notifications_center') }}" class="nav-link text-white my-1 py-2 d-flex justify-content-between align-items-center {% if app.request.attributes.get('_route') == 'app_notifications_center' %}active bg-primary fw-bold{% endif %}">
                             <span>🔔 Уведомления</span>
-                            {% if demoNotificationsCount > 0 %}
-                                <span class="badge bg-danger rounded-pill">{{ demoNotificationsCount }}</span>
-                            {% endif %}
+                            <span class="badge bg-danger rounded-pill d-none" id="inner-sidebar-badge">0</span>
                         </a>
                         
-                        <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Личные сообщения» находится в разработке (Заглушка MVP)'); return false;">
+                        <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Личные сообщения» находится в разработке'); return false;">
                             💬 Личные сообщения
                         </a>
                         
-                        <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Профиль» находится в разработке (Заглушка MVP)'); return false;">
+                        <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Профиль» находится в разработке'); return false;">
                             👤 Мой профиль
                         </a>
                     </div>
                 </div>
 
-                <!-- Подвал сайдбара -->
                 <div class="border-top border-secondary pt-3">
                     <div class="small text-muted mb-2 text-truncate">Юзер: <strong class="text-light">{{ app.user.email }}</strong></div>
                     <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger w-100">Выйти</a>
@@ -139,26 +124,41 @@
             </div>
 
             <script>
-                // Функция переключения состояния сайдбара
                 function toggleSidebar() {
                     const body = document.body;
                     if (window.innerWidth >= 768) {
-                        // Десктопный режим: переключаем сворачивание со сдвигом контента
                         body.classList.toggle('sidebar-collapsed');
-                        // Сохраняем выбор пользователя в localStorage, чтобы состояние не сбрасывалось при перезагрузке страниц
                         localStorage.setItem('sidebarCollapsed', body.classList.contains('sidebar-collapsed'));
                     } else {
-                        // Мобильный режим: просто выкатываем поверх контента
                         body.classList.toggle('sidebar-mobile-open');
                     }
                 }
 
-                // Восстанавливаем сохраненное пользователем состояние сайдбара при загрузке страницы
                 document.addEventListener('DOMContentLoaded', () => {
                     if (window.innerWidth >= 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
                         document.body.classList.add('sidebar-collapsed');
                     }
+                    // Запуск живого счетчика
+                    refreshSidebarNotificationCounter();
                 });
+
+                function refreshSidebarNotificationCounter() {
+                    fetch('/dashboard/notifications/unread-count-api', { method: 'GET' })
+                        .then(res => res.json())
+                        .then(data => {
+                            const count = data.count;
+                            const globalBadge = document.getElementById('global-sidebar-badge');
+                            const innerBadge = document.getElementById('inner-sidebar-badge');
+                            
+                            if (count > 0) {
+                                if(globalBadge) { globalBadge.innerText = count; globalBadge.classList.remove('d-none'); }
+                                if(innerBadge) { innerBadge.innerText = count; innerBadge.classList.remove('d-none'); }
+                            } else {
+                                if(globalBadge) globalBadge.classList.add('d-none');
+                                if(innerBadge) innerBadge.classList.add('d-none');
+                            }
+                        }).catch(() => {});
+                }
             </script>
         {% endif %}
 
