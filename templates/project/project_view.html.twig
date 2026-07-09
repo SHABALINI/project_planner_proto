@@ -270,22 +270,11 @@
                                 <input type="text" id="userSearchInput" class="form-control form-control-sm" placeholder="🔍 Введите email для поиска...">
                             </div>
 
-                            {#Вот тут говно какое то#}
-                            <div style="max-height: 250px; overflow-y: auto; padding-right: 5px;" class="border rounded p-2 bg-light">
-                                {% for user in allUsers %}
-                                    {# data-email нужен в нижнем регистре для корректной работы JS-поиска #}
-                                    <div class="form-check mb-2 user-search-item" data-email="{{ user.email|lower }}">
-                                        <input class="form-check-input" type="checkbox" name="users[]" value="{{ user.id }}" id="user_{{ user.id }}">
-                                        <label class="form-check-label" for="user_{{ user.id }}">
-                                            {{ user.email }}
-                                        </label>
-                                    </div>
-                                {% else %}
-                                    <div class="text-muted small p-1">Пользователи не найдены.</div>
-                                {% endfor %}
+                            <div style="max-height: 250px; overflow-y: auto; overflow-x: hidden; padding-right: 5px;" class="border rounded p-2 bg-light mb-3">
+                                <div id="usersModalList"></div>
                             </div>
-                            {#Говно#}
                         </div>
+
                         <div class="col-md-7 d-none" id="memberSettingsZone">
                             <h6 id="selectedUserEmail" class="text-primary fw-bold mb-3"></h6>
                             <div class="mb-3">
@@ -326,9 +315,7 @@
                                 {% endfor %}
                             </div>
                             <button class="btn btn-primary w-100 mt-3 fw-bold" onclick="saveMemberData()">Сохранить настройки участника</button>
-                        </div>
-                    </div>
-                </div>
+                        </div> </div> </div>
             </div>
         </div>
     </div>
@@ -336,23 +323,57 @@
 
     <script>
         let currentSelectedUserId = null;
-
         function openMembersModal() {
+            // Прячем правую панель до тех пор, пока не кликнули на пользователя
             document.getElementById('memberSettingsZone').classList.add('d-none');
+            
+            // Сбрасываем текст в поиске при открытии модалки
+            const searchInput = document.getElementById('userSearchInput');
+            if (searchInput) searchInput.value = '';
+
             fetch('{{ path("api_project_members", {"id": project.id}) }}')
                 .then(res => res.json())
                 .then(users => {
                     const list = document.getElementById('usersModalList');
                     list.innerHTML = '';
-                    if (users.length === 0) {
+               
+                    // Фильтруем список: убираем текущего пользователя
+                    const currentEmail = '{{ currentUser.email }}';
+                    const filteredUsers = users.filter(u => u.email !== currentEmail);
+
+                    if (filteredUsers.length === 0) {
                         list.innerHTML = '<div class="text-muted small p-2">Нет других зарегистрированных пользователей.</div>';
                         return;
                     }
-                    users.forEach(user => {
-                        const btn = document.createElement('button');
-                        btn.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${user.isMember ? 'list-group-item-success' : ''}`;
-                        btn.innerHTML = `<span>${user.email}</span> ${user.isMember ? '<span class="badge bg-success">'+user.role+'</span>' : ''}`;
-                        btn.onclick = () => selectUserForEdition(user);
+               
+                    filteredUsers.forEach(user => {
+                        const btn = document.createElement('div');
+                        
+                        // Классы для стилизации и КРИТИЧЕСКИЙ класс user-search-item для работы поиска
+                        btn.className = `user-search-item p-2 mb-1 rounded border d-flex justify-content-between align-items-center` + 
+                                        ` ${user.isMember ? 'bg-success-subtle text-success-emphasis border-success-subtle' : 'bg-white border-secondary-subtle'}`;
+                        
+                        // Атрибут, по которому ориентируется живой поиск
+                        btn.setAttribute('data-email', user.email.toLowerCase());
+                        btn.style.fontSize = '13px';
+                        btn.style.cursor = 'pointer';
+                        
+                        // Внутренний текст
+                        btn.innerHTML = `<span>👤 ${user.email}</span> ${user.isMember ? '<span class="badge bg-success">'+user.role+'</span>' : ''}`;
+                        
+                        // Клик по пользователю
+                        btn.onclick = () => {
+                            // Снимаем синее выделение (active) со всех и добавляем текущему
+                            document.querySelectorAll('.user-search-item').forEach(b => {
+                                b.style.borderColor = '';
+                                b.style.boxShadow = '';
+                            });
+                            btn.style.borderColor = '#0d6efd';
+                            btn.style.boxShadow = '0 0 0 0.25rem rgba(13, 110, 253, 0.25)';
+                            
+                            selectUserForEdition(user);
+                        };
+                        
                         list.appendChild(btn);
                     });
                 });
@@ -464,14 +485,16 @@
                 }).catch(err => console.error(err));
         }
 
+        // Исправленный живой поиск с учетом приоритетов Bootstrap 5
         document.getElementById('userSearchInput').addEventListener('input', function(e) {
             const searchText = e.target.value.toLowerCase();
             document.querySelectorAll('.user-search-item').forEach(function(item) {
                 const email = item.getAttribute('data-email');
-                if (email.includes(searchText)) {
-                    item.style.display = ''; // Показываем совпадение
+                
+                if (email && email.includes(searchText)) {
+                    item.classList.remove('d-none'); // Показываем совпадение
                 } else {
-                    item.style.display = 'none'; // Скрываем неподходящие
+                    item.classList.add('d-none'); // Надежно скрываем через утилиту Bootstrap
                 }
             });
         });
