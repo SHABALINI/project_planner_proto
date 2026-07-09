@@ -38,10 +38,16 @@ class Task
     #[ORM\OneToMany(targetEntity: Subtask::class, mappedBy: 'task', orphanRemoval: true)]
     private Collection $subtasks;
 
+    #[ORM\OneToMany(mappedBy: 'task', targetEntity: Comment::class, cascade: ['remove'])]
+    private $comments;
+
     public function __construct()
     {
         $this->subtasks = new ArrayCollection();
+        $this->comments = new \Doctrine\Common\Collections\ArrayCollection();
     }
+
+    public function getComments() { return $this->comments; }
 
     public function getId(): ?int
     {
@@ -121,6 +127,8 @@ class Task
         $this->deadline = $deadline;
         return $this;
     }
+
+    
 
     /**
      * @return Collection<int, Subtask>

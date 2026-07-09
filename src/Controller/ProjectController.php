@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Project;
 use App\Entity\Area;
 use App\Entity\Task;
+use App\Entity\Comment;
 use App\Entity\Subtask;
 use App\Entity\ProjectMember;
 use App\Entity\User;
@@ -14,6 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 
 #[Route('/dashboard')]
@@ -89,6 +91,7 @@ class ProjectController extends AbstractController
             'allowedAreas' => $allowedAreas,
             'allowedTasks' => $allowedTasks,
             'allowedSubtasks' => $allowedSubtasks,
+            'currentUser' => $user,
         ]);
     }
 
@@ -390,6 +393,99 @@ class ProjectController extends AbstractController
 
         $this->entityManager->persist($member);
         $this->entityManager->flush();
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route('/comment/create', name: 'api_comment_create', methods: ['POST'])]
+    public function createComment(Request $request): Response
+    {
+        $user = $this->getUser();
+        if (!$user) return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+
+        $taskId = $request->request->get('task_id');
+        $text = $request->request->get('text');
+        $task = $this->entityManager->getRepository(Task::class)->find($taskId ?? 0);
+
+        if (!$task) return new JsonResponse(['success' => false, 'error' => 'Task not found'], 404);
+
+        // Проверка: Зрители могут писать комментарии, но у пользователя должен быть хоть какой-то доступ к проекту
+        $project = $task->getArea()->getProject();
+        $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
+        if ($project->getOwner() !== $user && !$member) {
+            return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
+        }
+
+        if (empty(trim($text)) && !$request->files->get('file')) {
+            return new JsonResponse(['success' => false, 'error' => 'Comment cannot be empty'], 400);
+        }
+
+        $comment = new Comment();
+        $comment->setText($text ?? '');
+        $comment->setTask($task);
+        $comment->setAuthor($user);
+
+        // Обработка загрузки файла
+        /** @var UploadedFile $file */
+        $file = $request->files->get('file');
+        if ($file) {
+            $uploadsDirectory = $this->getParameter('kernel.project_dir') . '/public/uploads/comments';
+            $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            
+            // ИСПРАВЛЕНО: Безопасная очистка имени файла без использования transliterator_transliterate
+            // Переводим в нижний регистр и заменяем всё, кроме латиницы, цифр и подчёркивания, на дефисы
+            $safeFilename = mb_strtolower($originalFilename);
+            $safeFilename = preg_replace('/[^a-z0-9_]+/u', '-', $safeFilename);
+            $safeFilename = trim($safeFilename, '-');
+            
+            // Если после очистки имя стало пустым (например, файл назывался только на кириллице), даём дефолтное имя
+            if (empty($safeFilename)) {
+                $safeFilename = 'attachment';
+            }
+
+            $finalFilename = $safeFilename . '-' . uniqid() . '.' . $file->guessExtension();
+
+            try {
+                $file->move($uploadsDirectory, $finalFilename);
+                $comment->setFilePath('/uploads/comments/' . $finalFilename);
+                $comment->setFileName($file->getClientOriginalName());
+            } catch (\Exception $e) {
+                return new JsonResponse(['success' => false, 'error' => 'File upload failed'], 500);
+            }
+        }
+
+        $this->entityManager->persist($comment);
+        $this->entityManager->flush();
+
+        return $this->redirectToRoute('app_project_view', ['id' => $project->getId()]);
+    }
+
+    #[Route('/comment/delete/{id}', name: 'api_comment_delete', methods: ['POST'])]
+    public function deleteComment(int $id): JsonResponse
+    {
+        $user = $this->getUser();
+        $comment = $this->entityManager->getRepository(Comment::class)->find($id);
+        if (!$comment) return new JsonResponse(['success' => false, 'error' => 'Comment not found'], 404);
+
+        $task = $comment->getTask();
+        $area = $task->getArea();
+        $project = $area->getProject();
+
+        $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
+        $role = $project->getOwner() === $user ? 'admin' : ($member ? $member->getRole() : 'viewer');
+
+        // ПРОВЕРКА ПРАВ ИЗ ТЗ: 
+        // Удалить может: Автор комментария ИЛИ Админ ИЛИ Руководитель области, внутри которой задача
+        $isAuthor = ($comment->getAuthor() === $user);
+        $isAdmin = ($role === 'admin');
+        $isAreaManager = ($role === 'manager' && $member && $member->getAreas()->contains($area));
+
+        if (!$isAuthor && !$isAdmin && !$isAreaManager) {
+            return new JsonResponse(['success' => false, 'error' => 'Forbidden. You cannot delete this comment.'], 403);
+        }
+
+        $this->entityManager->remove($comment);
+        $this->entityManager->flush();
+
         return new JsonResponse(['success' => true]);
     }
 }
