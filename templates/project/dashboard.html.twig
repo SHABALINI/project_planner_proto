@@ -72,12 +72,33 @@
     <script>
         function createProject() {
             const titleInput = document.getElementById('projectTitle');
-            if (!titleInput.value.trim()) return;
-            fetch('/dashboard/project/create', { 
+            const titleValue = titleInput.value.trim();
+            if (!titleValue) return;
+            
+            // Используем встроенный роут Symfony, чтобы не ошибиться в адресах
+            fetch('{{ path("api_project_create") }}', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ title: titleInput.value }) 
-            }).then(() => location.reload());
+                body: JSON.stringify({ title: titleValue }) 
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Ошибка сервера: ' + res.status);
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    titleInput.value = ''; // Очищаем поле
+                    location.reload();     // Перезагружаем страницу, чтобы увидеть проект
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось создать проект'));
+                }
+            })
+            .catch(err => {
+                console.error('Ошибка запроса:', err);
+                alert('Не удалось связаться с сервером при создании проекта');
+            });
         }
 
         function deleteElement(type, id, confirmMessage = null) {
