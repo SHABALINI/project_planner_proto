@@ -56,6 +56,7 @@ class ProjectController extends AbstractController
     public function viewProject(int $id): Response
     {
         $user = $this->getUser();
+        $allUsers = $this->entityManager->getRepository(User::class)->findAll();
         $project = $this->entityManager->getRepository(Project::class)->find($id);
         
         if (!$project) {
@@ -92,6 +93,7 @@ class ProjectController extends AbstractController
             'allowedTasks' => $allowedTasks,
             'allowedSubtasks' => $allowedSubtasks,
             'currentUser' => $user,
+            'allUsers' => $allUsers,
         ]);
     }
 
