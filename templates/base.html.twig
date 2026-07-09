@@ -6,21 +6,68 @@
         <title>{% block title %}Канбан-Планировщик{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         
-        {# Подключаем Bootstrap 5 глобально #}
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         
         <style>
-            /* Стили для плавающей бургер-кнопки */
+            :root {
+                --sidebar-width: 260px;
+            }
+
+            /* Базовые стили для тела страницы с открытым сайдбаром */
+            body.with-sidebar {
+                padding-left: var(--sidebar-width);
+                transition: padding-left 0.3s ease;
+                position: relative;
+            }
+
+            /* Сайдбар */
+            .custom-sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: var(--sidebar-width);
+                z-index: 1040;
+                transition: transform 0.3s ease;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            }
+
+            /* Кнопка вызова меню (появляется только когда сайдбар закрыт) */
             .burger-menu-btn {
                 position: fixed;
                 top: 15px;
                 left: 15px;
-                z-index: 1050; /* Выше обычных элементов */
+                z-index: 1030;
                 box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                display: none; /* Скрыта по умолчанию, так как сайдбар открыт */
             }
-            /* Смещение контента, чтобы бургер-кнопка не перекрывала заголовки на мобильных */
-            body.logged-in-body {
-                padding-top: 20px;
+
+            /* Состояние: Сайдбар СВЕРНУТ */
+            body.sidebar-collapsed {
+                padding-left: 0 !important;
+            }
+            body.sidebar-collapsed .custom-sidebar {
+                transform: translateX(-100%);
+            }
+            body.sidebar-collapsed .burger-menu-btn {
+                display: block; /* Показываем кнопку, когда меню скрылось */
+            }
+
+            /* Адаптивность для мобильных устройств (автоматически скрываем на экранах < 768px) */
+            @media (max-width: 767.98px) {
+                body.with-sidebar {
+                    padding-left: 0 !important;
+                }
+                .custom-sidebar {
+                    transform: translateX(-100%);
+                }
+                .burger-menu-btn {
+                    display: block;
+                }
+                /* Если на мобильном принудительно открыли */
+                body.sidebar-mobile-open .custom-sidebar {
+                    transform: translateX(0);
+                }
             }
         </style>
 
@@ -34,60 +81,90 @@
         <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
         {% endif %}
     </head>
-    <body class="bg-light {% if app.user %}logged-in-body{% endif %}">
+    <body class="bg-light {% if app.user %}with-sidebar{% endif %}">
         
-        {# Бургер-меню рендерится ТОЛЬКО для авторизованных пользователей #}
         {% if app.user %}
-            <!-- Кнопка вызова меню -->
-            <button class="btn btn-dark burger-menu-btn rounded-pill px-3 fw-bold" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+            {# Имитируем количество уведомлений для заглушки (например, 3 новых сообщения/уведомления) #}
+            {% set demoNotificationsCount = 3 %}
+
+            <!-- Плавающая кнопка (видна, когда сайдбар закрыт) с индикатором уведомлений -->
+            <button class="btn btn-dark burger-menu-btn rounded-pill px-3 fw-bold position-fixed" type="button" onclick="toggleSidebar()">
                 ☰ Меню
+                {% if demoNotificationsCount > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ demoNotificationsCount }}
+                    </span>
+                {% endif %}
             </button>
 
-            <!-- Левая панель навигации (Бургер-меню) -->
-            <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel" style="width: 280px;">
-                <div class="offcanvas-header border-bottom border-secondary">
-                    <h5 class="offcanvas-title text-info" id="sidebarMenuLabel">📋 Канбан-Планировщик</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-temporary="offcanvas" data-bs-target="#sidebarMenu" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
-                </div>
-                <div class="offcanvas-body d-flex flex-column justify-content-between">
+            <!-- Постоянный левый сайдбар -->
+            <div class="custom-sidebar bg-dark text-white d-flex flex-column justify-content-between p-3">
+                <div>
+                    <!-- Шапка сайдбара с кнопкой "свернуть" -->
+                    <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-secondary">
+                        <h5 class="m-0 text-info text-truncate" style="max-width: 180px;">📋 Планировщик</h5>
+                        <button type="button" class="btn btn-sm btn-outline-light border-0" onclick="toggleSidebar()" title="Свернуть меню">
+                            ◀
+                        </button>
+                    </div>
                     
-                    <!-- Список разделов -->
+                    <!-- Навигационные разделы -->
                     <div class="nav flex-column nav-pills">
-                        <!-- Раздел Проекты (Активный роут dashboard) -->
                         <a href="{{ path('app_dashboard') }}" class="nav-link text-white my-1 py-2 {% if app.request.attributes.get('_route') == 'app_dashboard' or app.request.attributes.get('_route') == 'app_project_view' %}active bg-primary fw-bold{% endif %}">
-                            📁 Все Проекты
+                            📁 Проекты
                         </a>
                         
-                        <!-- Заглушка: Уведомления -->
-                        <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Уведомления» находится в разработке (Заглушка MVP)'); return false;">
-                            🔔 Уведомления <span class="badge bg-danger rounded-circle ms-1" style="font-size: 10px;">0</span>
+                        <a href="#" class="nav-link text-white my-1 py-2 d-flex justify-content-between align-items-center opacity-75" onclick="alert('Раздел «Уведомления» находится в разработке (Заглушка MVP)'); return false;">
+                            <span>🔔 Уведомления</span>
+                            {% if demoNotificationsCount > 0 %}
+                                <span class="badge bg-danger rounded-pill">{{ demoNotificationsCount }}</span>
+                            {% endif %}
                         </a>
                         
-                        <!-- Заглушка: Личные сообщения -->
                         <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Личные сообщения» находится в разработке (Заглушка MVP)'); return false;">
                             💬 Личные сообщения
                         </a>
                         
-                        <!-- Заглушка: Профиль -->
                         <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Профиль» находится в разработке (Заглушка MVP)'); return false;">
                             👤 Мой профиль
                         </a>
                     </div>
+                </div>
 
-                    <!-- Нижняя часть меню: Данные юзера и выход -->
-                    <div class="border-top border-secondary pt-3">
-                        <div class="small text-muted mb-2 text-truncate">Вы вошли как:<br><strong class="text-light">{{ app.user.email }}</strong></div>
-                        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger w-100">Выйти из аккаунта</a>
-                    </div>
-
+                <!-- Подвал сайдбара -->
+                <div class="border-top border-secondary pt-3">
+                    <div class="small text-muted mb-2 text-truncate">Юзер: <strong class="text-light">{{ app.user.email }}</strong></div>
+                    <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger w-100">Выйти</a>
                 </div>
             </div>
+
+            <script>
+                // Функция переключения состояния сайдбара
+                function toggleSidebar() {
+                    const body = document.body;
+                    if (window.innerWidth >= 768) {
+                        // Десктопный режим: переключаем сворачивание со сдвигом контента
+                        body.classList.toggle('sidebar-collapsed');
+                        // Сохраняем выбор пользователя в localStorage, чтобы состояние не сбрасывалось при перезагрузке страниц
+                        localStorage.setItem('sidebarCollapsed', body.classList.contains('sidebar-collapsed'));
+                    } else {
+                        // Мобильный режим: просто выкатываем поверх контента
+                        body.classList.toggle('sidebar-mobile-open');
+                    }
+                }
+
+                // Восстанавливаем сохраненное пользователем состояние сайдбара при загрузке страницы
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (window.innerWidth >= 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
+                        document.body.classList.add('sidebar-collapsed');
+                    }
+                });
+            </script>
         {% endif %}
 
-        {# Основной контент страниц #}
+        {# Основное содержимое страницы #}
         {% block body %}{% endblock %}
 
-        {# Глобальное подключение JS Bootstrap (необходимо для работы Offcanvas и Модалок) #}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </body>
 </html>
