@@ -9,6 +9,7 @@ use App\Entity\Comment;
 use App\Entity\Subtask;
 use App\Entity\ProjectMember;
 use App\Entity\User;
+use App\Entity\Notification;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
