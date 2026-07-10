@@ -260,6 +260,7 @@ class ProjectController extends AbstractController
 
         $changeText = null;
 
+        // 1. Чётко определяем, что изменилось, меняем сущность и формируем ОДИН текст
         if ($field === 'status') {
             $task->setStatus($value);
             $statusRu = ($value === 'done' ? 'Выполнено' : ($value === 'progress' ? 'В работе' : 'Не выполнено'));
@@ -267,14 +268,10 @@ class ProjectController extends AbstractController
         } elseif ($field === 'priority') {
             $task->setPriority($value);
             $changeText = "→ приоритет «" . $value . "» у задачи «" . $task->getTitle() . "»";
-        } elseif ($field === 'description') {
-            $task->setDescription($value);
-            $changeText = "обновил(а) описание задачи «" . $task->getTitle() . "»";
         } elseif ($field === 'deadline') {
-            // Дедлайн приходит строкой "YYYY-MM-DD" или пустой. Превращаем в DateTime или null
             if (!empty($value)) {
                 $task->setDeadline(new \DateTime($value));
-                $changeText = "изменил(а) дедлайн задачи «" . $task->getTitle() . "» на " . date('d.m.Y', strtotime($value));
+                $changeText = "→ дедлайн " . date('d.m.Y', strtotime($value)) . " у задачи «" . $task->getTitle() . "»";
             } else {
                 $task->setDeadline(null);
                 $changeText = "удалил(а) дедлайн у задачи «" . $task->getTitle() . "»";
@@ -287,38 +284,17 @@ class ProjectController extends AbstractController
             $currentUser = $this->getUser();
             $owner = $project->getOwner();
 
-            $notification = new \App\Entity\Notification();
-
-            
+            // Проверяем, что получатель существует и это не тот же человек, кто делает изменения
             if ($owner && $owner !== $currentUser) {
                 $notification = new \App\Entity\Notification();
                 $notification->setUser($owner);
                 $notification->setProject($project);
                 $notification->setTitle($project->getTitle());
-                $notification->setMessage("Пользователь " . $currentUser->getUserIdentifier() . " " . $changeText);
+                $notification->setMessage($currentUser->getUserIdentifier() . ": " . $changeText);
                 $notification->setTargetUrl($this->generateUrl('app_project_view', ['id' => $project->getId()]) . '#task-node-' . $task->getId());
                 
-                // Используем $this->entityManager, так как свойство объявлено в конструкторе твоего класса
                 $this->entityManager->persist($notification);
             }
-            $notification->setMessage($currentUser->getUserIdentifier() . ": " . $changeText);
-        }
-
-        $project = $task->getArea()->getProject();
-        $currentUser = $this->getUser();
-
-        $owner = $project->getOwner();
-        if ($owner && $owner !== $currentUser) {
-            $notification = new \App\Entity\Notification();
-            $notification->setUser($owner);
-            $notification->setProject($project);
-            $notification->setTitle($project->getTitle());
-            $notification->setMessage("Пользователь " . $currentUser->getUserIdentifier() . " " . $changeText);
-            
-            // Генерируем ссылку, чтобы кнопка «Перейти» вела сразу на эту задачу
-            $notification->setTargetUrl($this->generateUrl('app_project_view', ['id' => $project->getId()]) . '#task-node-' . $task->getId());
-            
-            $this->entityManager->persist($notification);
         }
 
         $this->entityManager->flush();

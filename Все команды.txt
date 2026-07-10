@@ -1,0 +1,13 @@
+Все команды для планировщика проектов:
+
+symfony server:start -d
+
+symfony server:stop
+
+lt --port 8000
+
+php bin/console make:migration
+
+php bin/console doctrine:migrations:migrate
+
+php bin/console cache:clear
