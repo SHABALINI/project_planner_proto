@@ -440,9 +440,41 @@ class ProjectController extends AbstractController
         $project = $this->entityManager->getRepository(Project::class)->find($id);
         if (!$project) return new JsonResponse(['success' => false], 404);
 
+        $currentUser = $this->getUser();
         $data = json_decode($request->getContent(), true);
         $user = $this->entityManager->getRepository(User::class)->find($data['user_id'] ?? 0);
         if (!$user) return new JsonResponse(['success' => false], 404);
+
+        $targetMember = $this->entityManager->getRepository(ProjectMember::class)
+        ->findOneBy(['project' => $project, 'user' => $user]);
+    
+        $isOwner = ($project->getOwner() === $currentUser);
+        $isTargetAdmin = $targetMember && $targetMember->getRole() === 'admin';
+        $newRole = $data['role'] ?? 'viewer';
+        
+        // 1. Если это админ и мы не владелец - запрещаем любые изменения
+        if ($isTargetAdmin && !$isOwner) {
+            return new JsonResponse([
+                'success' => false, 
+                'error' => 'Only the project owner can modify admin permissions'
+            ], 403);
+        }
+        
+        // 2. Если мы пытаемся сделать админом и мы не владелец - запрещаем
+        if ($newRole === 'admin' && !$isOwner) {
+            return new JsonResponse([
+                'success' => false, 
+                'error' => 'Only the project owner can grant admin permissions'
+            ], 403);
+        }
+        
+        // 3. Если мы пытаемся понизить админа и мы не владелец - запрещаем
+        if ($isTargetAdmin && $newRole !== 'admin' && !$isOwner) {
+            return new JsonResponse([
+                'success' => false, 
+                'error' => 'Only the project owner can revoke admin permissions'
+            ], 403);
+        }
 
         // Проверяем, был ли участник уже добавлен
         $existingMember = $this->entityManager->getRepository(ProjectMember::class)

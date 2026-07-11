@@ -437,19 +437,23 @@
             const list = document.getElementById('usersModalList');
             list.innerHTML = '<div class="text-muted small p-2">⏳ Загрузка...</div>';
             
-            console.log('Opening members modal, project ID:', projectId); // ДОБАВЛЕНО
+            // Определяем isOwner
+            const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
+            
+            console.log('Opening members modal, project ID:', projectId);
             
             fetch('{{ path("api_project_members", {"id": project.id}) }}')
                 .then(res => {
-                    console.log('API response status:', res.status); // ДОБАВЛЕНО
+                    console.log('API response status:', res.status);
                     if (!res.ok) {
                         throw new Error('HTTP error! status: ' + res.status);
                     }
                     return res.json();
                 })
                 .then(users => {
-                    console.log('Users data from API:', users); // ДОБАВЛЕНО
-                    renderUsersList(users);
+                    console.log('Users data from API:', users);
+                    // Передаем isOwner как второй параметр
+                    renderUsersList(users, isOwner);
                 })
                 .catch(err => {
                     console.error('Error loading users:', err);
@@ -457,7 +461,7 @@
                 });
         }
 
-        function renderUsersList(users) {
+        function renderUsersList(users, isOwner) {
             const list = document.getElementById('usersModalList');
             list.innerHTML = '';
             
@@ -482,6 +486,17 @@
             filteredUsers.forEach(user => {
                 const btn = document.createElement('div');
                 const isMember = user.isMember;
+                const isAdmin = user.role === 'admin';
+                
+                // === ЛОГИКА С ИСПОЛЬЗОВАНИЕМ ПЕРЕДАННОГО isOwner ===
+                let statusText = isMember ? user.role : '';
+                let statusClass = isMember ? 'bg-success' : 'bg-secondary';
+                
+                if (isAdmin && !isOwner) {
+                    statusText = '🔒 Админ (только владелец)';
+                    statusClass = 'bg-danger';
+                }
+                
                 btn.className = `user-search-item p-2 mb-1 rounded border d-flex justify-content-between align-items-center` + 
                                 ` ${isMember ? 'bg-success-subtle border-success' : 'bg-white border-secondary'}`;
                 btn.setAttribute('data-email', user.email.toLowerCase());
@@ -490,14 +505,24 @@
                 btn.style.cursor = 'pointer';
                 btn.style.transition = 'all 0.2s';
                 
+                if (isAdmin && !isOwner) {
+                    btn.style.opacity = '0.7';
+                    btn.style.cursor = 'not-allowed';
+                }
+                
                 btn.innerHTML = `
                     <span>
                         ${user.email}
                     </span>
-                    ${isMember ? `<span class="badge bg-success">${user.role}</span>` : ''}
+                    <span class="badge ${statusClass}">${statusText}</span>
                 `;
                 
                 btn.onclick = () => {
+                    if (isAdmin && !isOwner) {
+                        showToast('Только владелец может редактировать админа', 'warning');
+                        return;
+                    }
+                    
                     document.querySelectorAll('.user-search-item').forEach(b => {
                         b.style.borderColor = '';
                         b.style.boxShadow = '';
@@ -519,6 +544,42 @@
             document.getElementById('memberRoleSelect').value = user.role;
             document.getElementById('memberSettingsZone').classList.remove('d-none');
 
+            // === ЛОГИКА БЛОКИРОВКИ АДМИНОВ ===
+            const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
+            const roleSelect = document.getElementById('memberRoleSelect');
+            const saveButton = document.querySelector('#memberSettingsZone .btn-primary');
+            
+            // Удаляем старое предупреждение если есть
+            const existingWarning = document.getElementById('adminWarning');
+            if (existingWarning) existingWarning.remove();
+            
+            if (user.role === 'admin' && !isOwner) {
+                // Если это админ и мы не владелец - блокируем
+                roleSelect.disabled = true;
+                saveButton.disabled = true;
+                saveButton.textContent = '⛔ Только владелец может изменять админа';
+                saveButton.classList.add('btn-secondary');
+                saveButton.classList.remove('btn-primary');
+                
+                // Показываем предупреждение
+                const warning = document.createElement('div');
+                warning.id = 'adminWarning';
+                warning.className = 'alert alert-warning mt-2';
+                warning.role = 'alert';
+                warning.innerHTML = '⚠️ <strong>Внимание!</strong> Только владелец проекта может изменять права администратора.';
+                
+                const parent = roleSelect.parentElement;
+                parent.appendChild(warning);
+            } else {
+                // Разблокируем
+                roleSelect.disabled = false;
+                saveButton.disabled = false;
+                saveButton.textContent = 'Сохранить настройки участника';
+                saveButton.classList.remove('btn-secondary');
+                saveButton.classList.add('btn-primary');
+            }
+
+            // Снимаем все галочки
             document.querySelectorAll('.form-check-input').forEach(cb => cb.checked = false);
             user.areas.forEach(id => { const c = document.getElementById(`cb-area-${id}`); if(c) c.checked = true; });
             user.tasks.forEach(id => { const c = document.getElementById(`cb-task-${id}`); if(c) c.checked = true; });
@@ -556,13 +617,32 @@
 
         function saveMemberData() {
             const role = document.getElementById('memberRoleSelect').value;
+            const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
+            
+            // Проверка: если пытаемся изменить админа
+            const selectedUser = currentSelectedUserId;
+            // Находим выбранного пользователя в списке
+            const userItem = document.querySelector(`.user-search-item[data-user-id="${selectedUser}"]`);
+            if (userItem) {
+                const isAdmin = userItem.innerHTML.includes('Админ');
+                if (isAdmin && !isOwner) {
+                    showToast('Только владелец может изменять права админа', 'warning');
+                    return;
+                }
+            }
+            
+            // Проверка: если пытаемся сделать админом
+            if (role === 'admin' && !isOwner) {
+                showToast('Только владелец может назначать админов', 'warning');
+                return;
+            }
+            
             if (role === 'admin' && !confirm('Внимание! Вы собираетесь назначить Администратора. Продолжить?')) return;
 
             const areas = Array.from(document.querySelectorAll('.area-cb:checked')).map(cb => parseInt(cb.value));
             const tasks = Array.from(document.querySelectorAll('.task-cb:checked')).map(cb => parseInt(cb.value));
             const subtasks = Array.from(document.querySelectorAll('.subtask-cb:checked')).map(cb => parseInt(cb.value));
 
-            // Показываем индикатор загрузки
             const saveBtn = document.querySelector('#memberSettingsZone .btn-primary');
             const originalText = saveBtn.textContent;
             saveBtn.textContent = '⏳ Сохранение...';
@@ -581,24 +661,19 @@
             })
             .then(res => res.json())
             .then(data => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+                
                 if(data.success) { 
-                    // Возвращаем кнопку в исходное состояние
-                    saveBtn.textContent = originalText;
-                    saveBtn.disabled = false;
-                    
-                    // Скрываем панель настроек
                     document.getElementById('memberSettingsZone').classList.add('d-none');
                     
-                    // Обновляем панель участников справа
                     refreshMembersPanel();
                     
-                    // ОБНОВЛЯЕМ СПИСОК В МОДАЛКЕ (без перезагрузки)
-                    // Перезагружаем данные для модалки
+                    // Обновляем список в модалке
                     fetch('{{ path("api_project_members", {"id": project.id}) }}')
                         .then(res => res.json())
                         .then(users => {
-                            renderUsersList(users);
-                            // Сбрасываем выделение
+                            renderUsersList(users, isOwner);
                             document.querySelectorAll('.user-search-item').forEach(b => {
                                 b.style.borderColor = '';
                                 b.style.boxShadow = '';
@@ -606,19 +681,16 @@
                             });
                         });
                     
-                    // Короткое уведомление об успехе (можно убрать, если не нужно)
                     showToast('Права успешно обновлены!', 'success');
                 } else {
-                    saveBtn.textContent = originalText;
-                    saveBtn.disabled = false;
-                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
                 }
             })
             .catch(err => {
                 saveBtn.textContent = originalText;
                 saveBtn.disabled = false;
                 console.error('Error:', err);
-                alert('Ошибка при сохранении');
+                showToast('Ошибка при сохранении', 'error');
             });
         }
 
@@ -768,8 +840,13 @@
         }
 
         function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+                document.body.appendChild(container);
+            }
             
             const colors = {
                 success: 'bg-success text-white',
@@ -782,6 +859,7 @@
             toast.className = `toast align-items-center ${colors[type] || colors.info} border-0 show`;
             toast.role = 'alert';
             toast.style.minWidth = '250px';
+            toast.style.marginBottom = '10px';
             toast.innerHTML = `
                 <div class="d-flex">
                     <div class="toast-body">
