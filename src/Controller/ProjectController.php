@@ -89,7 +89,19 @@ class ProjectController extends AbstractController
         $allowedTasks = $memberInfo ? array_map(fn($t) => $t->getId(), $memberInfo->getTasks()->toArray()) : [];
         $allowedSubtasks = $memberInfo ? array_map(fn($s) => $s->getId(), $memberInfo->getSubtasks()->toArray()) : [];
 
-         $projectMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
+        $projectMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
+
+        // Сортируем по приоритету ролей
+        $rolePriority = [
+            'admin' => 1,
+            'manager' => 2,
+            'executor' => 3,
+            'viewer' => 4
+        ];
+
+        usort($projectMembers, function($a, $b) use ($rolePriority) {
+            return $rolePriority[$a->getRole()] <=> $rolePriority[$b->getRole()];
+        });
 
         return $this->render('project/project_view.html.twig', [
             'project' => $project,
@@ -617,4 +629,78 @@ class ProjectController extends AbstractController
 
         return new JsonResponse(['success' => true]);
     }
+
+    #[Route('/project/{id}/members-panel', name: 'api_project_members_panel', methods: ['GET'])]
+    public function getMembersPanel(int $id): JsonResponse
+    {
+        $project = $this->entityManager->getRepository(Project::class)->find($id);
+        if (!$project) {
+            return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
+        }
+        
+        // Получаем всех участников
+        $members = $this->entityManager->getRepository(ProjectMember::class)
+            ->findBy(['project' => $project]);
+        
+        // Сортируем по ролям
+        $rolePriority = [
+            'admin' => 1,
+            'manager' => 2,
+            'executor' => 3,
+            'viewer' => 4
+        ];
+        
+        usort($members, function($a, $b) use ($rolePriority) {
+            return $rolePriority[$a->getRole()] <=> $rolePriority[$b->getRole()];
+        });
+        
+        // Формируем данные для ответа
+        $membersData = [];
+        foreach ($members as $member) {
+            $membersData[] = [
+                'id' => $member->getId(),
+                'userId' => $member->getUser()->getId(),
+                'email' => $member->getUser()->getEmail(),
+                'role' => $member->getRole(),
+                'roleLabel' => $this->getRoleLabel($member->getRole()),
+                'areasCount' => $member->getAreas()->count(),
+                'tasksCount' => $member->getTasks()->count(),
+                'isOwner' => false
+            ];
+        }
+        
+        // Добавляем владельца
+        $ownerData = [
+            'id' => null,
+            'userId' => $project->getOwner()->getId(),
+            'email' => $project->getOwner()->getEmail(),
+            'role' => 'owner',
+            'roleLabel' => '👑 Владелец',
+            'areasCount' => 0,
+            'tasksCount' => 0,
+            'isOwner' => true
+        ];
+        
+        array_unshift($membersData, $ownerData);
+        
+        return new JsonResponse([
+            'success' => true,
+            'members' => $membersData,
+            'total' => count($membersData)
+        ]);
+    }
+
+    private function getRoleLabel(string $role): string
+    {
+        return match($role) {
+            'admin' => 'Админ',
+            'manager' => 'Руководитель',
+            'executor' => 'Исполнитель',
+            'viewer' => 'Зритель',
+            default => $role
+        };
+    }
+
 }
+
+

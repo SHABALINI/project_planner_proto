@@ -75,26 +75,6 @@
                 </div>
             </div>
 
-        {# ... Весь остальной существующий код шаблона project_view (progress-bar, области, задачи, комментарии, модалка) остается абсолютно без изменений ... #}
-        
-        {% set totalProjectPoints = 0 %}{% set earnedProjectPoints = 0 %}
-        {% for area in project.areas %}
-            {% for task in area.tasks %}
-                {% set totalProjectPoints = totalProjectPoints + 100 %}
-                {% if task.status == 'done' %}{% set earnedProjectPoints = earnedProjectPoints + 100 %}
-                {% elseif task.status == 'progress' %}{% set earnedProjectPoints = earnedProjectPoints + 50 %}{% endif %}
-            {% endfor %}
-        {% endfor %}
-        {% set projectPercent = totalProjectPoints > 0 ? (earnedProjectPoints / totalProjectPoints * 100)|round : 0 %}
-
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <small class="fw-bold text-secondary">Общая готовность проекта: {{ projectPercent }}%</small>
-                <div class="progress" style="height: 12px;">
-                    <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ projectPercent }}%"></div>
-                </div>
-            </div>
-        </div>
 
         {% if userRole == 'admin' %}
         <div class="bg-white p-3 rounded mb-4 border shadow-sm">
@@ -284,16 +264,17 @@
         </div>
     </div>
 
+    {# Правая панель с участникам - 25% ширины#}
     <div class="col-md-3">
             <div class="card shadow-sm sticky-top" style="top: 20px;">
                 <div class="card-header bg-dark text-white">
-                    <h6 class="mb-0">👥 Участники <span class="badge bg-light text-dark ms-2">{{ project_members|length + 1 }}</span></h6>
+                    <h6 class="mb-0">👥 Участники <span class="badge bg-light text-dark ms-2" id="membersCount">{{ project_members|length + 1 }}</span></h6>
 
                     {% if userRole == 'admin' %}
                         <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#membersModal" onclick="openMembersModal()">Управление</button>
                     {% endif %}
                 </div>
-                <div class="card-body p-2" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                <div class="card-body p-2" id="membersPanelBody" style="max-height: calc(100vh - 200px); overflow-y: auto;">
                     
                     {# Владелец проекта #}
                     <div class="d-flex align-items-center p-2 mb-1 rounded bg-primary bg-opacity-10">
@@ -367,7 +348,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title">👥 Управление участниками проекта</h5>
+                    <h5 class="modal-title">👥 Управление участниками и добавление в проект</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -428,6 +409,7 @@
 
     <script>
         const projectId = {{ project.id }};
+        const userRole = '{{ userRole }}';
 
         let currentSelectedUserId = null;
         function openMembersModal() {
@@ -521,9 +503,24 @@
             fetch('{{ path("api_project_member_save", {"id": project.id}) }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: currentSelectedUserId, role: role, areas: areas, tasks: tasks, subtasks: subtasks })
-            }).then(res => res.json()).then(data => {
-                if(data.success) { alert('Права успешно обновлены!'); openMembersModal(); }
+                body: JSON.stringify({ 
+                    user_id: currentSelectedUserId, 
+                    role: role, 
+                    areas: areas, 
+                    tasks: tasks, 
+                    subtasks: subtasks 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) { 
+                    alert('Права успешно обновлены!');
+                    // Закрываем модалку
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('membersModal'));
+                    if (modal) modal.hide();
+                    // Обновляем панель участников без перезагрузки
+                    refreshMembersPanel();
+                }
             });
         }
 
@@ -537,11 +534,100 @@
             .then(data => {
                 if (data.success) {
                     alert('Участник удален!');
-                    location.reload();
+                    // Обновляем панель без перезагрузки
+                    refreshMembersPanel();
+                    // Если модалка открыта, закрываем её
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('membersModal'));
+                    if (modal) modal.hide();
                 } else {
-                    alert('Ошибка: ' + data.error);
+                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
                 }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Ошибка при удалении участника');
             });
+        }
+
+        function refreshMembersPanel() {
+            fetch(`/dashboard/project/${projectId}/members-panel`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        updateMembersPanel(data.members, data.total);
+                    }
+                })
+                .catch(err => console.error('Error refreshing members:', err));
+        }
+
+        // Функция обновления HTML панели
+        function updateMembersPanel(members, total) {
+            const panelBody = document.getElementById('membersPanelBody');
+            if (!panelBody) return;
+            
+            // Обновляем счетчик участников
+            const badge = document.querySelector('.card-header .badge');
+            if (badge) {
+                badge.textContent = total;
+            }
+            
+            // Очищаем панель
+            panelBody.innerHTML = '';
+            
+            // Рендерим каждого участника
+            members.forEach(member => {
+                const isOwner = member.isOwner;
+                const firstLetter = member.email.charAt(0).toUpperCase();
+                const bgColor = isOwner ? 'bg-primary' : 
+                            (member.role === 'admin' ? 'bg-danger' : 
+                            (member.role === 'manager' ? 'bg-primary' : 
+                            (member.role === 'executor' ? 'bg-success' : 'bg-secondary')));
+                
+                const roleBadge = isOwner ? 
+                    '<span class="badge bg-warning text-dark">👑 Владелец</span>' :
+                    `<span class="badge bg-${member.role === 'admin' ? 'danger' : member.role === 'manager' ? 'primary' : member.role === 'executor' ? 'success' : 'secondary'}">${member.roleLabel}</span>`;
+                
+                const extraInfo = !isOwner && member.role === 'manager' ?
+                    `<span class="badge bg-secondary small">Областей: ${member.areasCount}</span>` :
+                    (!isOwner && member.role === 'executor' ?
+                    `<span class="badge bg-secondary small">Задач: ${member.tasksCount}</span>` : '');
+                
+                const deleteButton = !isOwner && userRole === 'admin' ?
+                    `<button class="btn btn-sm btn-outline-danger ms-1" 
+                            onclick="removeMember(${member.userId})" 
+                            title="Удалить участника"
+                            style="padding: 2px 6px; font-size: 12px;">
+                        ×
+                    </button>` : '';
+                
+                const memberHtml = `
+                    <div class="d-flex align-items-center p-2 mb-1 rounded hover-bg-light">
+                        <div class="position-relative">
+                            <div class="rounded-circle ${bgColor} text-white d-flex align-items-center justify-content-center" 
+                                style="width: 40px; height: 40px; font-size: 18px; font-weight: bold;">
+                                ${firstLetter}
+                            </div>
+                            <span class="position-absolute bottom-0 end-0" 
+                                style="width: 12px; height: 12px; background: #23a55a; border: 2px solid white; border-radius: 50%;"></span>
+                        </div>
+                        <div class="ms-2 flex-grow-1">
+                            <div class="fw-bold small text-truncate" style="max-width: 120px;">${member.email}</div>
+                            <div class="text-muted small">
+                                ${roleBadge}
+                                ${extraInfo}
+                            </div>
+                        </div>
+                        ${deleteButton}
+                    </div>
+                `;
+                
+                panelBody.innerHTML += memberHtml;
+            });
+            
+            // Если нет участников
+            if (members.length === 0) {
+                panelBody.innerHTML = '<div class="text-center text-muted small p-3">Нет участников</div>';
+            }
         }
 
         function createArea(projectId) {
@@ -597,6 +683,7 @@
         });
 
         document.addEventListener("DOMContentLoaded", function() {
+            refreshMembersPanel();
             const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
             document.querySelectorAll(".comment-text-raw").forEach(el => {
                 let rawText = el.innerHTML;
@@ -605,4 +692,6 @@
             });
         });
     </script>
+
+    
 {% endblock %}
