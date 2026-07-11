@@ -89,6 +89,8 @@ class ProjectController extends AbstractController
         $allowedTasks = $memberInfo ? array_map(fn($t) => $t->getId(), $memberInfo->getTasks()->toArray()) : [];
         $allowedSubtasks = $memberInfo ? array_map(fn($s) => $s->getId(), $memberInfo->getSubtasks()->toArray()) : [];
 
+         $projectMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
+
         return $this->render('project/project_view.html.twig', [
             'project' => $project,
             'userRole' => $role,
@@ -97,6 +99,7 @@ class ProjectController extends AbstractController
             'allowedSubtasks' => $allowedSubtasks,
             'currentUser' => $user,
             'allUsers' => $allUsers,
+            'project_members' => $projectMembers,
         ]);
     }
 
@@ -418,6 +421,13 @@ class ProjectController extends AbstractController
         $user = $this->entityManager->getRepository(User::class)->find($data['user_id'] ?? 0);
         if (!$user) return new JsonResponse(['success' => false], 404);
 
+        // Проверяем, был ли участник уже добавлен
+        $existingMember = $this->entityManager->getRepository(ProjectMember::class)
+            ->findOneBy(['project' => $project, 'user' => $user]);
+
+        $isNewMember = ($existingMember === null);
+
+
         $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]) ?? new ProjectMember();
         $member->setProject($project);
         $member->setUser($user);
@@ -450,9 +460,84 @@ class ProjectController extends AbstractController
                 }
             }
         }
+        $currentUser = $this->getUser(); // Получаем текущего пользователя
+
+        if ($isNewMember) {
+            $message = $user->getUserIdentifier() . " 👤 добавил(а) вас в проект «" . $project->getTitle() . "»";
+            $targetUrl = $this->generateUrl('app_project_view', ['id' => $project->getId()]);
+            
+            $this->notificationService->sendNotification(
+                $project,
+                $message,
+                $targetUrl,
+                $currentUser  // Не отправляем уведомление тому, кто добавил
+            );
+        }
 
         $this->entityManager->persist($member);
         $this->entityManager->flush();
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route('/project/{projectId}/member/remove/{userId}', name: 'api_project_member_remove', methods: ['POST'])]
+    public function removeProjectMember(int $projectId, int $userId): JsonResponse
+    {
+        $currentUser = $this->getUser();
+        $project = $this->entityManager->getRepository(Project::class)->find($projectId);
+        
+        if (!$project) {
+            return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
+        }
+        
+        // Проверка прав: только админ или владелец может удалять
+        $isOwner = ($project->getOwner() === $currentUser);
+        $isAdmin = false;
+        
+        if (!$isOwner) {
+            $member = $this->entityManager->getRepository(ProjectMember::class)
+                ->findOneBy(['project' => $project, 'user' => $currentUser]);
+            $isAdmin = ($member && $member->getRole() === 'admin');
+        }
+        
+        if (!$isOwner && !$isAdmin) {
+            return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
+        }
+        
+        // Нельзя удалить владельца проекта
+        if ($project->getOwner()->getId() === $userId) {
+            return new JsonResponse(['success' => false, 'error' => 'Cannot remove project owner'], 400);
+        }
+        
+        $userToRemove = $this->entityManager->getRepository(User::class)->find($userId);
+        if (!$userToRemove) {
+            return new JsonResponse(['success' => false, 'error' => 'User not found'], 404);
+        }
+        
+        // Находим запись ProjectMember
+        $memberToRemove = $this->entityManager->getRepository(ProjectMember::class)
+            ->findOneBy(['project' => $project, 'user' => $userToRemove]);
+        
+        if (!$memberToRemove) {
+            return new JsonResponse(['success' => false, 'error' => 'Member not found'], 404);
+        }
+        
+        // Отправляем уведомление удаленному пользователю (если он не текущий)
+        if ($userToRemove !== $currentUser) {
+            $message = $currentUser->getUserIdentifier() . " ❌ удалил(а) вас из проекта «" . $project->getTitle() . "»";
+            $targetUrl = $this->generateUrl('app_dashboard'); // Ссылка на дашборд
+            $notification = new Notification();
+            $notification->setUser($userToRemove);
+            $notification->setProject($project);
+            $notification->setTitle($project->getTitle());
+            $notification->setMessage($message);
+            $notification->setTargetUrl($targetUrl);
+            $this->entityManager->persist($notification);
+        }
+        
+        // Удаляем участника
+        $this->entityManager->remove($memberToRemove);
+        $this->entityManager->flush();
+        
         return new JsonResponse(['success' => true]);
     }
 
