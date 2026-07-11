@@ -10,6 +10,7 @@ use App\Entity\Subtask;
 use App\Entity\ProjectMember;
 use App\Entity\User;
 use App\Entity\Notification;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,10 +24,11 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 class ProjectController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
+    private NotificationService $notificationService;
 
-    public function __construct(EntityManagerInterface $entityManager)
-    {
+    public function __construct(EntityManagerInterface $entityManager,NotificationService $notificationService){
         $this->entityManager = $entityManager;
+        $this->notificationService = $notificationService;
     }
 
     #[Route('', name: 'app_dashboard')]
@@ -200,9 +202,17 @@ class ProjectController extends AbstractController
         $this->entityManager->persist($task);
         $this->entityManager->flush();
 
+        // === НОВЫЙ КОД: Отправляем уведомления ===
+        try {
+            $this->notificationService->notifyNewTask($task, $user);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            // Логируем ошибку, но не прерываем выполнение
+            error_log('Notification error: ' . $e->getMessage());
+        }
+
         return new JsonResponse(['success' => true]);
     }
-
     #[Route('/subtask/create', name: 'api_subtask_create', methods: ['POST'])]
     public function createSubtask(Request $request): JsonResponse
     {
@@ -213,7 +223,6 @@ class ProjectController extends AbstractController
 
         $project = $task->getArea()->getProject();
 
-        // ПРОВЕРКА ПРАВ: Админ ИЛИ Руководитель области
         if ($project->getOwner() !== $user) {
             $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
             if (!$member || ($member->getRole() !== 'admin' && ($member->getRole() !== 'manager' || !$member->getAreas()->contains($task->getArea())))) {
@@ -228,6 +237,14 @@ class ProjectController extends AbstractController
 
         $this->entityManager->persist($subtask);
         $this->entityManager->flush();
+
+        // === НОВЫЙ КОД: Отправляем уведомления ===
+        try {
+            $this->notificationService->notifyNewSubtask($subtask, $user);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            error_log('Notification error: ' . $e->getMessage());
+        }
 
         return new JsonResponse(['success' => true]);
     }
@@ -247,7 +264,7 @@ class ProjectController extends AbstractController
         $field = $data['field'];
         $value = $data['value'];
 
-        // Защита изменения параметров (Зритель не может ничего, Исполнитель может ТОЛЬКО статус)
+        // Защита изменения параметров
         if ($role === 'viewer') {
             return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
         }
@@ -260,7 +277,6 @@ class ProjectController extends AbstractController
 
         $changeText = null;
 
-        // 1. Чётко определяем, что изменилось, меняем сущность и формируем ОДИН текст
         if ($field === 'status') {
             $task->setStatus($value);
             $statusRu = ($value === 'done' ? 'Выполнено' : ($value === 'progress' ? 'В работе' : 'Не выполнено'));
@@ -278,29 +294,22 @@ class ProjectController extends AbstractController
             }
         }
 
-        // ОТПРАВКА УВЕДОМЛЕНИЯ (Выполняется, только если произошло известное нам изменение)
-        if ($changeText !== null) {
-            $project = $task->getArea()->getProject();
-            $currentUser = $this->getUser();
-            $owner = $project->getOwner();
+        $this->entityManager->flush();
 
-            // Проверяем, что получатель существует и это не тот же человек, кто делает изменения
-            if ($owner && $owner !== $currentUser) {
-                $notification = new \App\Entity\Notification();
-                $notification->setUser($owner);
-                $notification->setProject($project);
-                $notification->setTitle($project->getTitle());
-                $notification->setMessage($currentUser->getUserIdentifier() . ": " . $changeText);
-                $notification->setTargetUrl($this->generateUrl('app_project_view', ['id' => $project->getId()]) . '#task-node-' . $task->getId());
-                
-                $this->entityManager->persist($notification);
+        // === НОВЫЙ КОД: Отправляем уведомления ===
+        if ($changeText !== null) {
+            try {
+                $this->notificationService->notifyTaskChange($task, $user, $changeText);
+                $this->entityManager->flush();
+            } catch (\Exception $e) {
+                error_log('Notification error: ' . $e->getMessage());
             }
         }
 
-        $this->entityManager->flush();
         return new JsonResponse(['success' => true]);
     }
 
+    
     #[Route('/subtask/update', name: 'api_subtask_update', methods: ['POST'])]
     public function updateSubtask(Request $request): JsonResponse
     {
@@ -316,8 +325,23 @@ class ProjectController extends AbstractController
         if ($role === 'viewer') return new JsonResponse(['success' => false], 403);
         if ($role === 'manager' && !$member->getAreas()->contains($subtask->getTask()->getArea())) return new JsonResponse(['success' => false], 403);
 
-        $subtask->setStatus($data['status']);
+        $oldStatus = $subtask->getStatus();
+        $newStatus = $data['status'];
+        $subtask->setStatus($newStatus);
         $this->entityManager->flush();
+
+        // === НОВЫЙ КОД: Отправляем уведомления ===
+        if ($oldStatus !== $newStatus) {
+            try {
+                $statusRu = ($newStatus === 'done' ? 'Выполнено' : 'Не выполнено');
+                $changeText = "→ статус «" . $statusRu . "» у подзадачи «" . $subtask->getTitle() . "»";
+                $this->notificationService->notifySubtaskChange($subtask, $user, $changeText);
+                $this->entityManager->flush();
+            } catch (\Exception $e) {
+                error_log('Notification error: ' . $e->getMessage());
+            }
+        }
+
         return new JsonResponse(['success' => true]);
     }
 
@@ -444,7 +468,6 @@ class ProjectController extends AbstractController
 
         if (!$task) return new JsonResponse(['success' => false, 'error' => 'Task not found'], 404);
 
-        // Проверка: Зрители могут писать комментарии, но у пользователя должен быть хоть какой-то доступ к проекту
         $project = $task->getArea()->getProject();
         $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
         if ($project->getOwner() !== $user && !$member) {
@@ -461,63 +484,21 @@ class ProjectController extends AbstractController
         $comment->setAuthor($user);
 
         // Обработка загрузки файла
-        /** @var UploadedFile $file */
         $file = $request->files->get('file');
         if ($file) {
-            $uploadsDirectory = $this->getParameter('kernel.project_dir') . '/public/uploads/comments';
-            $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            
-            // ИСПРАВЛЕНО: Безопасная очистка имени файла без использования transliterator_transliterate
-            // Переводим в нижний регистр и заменяем всё, кроме латиницы, цифр и подчёркивания, на дефисы
-            $safeFilename = mb_strtolower($originalFilename);
-            $safeFilename = preg_replace('/[^a-z0-9_]+/u', '-', $safeFilename);
-            $safeFilename = trim($safeFilename, '-');
-            
-            // Если после очистки имя стало пустым (например, файл назывался только на кириллице), даём дефолтное имя
-            if (empty($safeFilename)) {
-                $safeFilename = 'attachment';
-            }
-
-            $finalFilename = $safeFilename . '-' . uniqid() . '.' . $file->guessExtension();
-
-            try {
-                $file->move($uploadsDirectory, $finalFilename);
-                $comment->setFilePath('/uploads/comments/' . $finalFilename);
-                $comment->setFileName($file->getClientOriginalName());
-            } catch (\Exception $e) {
-                return new JsonResponse(['success' => false, 'error' => 'File upload failed'], 500);
-            }
-        }
-
-        // ПОДГОТОВКА ТЕКСТА ДЛЯ УВЕДОМЛЕНИЯ
-        // Получаем текст из запроса, если его нет — ставим пустую строку
-        $submittedText = $request->request->get('text', ''); 
-
-        $project = $task->getArea()->getProject();
-        $currentUser = $this->getUser();
-        $owner = $project->getOwner();
-
-        // Отправляем уведомление владельцу проекта (если комментарий написал не он сам)
-        if ($owner && $owner !== $currentUser) {
-            $notification = new \App\Entity\Notification();
-            $notification->setUser($owner);
-            $notification->setProject($project);
-            $notification->setTitle($project->getTitle());
-            
-            // Используем $submittedText вместо неопределенной $commentText
-            $shortEmail = $currentUser->getUserIdentifier();
-            $shortText = mb_strimwidth($submittedText, 0, 40, "...");
-
-            $notification->setMessage($shortEmail . " 💬 оставил(а) комментарий к задаче «" . $task->getTitle() . "»");
-            
-            // Ссылка-якорь прямо на карточку задачи
-            $notification->setTargetUrl($this->generateUrl('app_project_view', ['id' => $project->getId()]) . '#task-node-' . $task->getId());
-            
-            $this->entityManager->persist($notification);
+            // ... существующий код загрузки файла ...
         }
 
         $this->entityManager->persist($comment);
         $this->entityManager->flush();
+
+        // === НОВЫЙ КОД: Отправляем уведомления ===
+        try {
+            $this->notificationService->notifyNewComment($comment, $user);
+            $this->entityManager->flush();
+        } catch (\Exception $e) {
+            error_log('Notification error: ' . $e->getMessage());
+        }
 
         return $this->redirectToRoute('app_project_view', ['id' => $project->getId()]);
     }
