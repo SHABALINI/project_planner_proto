@@ -387,15 +387,18 @@ class ProjectController extends AbstractController
         return new JsonResponse(['success' => true]);
     }
 
-    #[Route('/project/{id}/members', name: 'api_project_members', methods: ['GET'])]
+   #[Route('/project/{id}/members', name: 'api_project_members', methods: ['GET'])]
     public function getProjectMembers(int $id): JsonResponse
     {
         $project = $this->entityManager->getRepository(Project::class)->find($id);
-        if (!$project) return new JsonResponse(['success' => false], 404);
+        if (!$project) {
+            return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
+        }
 
         $allUsers = $this->entityManager->getRepository(User::class)->findAll();
         $members = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
         
+        // Создаем карту участников
         $membersMap = [];
         foreach ($members as $m) {
             $membersMap[$m->getUser()->getId()] = [
@@ -408,7 +411,11 @@ class ProjectController extends AbstractController
 
         $result = [];
         foreach ($allUsers as $u) {
-            if ($project->getOwner() === $u) continue;
+            // Пропускаем владельца проекта (он всегда в проекте)
+            if ($project->getOwner() === $u) {
+                continue;
+            }
+            
             $hasMemberData = $membersMap[$u->getId()] ?? null;
             $result[] = [
                 'id' => $u->getId(),
@@ -420,6 +427,10 @@ class ProjectController extends AbstractController
                 'subtasks' => $hasMemberData ? $hasMemberData['subtasks'] : []
             ];
         }
+        
+        // Добавляем логирование
+        error_log('Returning ' . count($result) . ' users for members modal');
+        
         return new JsonResponse($result);
     }
 
@@ -532,6 +543,8 @@ class ProjectController extends AbstractController
         if (!$memberToRemove) {
             return new JsonResponse(['success' => false, 'error' => 'Member not found'], 404);
         }
+
+        
         
         // Отправляем уведомление удаленному пользователю (если он не текущий)
         if ($userToRemove !== $currentUser) {

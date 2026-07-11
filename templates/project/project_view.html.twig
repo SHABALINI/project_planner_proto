@@ -37,10 +37,25 @@
                 top: 0 !important;
             }
         }
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 {% endblock %}
 
 {% block body %}
+    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
     <div class="container-fluid mt-3">
     <div class="row">
         {# Основной контент - 75% ширины #}
@@ -412,44 +427,90 @@
         const userRole = '{{ userRole }}';
 
         let currentSelectedUserId = null;
+
         function openMembersModal() {
             document.getElementById('memberSettingsZone').classList.add('d-none');
             const searchInput = document.getElementById('userSearchInput');
             if (searchInput) searchInput.value = '';
-
+            
+            const list = document.getElementById('usersModalList');
+            list.innerHTML = '<div class="text-muted small p-2">⏳ Загрузка...</div>';
+            
+            console.log('Opening members modal, project ID:', projectId); // ДОБАВЛЕНО
+            
             fetch('{{ path("api_project_members", {"id": project.id}) }}')
-                .then(res => res.json())
-                .then(users => {
-                    const list = document.getElementById('usersModalList');
-                    list.innerHTML = '';
-                    const currentEmail = '{{ currentUser.email }}';
-                    const filteredUsers = users.filter(u => u.email !== currentEmail);
-
-                    if (filteredUsers.length === 0) {
-                        list.innerHTML = '<div class="text-muted small p-2">Нет других зарегистрированных пользователей.</div>';
-                        return;
+                .then(res => {
+                    console.log('API response status:', res.status); // ДОБАВЛЕНО
+                    if (!res.ok) {
+                        throw new Error('HTTP error! status: ' + res.status);
                     }
-                    filteredUsers.forEach(user => {
-                        const btn = document.createElement('div');
-                        btn.className = `user-search-item p-2 mb-1 rounded border d-flex justify-content-between align-items-center` + 
-                                        ` ${user.isMember ? 'bg-success-subtle text-success-emphasis border-success-subtle' : 'bg-white border-secondary-subtle'}`;
-                        btn.setAttribute('data-email', user.email.toLowerCase());
-                        btn.style.fontSize = '13px';
-                        btn.style.cursor = 'pointer';
-                        btn.innerHTML = `<span>👤 ${user.email}</span> ${user.isMember ? '<span class="badge bg-success">'+user.role+'</span>' : ''}`;
-                        btn.onclick = () => {
-                            document.querySelectorAll('.user-search-item').forEach(b => {
-                                b.style.borderColor = '';
-                                b.style.boxShadow = '';
-                            });
-                            btn.style.borderColor = '#0d6efd';
-                            btn.style.boxShadow = '0 0 0 0.25rem rgba(13, 110, 253, 0.25)';
-                            selectUserForEdition(user);
-                        };
-                        list.appendChild(btn);
-                    });
+                    return res.json();
+                })
+                .then(users => {
+                    console.log('Users data from API:', users); // ДОБАВЛЕНО
+                    renderUsersList(users);
+                })
+                .catch(err => {
+                    console.error('Error loading users:', err);
+                    list.innerHTML = '<div class="text-muted small p-2 text-danger">❌ Ошибка загрузки: ' + err.message + '</div>';
                 });
         }
+
+        function renderUsersList(users) {
+            const list = document.getElementById('usersModalList');
+            list.innerHTML = '';
+            
+            console.log('Rendering users list. Users count:', users ? users.length : 0);
+            
+            if (!users || users.length === 0) {
+                list.innerHTML = '<div class="text-muted small p-2">Нет зарегистрированных пользователей.</div>';
+                return;
+            }
+            
+            const currentEmail = '{{ currentUser.email }}';
+            const filteredUsers = users.filter(u => u.email !== currentEmail);
+            
+            console.log('Current user email:', currentEmail);
+            console.log('Filtered users count:', filteredUsers.length);
+
+            if (filteredUsers.length === 0) {
+                list.innerHTML = '<div class="text-muted small p-2">Нет других зарегистрированных пользователей.</div>';
+                return;
+            }
+            
+            filteredUsers.forEach(user => {
+                const btn = document.createElement('div');
+                const isMember = user.isMember;
+                btn.className = `user-search-item p-2 mb-1 rounded border d-flex justify-content-between align-items-center` + 
+                                ` ${isMember ? 'bg-success-subtle border-success' : 'bg-white border-secondary'}`;
+                btn.setAttribute('data-email', user.email.toLowerCase());
+                btn.setAttribute('data-user-id', user.id);
+                btn.style.fontSize = '13px';
+                btn.style.cursor = 'pointer';
+                btn.style.transition = 'all 0.2s';
+                
+                btn.innerHTML = `
+                    <span>
+                        ${user.email}
+                    </span>
+                    ${isMember ? `<span class="badge bg-success">${user.role}</span>` : ''}
+                `;
+                
+                btn.onclick = () => {
+                    document.querySelectorAll('.user-search-item').forEach(b => {
+                        b.style.borderColor = '';
+                        b.style.boxShadow = '';
+                        b.style.backgroundColor = '';
+                    });
+                    btn.style.borderColor = '#0d6efd';
+                    btn.style.boxShadow = '0 0 0 0.25rem rgba(13, 110, 253, 0.25)';
+                    btn.style.backgroundColor = '#e7f1ff';
+                    selectUserForEdition(user);
+                };
+                list.appendChild(btn);
+            });
+        }
+            
 
         function selectUserForEdition(user) {
             currentSelectedUserId = user.id;
@@ -500,6 +561,12 @@
             const tasks = Array.from(document.querySelectorAll('.task-cb:checked')).map(cb => parseInt(cb.value));
             const subtasks = Array.from(document.querySelectorAll('.subtask-cb:checked')).map(cb => parseInt(cb.value));
 
+            // Показываем индикатор загрузки
+            const saveBtn = document.querySelector('#memberSettingsZone .btn-primary');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '⏳ Сохранение...';
+            saveBtn.disabled = true;
+
             fetch('{{ path("api_project_member_save", {"id": project.id}) }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -514,18 +581,55 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) { 
-                    alert('Права успешно обновлены!');
-                    // Закрываем модалку
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('membersModal'));
-                    if (modal) modal.hide();
-                    // Обновляем панель участников без перезагрузки
+                    // Возвращаем кнопку в исходное состояние
+                    saveBtn.textContent = originalText;
+                    saveBtn.disabled = false;
+                    
+                    // Скрываем панель настроек
+                    document.getElementById('memberSettingsZone').classList.add('d-none');
+                    
+                    // Обновляем панель участников справа
                     refreshMembersPanel();
+                    
+                    // ОБНОВЛЯЕМ СПИСОК В МОДАЛКЕ (без перезагрузки)
+                    // Перезагружаем данные для модалки
+                    fetch('{{ path("api_project_members", {"id": project.id}) }}')
+                        .then(res => res.json())
+                        .then(users => {
+                            renderUsersList(users);
+                            // Сбрасываем выделение
+                            document.querySelectorAll('.user-search-item').forEach(b => {
+                                b.style.borderColor = '';
+                                b.style.boxShadow = '';
+                                b.style.backgroundColor = '';
+                            });
+                        });
+                    
+                    // Короткое уведомление об успехе (можно убрать, если не нужно)
+                    showToast('Права успешно обновлены!', 'success');
+                } else {
+                    saveBtn.textContent = originalText;
+                    saveBtn.disabled = false;
+                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
                 }
+            })
+            .catch(err => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+                console.error('Error:', err);
+                alert('Ошибка при сохранении');
             });
         }
 
         function removeMember(userId) {
             if (!confirm('Удалить участника?')) return;
+            
+            // Показываем индикатор на кнопке
+            const buttons = document.querySelectorAll(`button[onclick*="removeMember(${userId})"]`);
+            buttons.forEach(btn => {
+                btn.textContent = '⏳';
+                btn.disabled = true;
+            });
             
             fetch(`/dashboard/project/${projectId}/member/remove/${userId}`, {
                 method: 'POST'
@@ -533,19 +637,35 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    alert('Участник удален!');
-                    // Обновляем панель без перезагрузки
+                    // Обновляем панель справа
                     refreshMembersPanel();
-                    // Если модалка открыта, закрываем её
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('membersModal'));
-                    if (modal) modal.hide();
+                    
+                    // Обновляем список в модалке
+                    fetch('{{ path("api_project_members", {"id": project.id}) }}')
+                        .then(res => res.json())
+                        .then(users => {
+                            renderUsersList(users);
+                            // Скрываем панель настроек
+                            document.getElementById('memberSettingsZone').classList.add('d-none');
+                        });
+                    
+                    showToast('Участник удален!', 'success');
                 } else {
                     alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    // Восстанавливаем кнопки
+                    buttons.forEach(btn => {
+                        btn.textContent = '×';
+                        btn.disabled = false;
+                    });
                 }
             })
             .catch(err => {
                 console.error('Error:', err);
                 alert('Ошибка при удалении участника');
+                buttons.forEach(btn => {
+                    btn.textContent = '×';
+                    btn.disabled = false;
+                });
             });
         }
 
@@ -628,6 +748,41 @@
             if (members.length === 0) {
                 panelBody.innerHTML = '<div class="text-center text-muted small p-3">Нет участников</div>';
             }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            
+            const colors = {
+                success: 'bg-success text-white',
+                error: 'bg-danger text-white',
+                warning: 'bg-warning text-dark',
+                info: 'bg-info text-dark'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center ${colors[type] || colors.info} border-0 show`;
+            toast.role = 'alert';
+            toast.style.minWidth = '250px';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Авто-удаление через 3 секунды
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 3000);
         }
 
         function createArea(projectId) {
