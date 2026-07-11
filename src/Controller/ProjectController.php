@@ -486,14 +486,15 @@ class ProjectController extends AbstractController
         $currentUser = $this->getUser(); // Получаем текущего пользователя
 
         if ($isNewMember) {
-            $message = $user->getUserIdentifier() . " 👤 добавил(а) вас в проект «" . $project->getTitle() . "»";
+            $message = $currentUser->getUserIdentifier() . " 👤 добавил(а) вас в проект «" . $project->getTitle() . "»";
             $targetUrl = $this->generateUrl('app_project_view', ['id' => $project->getId()]);
             
-            $this->notificationService->sendNotification(
+            // Отправляем уведомление ТОЛЬКО тому, кого добавили
+            $this->notificationService->sendNotificationToUser(
+                $user,  // Получатель - добавляемый пользователь
                 $project,
                 $message,
-                $targetUrl,
-                $currentUser  // Не отправляем уведомление тому, кто добавил
+                $targetUrl
             );
         }
 

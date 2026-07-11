@@ -22,6 +22,25 @@ class NotificationService
         $this->urlGenerator = $urlGenerator;
     }
 
+
+    public function sendNotificationToUser(
+        User $user,
+        Project $project,
+        string $message,
+        string $targetUrl
+    ): void {
+        $notification = new Notification();
+        $notification->setUser($user);
+        $notification->setProject($project);
+        $notification->setTitle($project->getTitle());
+        $notification->setMessage($message);
+        $notification->setTargetUrl($targetUrl);
+        $notification->setIsRead(false);
+
+        $this->entityManager->persist($notification);
+        $this->entityManager->flush();
+    }
+
     /**
      * Отправляет уведомление всем участникам, которых касается изменение
      */
