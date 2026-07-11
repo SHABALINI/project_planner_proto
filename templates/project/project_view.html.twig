@@ -316,8 +316,6 @@
                                      style="width: 40px; height: 40px; font-size: 18px; font-weight: bold;">
                                     {{ member.user.email|first|upper }}
                                 </div>
-                                {# Зеленый индикатор онлайн (для красоты) #}
-                                <span class="position-absolute bottom-0 end-0" style="width: 12px; height: 12px; background: #23a55a; border: 2px solid white; border-radius: 50%;"></span>
                             </div>
                             <div class="ms-2 flex-grow-1">
                                 <div class="fw-bold small text-truncate" style="max-width: 120px;">{{ member.user.email }}</div>
@@ -335,7 +333,10 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            {% if userRole == 'admin' and member.user != project.owner %}
+                            {# Кнопка удаления: только если userRole == 'admin' И member.user != project.owner И НЕ (member.role == 'admin' И userRole != 'owner') #}
+                            {% set canDelete = (userRole == 'admin' and member.user != project.owner) %}
+                            {% set isAdminDeletingAdmin = (member.role == 'admin' and userRole == 'admin' and project.owner != app.user) %}
+                            {% if canDelete and not isAdminDeletingAdmin %}
                                 <button class="btn btn-sm btn-outline-danger ms-1" 
                                         onclick="removeMember({{ member.user.id }})" 
                                         title="Удалить участника"
@@ -683,6 +684,8 @@
         // Функция обновления HTML панели
         function updateMembersPanel(members, total) {
             const panelBody = document.getElementById('membersPanelBody');
+            const currentUserRole = '{{ userRole }}';
+            const isOwner = currentUserRole === 'admin' && {{ project.owner.id == app.user.id ? 'true' : 'false' }};
             if (!panelBody) return;
             
             // Обновляем счетчик участников
@@ -693,6 +696,7 @@
             
             // Очищаем панель
             panelBody.innerHTML = '';
+            
             
             // Рендерим каждого участника
             members.forEach(member => {
@@ -712,7 +716,20 @@
                     (!isOwner && member.role === 'executor' ?
                     `<span class="badge bg-secondary small">Задач: ${member.tasksCount}</span>` : '');
                 
-                const deleteButton = !isOwner && userRole === 'admin' ?
+                let showDeleteButton = false;
+                if (!isOwner && currentUserRole === 'admin') {
+                    // Если текущий пользователь - владелец, может удалять всех
+                    if ({{ project.owner.id == app.user.id ? 'true' : 'false' }}) {
+                        showDeleteButton = true;
+                    } else {
+                        // Если текущий пользователь - админ (не владелец), не может удалять других админов
+                        if (member.role !== 'admin') {
+                            showDeleteButton = true;
+                        }
+                    }
+                }
+                
+                const deleteButton = showDeleteButton ?
                     `<button class="btn btn-sm btn-outline-danger ms-1" 
                             onclick="removeMember(${member.userId})" 
                             title="Удалить участника"

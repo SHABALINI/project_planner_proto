@@ -544,7 +544,13 @@ class ProjectController extends AbstractController
             return new JsonResponse(['success' => false, 'error' => 'Member not found'], 404);
         }
 
-        
+        //Нельзя удалить админа (если только ты не владелец) ===
+        if ($memberToRemove->getRole() === 'admin' && !$isOwner) {
+            return new JsonResponse([
+                'success' => false, 
+                'error' => 'Cannot remove another admin. Only the project owner can remove admins.'
+            ], 403);
+        }
         
         // Отправляем уведомление удаленному пользователю (если он не текущий)
         if ($userToRemove !== $currentUser) {
