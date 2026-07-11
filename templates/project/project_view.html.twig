@@ -9,26 +9,71 @@
         .priority-high { border-left-color: #dc3545 !important; }
         .priority-medium { border-left-color: #ffc107 !important; }
         .priority-low { border-left-color: #0dcaf0 !important; }
+        
+        /* Стили для правой панели участников */
+        .hover-bg-light:hover {
+            background-color: #f8f9fa;
+            cursor: default;
+        }
+        
+        /* Анимация для индикатора онлайн */
+        .position-relative .position-absolute {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Адаптивность для мобильных */
+        @media (max-width: 768px) {
+            .col-md-9, .col-md-3 {
+                width: 100%;
+            }
+            .sticky-top {
+                position: relative !important;
+                top: 0 !important;
+            }
+        }
     </style>
 {% endblock %}
 
 {% block body %}
-    <div class="container mt-5" style="max-width: 1000px;">
-        
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <a href="{{ path('app_dashboard') }}" class="btn btn-sm btn-outline-secondary mb-2">← К списку проектов</a>
-                <h1 class="m-0 text-primary">📁 {{ project.title }} 
-                    <span class="badge bg-info text-dark fs-6 font-monospace">Роль: {{ userRole|upper }}</span>
-                </h1>
+    <div class="container-fluid mt-3">
+    <div class="row">
+        {# Основной контент - 75% ширины #}
+        <div class="col-md-9">
+            <!-- Весь существующий контент проекта -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <a href="{{ path('app_dashboard') }}" class="btn btn-sm btn-outline-secondary mb-2">← К списку проектов</a>
+                    <h1 class="m-0 text-primary">📁 {{ project.title }} 
+                        <span class="badge bg-info text-dark fs-6 font-monospace">Роль: {{ userRole|upper }}</span>
+                    </h1>
+                </div>
             </div>
-            <div>
-                {% if userRole == 'admin' %}
-                    <button class="btn btn-dark btn-sm me-2" data-bs-toggle="modal" data-bs-target="#membersModal" onclick="openMembersModal()">👥 Участники проекта</button>
-                {% endif %}
-                <a href="{{ path('app_logout') }}" class="btn btn-outline-danger btn-sm">Выйти</a>
+
+            <!-- Прогресс-бар -->
+            {% set totalProjectPoints = 0 %}{% set earnedProjectPoints = 0 %}
+            {% for area in project.areas %}
+                {% for task in area.tasks %}
+                    {% set totalProjectPoints = totalProjectPoints + 100 %}
+                    {% if task.status == 'done' %}{% set earnedProjectPoints = earnedProjectPoints + 100 %}
+                    {% elseif task.status == 'progress' %}{% set earnedProjectPoints = earnedProjectPoints + 50 %}{% endif %}
+                {% endfor %}
+            {% endfor %}
+            {% set projectPercent = totalProjectPoints > 0 ? (earnedProjectPoints / totalProjectPoints * 100)|round : 0 %}
+
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <small class="fw-bold text-secondary">Общая готовность проекта: {{ projectPercent }}%</small>
+                    <div class="progress" style="height: 12px;">
+                        <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ projectPercent }}%"></div>
+                    </div>
+                </div>
             </div>
-        </div>
 
         {# ... Весь остальной существующий код шаблона project_view (progress-bar, области, задачи, комментарии, модалка) остается абсолютно без изменений ... #}
         
@@ -239,6 +284,84 @@
         </div>
     </div>
 
+    <div class="col-md-3">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0">👥 Участники <span class="badge bg-light text-dark ms-2">{{ project_members|length + 1 }}</span></h6>
+
+                    {% if userRole == 'admin' %}
+                        <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#membersModal" onclick="openMembersModal()">Управление</button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-2" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                    
+                    {# Владелец проекта #}
+                    <div class="d-flex align-items-center p-2 mb-1 rounded bg-primary bg-opacity-10">
+                        <div class="position-relative">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px; font-size: 18px; font-weight: bold;">
+                                {{ project.owner.email|first|upper }}
+                            </div>
+                            <span class="position-absolute bottom-0 end-0" style="width: 12px; height: 12px; background: #23a55a; border: 2px solid white; border-radius: 50%;"></span>
+                        </div>
+                        <div class="ms-2 flex-grow-1">
+                            <div class="fw-bold small">{{ project.owner.email }}</div>
+                            <div class="text-muted small">
+                                <span class="badge bg-warning text-dark"> Владелец</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Остальные участники #}
+                    {% for member in project_members %}
+                        <div class="d-flex align-items-center p-2 mb-1 rounded hover-bg-light">
+                            <div class="position-relative">
+                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px; font-size: 18px; font-weight: bold;">
+                                    {{ member.user.email|first|upper }}
+                                </div>
+                                {# Зеленый индикатор онлайн (для красоты) #}
+                                <span class="position-absolute bottom-0 end-0" style="width: 12px; height: 12px; background: #23a55a; border: 2px solid white; border-radius: 50%;"></span>
+                            </div>
+                            <div class="ms-2 flex-grow-1">
+                                <div class="fw-bold small text-truncate" style="max-width: 120px;">{{ member.user.email }}</div>
+                                <div class="text-muted small">
+                                    {% if member.role == 'admin' %}
+                                        <span class="badge bg-danger">Админ</span>
+                                    {% elseif member.role == 'manager' %}
+                                        <span class="badge bg-primary">Руководитель</span>
+                                        <span class="badge bg-secondary small">Областей: {{ member.areas|length }}</span>
+                                    {% elseif member.role == 'executor' %}
+                                        <span class="badge bg-success">Исполнитель</span>
+                                        <span class="badge bg-secondary small">Задач: {{ member.tasks|length }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Зритель</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if userRole == 'admin' and member.user != project.owner %}
+                                <button class="btn btn-sm btn-outline-danger ms-1" 
+                                        onclick="removeMember({{ member.user.id }})" 
+                                        title="Удалить участника"
+                                        style="padding: 2px 6px; font-size: 12px;">
+                                    ×
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    {# Если нет участников #}
+                    {% if project_members|length == 0 %}
+                        <div class="text-center text-muted small p-3">
+                            Нет участников
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
     {% if userRole == 'admin' %}
     <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -298,45 +421,6 @@
                             </div>
                             <button class="btn btn-primary w-100 mt-3 fw-bold" onclick="saveMemberData()">Сохранить настройки участника</button>
                         </div> </div> </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if userRole == 'admin' or userRole == 'owner' %}
-    <div class="card mt-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">👥 Управление участниками</h5>
-        </div>
-        <div class="card-body">
-            <div class="list-group">
-                {# Владелец #}
-                <div class="list-group-item d-flex justify-content-between align-items-center bg-light">
-                    <div>
-                        <strong>👑 {{ project.owner.email }}</strong>
-                        <span class="badge bg-warning ms-2">Владелец</span>
-                    </div>
-                    <span class="text-muted">Нельзя удалить</span>
-                </div>
-                
-                {# Участники #}
-                {% for member in project_members %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>👤 {{ member.user.email }}</strong>
-                            <span class="badge bg-info ms-2">{{ member.role|upper }}</span>
-                            {% if member.role == 'manager' %}
-                                <span class="badge bg-secondary">Областей: {{ member.areas|length }}</span>
-                            {% endif %}
-                            {% if member.role == 'executor' %}
-                                <span class="badge bg-secondary">Задач: {{ member.tasks|length }}</span>
-                            {% endif %}
-                        </div>
-                        <button class="btn btn-sm btn-outline-danger" onclick="removeMember({{ member.user.id }})">
-                            🗑 Удалить
-                        </button>
-                    </div>
-                {% endfor %}
             </div>
         </div>
     </div>
