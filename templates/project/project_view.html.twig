@@ -1213,6 +1213,135 @@
             }
         }
 
+        // ===== Для обновления UI ======
+        // Обновление списка задач в области
+        function refreshTasksList(areaId) {
+            fetch(`/dashboard/area/${areaId}/tasks`)
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById(`tasksList-${areaId}`);
+                    if (container && data.tasks) {
+                        // Рендерим задачи заново
+                        container.innerHTML = renderTasksHTML(data.tasks);
+                    }
+                })
+                .catch(err => console.error('Error refreshing tasks:', err));
+        }
+
+        // Обновление списка подзадач
+        function refreshSubtasksList(taskId) {
+            fetch(`/dashboard/task/${taskId}/subtasks`)
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById(`subtasksList-${taskId}`);
+                    if (container && data.subtasks) {
+                        container.innerHTML = renderSubtasksHTML(data.subtasks);
+                    }
+                })
+                .catch(err => console.error('Error refreshing subtasks:', err));
+        }
+
+        // Обновление визуального состояния задачи
+        function updateTaskVisual(taskId, paramName, paramValue) {
+            const taskItem = document.getElementById(`task-node-${taskId}`);
+            if (!taskItem) return;
+            
+            if (paramName === 'status') {
+                const indicator = taskItem.querySelector('.task-status-indicator');
+                const title = taskItem.querySelector('.task-title');
+                
+                // Обновляем индикатор
+                indicator.className = `task-status-indicator ${paramValue}`;
+                
+                // Обновляем заголовок
+                if (paramValue === 'done') {
+                    title.classList.add('done');
+                } else {
+                    title.classList.remove('done');
+                }
+                
+                // Обновляем селект
+                const select = taskItem.querySelector('select[onchange*="status"]');
+                if (select) select.value = paramValue;
+            }
+            
+            if (paramName === 'priority') {
+                const priorityBadge = taskItem.querySelector('.task-priority');
+                if (priorityBadge) {
+                    priorityBadge.className = `task-priority ${paramValue}`;
+                    priorityBadge.textContent = paramValue;
+                }
+                
+                const select = taskItem.querySelector('select[onchange*="priority"]');
+                if (select) select.value = paramValue;
+            }
+        }
+
+        // Обновление прогресса задачи
+        function updateTaskProgress(taskItem) {
+            const subtasks = taskItem.querySelectorAll('.subtask-item');
+            const total = subtasks.length;
+            const done = taskItem.querySelectorAll('.subtask-checkbox:checked').length;
+            
+            if (total === 0) return;
+            
+            const percent = Math.round((done / total) * 100);
+            const progressBar = taskItem.querySelector('.progress-bar');
+            const progressText = taskItem.querySelector('.text-muted[style*="font-size: 11px;"]');
+            
+            if (progressBar) {
+                progressBar.style.width = percent + '%';
+            }
+            
+            if (progressText) {
+                progressText.textContent = `📊 ${percent}%`;
+            }
+        }
+
+        // Сохраняем состояние раскрытых областей
+        function saveAreaState() {
+            const states = {};
+            document.querySelectorAll('.area-body').forEach(body => {
+                const areaId = body.id.replace('area-body-', '');
+                states[areaId] = body.classList.contains('open');
+            });
+            localStorage.setItem(`areaStates_${projectId}`, JSON.stringify(states));
+        }
+
+        // Восстанавливаем состояние
+        function restoreAreaState() {
+            const saved = localStorage.getItem(`areaStates_${projectId}`);
+            if (!saved) return;
+            
+            const states = JSON.parse(saved);
+            Object.keys(states).forEach(areaId => {
+                const body = document.getElementById(`area-body-${areaId}`);
+                const toggle = document.getElementById(`area-toggle-${areaId}`);
+                if (body && states[areaId]) {
+                    body.classList.add('open');
+                    if (toggle) toggle.classList.remove('collapsed');
+                }
+            });
+        }
+
+        // Сохраняем состояние при клике
+        function toggleArea(areaId) {
+            const body = document.getElementById(`area-body-${areaId}`);
+            const toggle = document.getElementById(`area-toggle-${areaId}`);
+            
+            if (!body) return;
+            
+            if (body.classList.contains('open')) {
+                body.classList.remove('open');
+                if (toggle) toggle.classList.add('collapsed');
+            } else {
+                body.classList.add('open');
+                if (toggle) toggle.classList.remove('collapsed');
+            }
+            
+            saveAreaState();
+        }
+
         // ===== CRUD ОПЕРАЦИИ =====
         function createArea(projectId) {
             const titleInput = document.getElementById(`areaTitle-${projectId}`);
@@ -1252,6 +1381,12 @@
                 showToast('Введите название задачи', 'warning');
                 return;
             }
+            
+            const btn = titleInput.closest('.row').querySelector('.btn');
+            const originalText = btn.textContent;
+            btn.textContent = '⏳';
+            btn.disabled = true;
+            
             fetch('{{ path("app_task_create") }}', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -1263,14 +1398,23 @@
             })
             .then(res => res.json())
             .then(data => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                
                 if (data.success) {
                     showToast('Задача создана!', 'success');
-                    location.reload();
+                    // Обновляем только список задач в этой области
+                    refreshTasksList(areaId);
+                    // Очищаем поля
+                    titleInput.value = '';
+                    deadlineInput.value = '';
                 } else {
                     showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
                 }
             })
             .catch(err => {
+                btn.textContent = originalText;
+                btn.disabled = false;
                 console.error('Error:', err);
                 showToast('Ошибка при создании задачи', 'error');
             });
@@ -1282,30 +1426,71 @@
                 showToast('Введите название подзадачи', 'warning');
                 return;
             }
+            
+            const btn = titleInput.nextElementSibling;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳';
+            btn.disabled = true;
+            
+            const title = titleInput.value.trim();
+            
             fetch('{{ path("api_subtask_create") }}', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ 
                     task_id: taskId, 
-                    title: titleInput.value 
+                    title: title
                 }) 
             })
             .then(res => res.json())
             .then(data => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                
                 if (data.success) {
                     showToast('Подзадача создана!', 'success');
-                    location.reload();
+                    
+                    // === НОВОЕ: Добавляем подзадачу в DOM сразу ===
+                    const subtasksContainer = document.getElementById(`subtasksList-${taskId}`);
+                    if (subtasksContainer) {
+                        // Удаляем сообщение "Нет подзадач" если есть
+                        const emptyMsg = subtasksContainer.querySelector('.text-muted');
+                        if (emptyMsg) emptyMsg.remove();
+                        
+                        // Создаем новую подзадачу
+                        const subtaskItem = document.createElement('div');
+                        subtaskItem.className = 'subtask-item';
+                        subtaskItem.innerHTML = `
+                            <input class="subtask-checkbox" type="checkbox" onchange="updateSubtaskStatus(${data.id}, this.checked)">
+                            <span class="subtask-label">${title}</span>
+                            <button class="btn btn-sm text-muted" style="border: none; background: none; font-size: 12px;" onclick="deleteElement('subtask', ${data.id})">✕</button>
+                        `;
+                        subtasksContainer.appendChild(subtaskItem);
+                        
+                        // Обновляем прогресс задачи
+                        const taskItem = subtasksContainer.closest('.task-item');
+                        if (taskItem) updateTaskProgress(taskItem);
+                    }
+                    
+                    titleInput.value = '';
                 } else {
                     showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
                 }
             })
             .catch(err => {
+                btn.textContent = originalText;
+                btn.disabled = false;
                 console.error('Error:', err);
                 showToast('Ошибка при создании подзадачи', 'error');
             });
         }
 
         function updateTaskParam(taskId, paramName, paramValue) {
+            // Показываем индикатор загрузки на выпадающем списке
+            const select = event.target;
+            const originalBg = select.style.backgroundColor;
+            select.style.backgroundColor = '#fef3c7';
+            
             fetch('{{ path("app_task_update") }}', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -1317,20 +1502,29 @@
             })
             .then(res => res.json())
             .then(data => {
+                select.style.backgroundColor = originalBg;
+                
                 if (data.success) {
                     showToast('Параметр обновлен!', 'success');
-                    location.reload();
+                    // Обновляем визуальное состояние задачи без перезагрузки
+                    updateTaskVisual(taskId, paramName, paramValue);
                 } else {
                     showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
                 }
             })
             .catch(err => {
+                select.style.backgroundColor = originalBg;
                 console.error('Error:', err);
                 showToast('Ошибка при обновлении', 'error');
             });
         }
 
         function updateSubtaskStatus(subtaskId, isChecked) {
+            const checkbox = event.target;
+            const label = checkbox.closest('.subtask-item').querySelector('.subtask-label');
+            
+            checkbox.disabled = true;
+            
             fetch('{{ path("api_subtask_update") }}', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -1341,15 +1535,142 @@
             })
             .then(res => res.json())
             .then(data => {
+                checkbox.disabled = false;
+                
                 if (data.success) {
-                    location.reload();
+                    if (isChecked) {
+                        label.classList.add('done');
+                        checkbox.checked = true;
+                    } else {
+                        label.classList.remove('done');
+                        checkbox.checked = false;
+                    }
+                    
+                    const taskItem = checkbox.closest('.task-item');
+                    if (taskItem) {
+                        updateTaskProgress(taskItem);
+                        // Обновляем прогресс области и проекта
+                        const areaCard = taskItem.closest('.area-card');
+                        if (areaCard) {
+                            updateAreaProgress(areaCard);
+                            updateProjectProgress();
+                        }
+                    }
+                    
+                    showToast('Статус обновлен!', 'success');
                 }
             })
-            .catch(err => console.error('Error:', err));
+            .catch(err => {
+                checkbox.disabled = false;
+                console.error('Error:', err);
+                showToast('Ошибка при обновлении', 'error');
+            });
         }
 
         function deleteElement(type, id, confirmMessage = null) {
             if (confirmMessage && !confirm(confirmMessage)) return;
+            
+            // === НОВОЕ: Специальная обработка для подзадач ===
+            if (type === 'subtask') {
+                const subtaskItem = document.querySelector(`.subtask-item:has(button[onclick*="deleteElement('subtask', ${id})"])`);
+                if (subtaskItem) {
+                    subtaskItem.style.opacity = '0.5';
+                    subtaskItem.style.pointerEvents = 'none';
+                }
+                
+                fetch(`/dashboard/delete/${type}/${id}`, { 
+                    method: 'POST' 
+                })
+                .then(res => res.json())
+                .then(data => { 
+                    if (data.success) {
+                        showToast('Подзадача удалена!', 'success');
+                        if (subtaskItem) {
+                            subtaskItem.style.transition = 'all 0.3s ease';
+                            subtaskItem.style.transform = 'translateX(20px)';
+                            subtaskItem.style.opacity = '0';
+                            setTimeout(() => {
+                                subtaskItem.remove();
+                                // Обновляем прогресс задачи
+                                const taskItem = subtaskItem.closest('.task-item');
+                                if (taskItem) updateTaskProgress(taskItem);
+                                updateAllCounters();
+                            }, 300);
+                        }
+                    } else {
+                        showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                        if (subtaskItem) {
+                            subtaskItem.style.opacity = '1';
+                            subtaskItem.style.pointerEvents = 'auto';
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showToast('Ошибка при удалении', 'error');
+                    if (subtaskItem) {
+                        subtaskItem.style.opacity = '1';
+                        subtaskItem.style.pointerEvents = 'auto';
+                    }
+                });
+                return;
+            }
+            
+            // === Специальная обработка для задач ===
+            if (type === 'task') {
+                const taskItem = document.getElementById(`task-node-${id}`);
+                if (taskItem) {
+                    taskItem.style.opacity = '0.5';
+                    taskItem.style.pointerEvents = 'none';
+                }
+                
+                fetch(`/dashboard/delete/${type}/${id}`, { 
+                    method: 'POST' 
+                })
+                .then(res => res.json())
+                .then(data => { 
+                    if (data.success) {
+                        showToast('Задача удалена!', 'success');
+                        if (taskItem) {
+                            taskItem.style.transition = 'all 0.3s ease';
+                            taskItem.style.transform = 'scale(0.9)';
+                            taskItem.style.opacity = '0';
+                            setTimeout(() => {
+                                taskItem.remove();
+                                // Обновляем прогресс области
+                                const areaCard = taskItem.closest('.area-card');
+                                if (areaCard) updateAreaProgress(areaCard);
+                                updateAllCounters();
+                            }, 300);
+                        }
+                    } else {
+                        showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                        if (taskItem) {
+                            taskItem.style.opacity = '1';
+                            taskItem.style.pointerEvents = 'auto';
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showToast('Ошибка при удалении', 'error');
+                    if (taskItem) {
+                        taskItem.style.opacity = '1';
+                        taskItem.style.pointerEvents = 'auto';
+                    }
+                });
+                return;
+            }
+            
+            // === Остальные типы (области, проекты) ===
+            const element = document.getElementById(`area-${id}`) || 
+                        document.getElementById(`task-node-${id}`);
+            
+            if (element) {
+                element.style.opacity = '0.5';
+                element.style.pointerEvents = 'none';
+            }
+            
             fetch(`/dashboard/delete/${type}/${id}`, { 
                 method: 'POST' 
             })
@@ -1357,14 +1678,32 @@
             .then(data => { 
                 if (data.success) {
                     showToast('Элемент удален!', 'success');
-                    location.reload();
+                    if (element) {
+                        element.style.transition = 'all 0.3s ease';
+                        element.style.transform = 'scale(0.9)';
+                        element.style.opacity = '0';
+                        setTimeout(() => {
+                            element.remove();
+                            updateAllCounters();
+                        }, 300);
+                    } else {
+                        location.reload();
+                    }
                 } else {
                     showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                    if (element) {
+                        element.style.opacity = '1';
+                        element.style.pointerEvents = 'auto';
+                    }
                 }
             })
             .catch(err => {
                 console.error('Error:', err);
                 showToast('Ошибка при удалении', 'error');
+                if (element) {
+                    element.style.opacity = '1';
+                    element.style.pointerEvents = 'auto';
+                }
             });
         }
 
@@ -1402,11 +1741,14 @@
         document.addEventListener("DOMContentLoaded", function() {
             // Открываем первую область по умолчанию
             const firstAreaBody = document.querySelector('.area-body');
-            if (firstAreaBody) {
+            if (firstAreaBody && !localStorage.getItem(`areaStates_${projectId}`)) {
                 firstAreaBody.classList.add('open');
                 const firstToggle = document.querySelector('.area-toggle');
                 if (firstToggle) firstToggle.classList.remove('collapsed');
             }
+
+            // Восстанавливаем сохраненное состояние
+            restoreAreaState();
             
             // Загружаем участников
             refreshMembersPanel();
@@ -1426,13 +1768,18 @@
                 e.preventDefault();
                 
                 const formData = new FormData(this);
-                const taskId = formData.get('task_id');
                 const text = formData.get('text');
+                const file = formData.get('file');
                 
-                if (!text.trim() && !formData.get('file').name) {
+                if (!text.trim() && (!file || file.size === 0)) {
                     showToast('Напишите комментарий или прикрепите файл', 'warning');
                     return;
                 }
+                
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = '⏳';
+                submitBtn.disabled = true;
                 
                 fetch('{{ path("api_comment_create") }}', {
                     method: 'POST',
@@ -1440,20 +1787,48 @@
                 })
                 .then(res => res.json())
                 .then(data => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    
                     if (data.success) {
                         showToast('Комментарий отправлен!', 'success');
-                        // Добавляем комментарий в список без перезагрузки
+                        
+                        // === НОВОЕ: Добавляем комментарий в DOM сразу ===
                         const commentsContainer = form.closest('.task-item').querySelector('.comments-container');
-                        const newComment = document.createElement('div');
-                        newComment.className = 'comment-item';
-                        newComment.innerHTML = `
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="comment-author">👤 {{ currentUser.email }}</span>
-                                <span class="comment-time">${new Date().toLocaleString()}</span>
-                            </div>
-                            <p class="comment-text">${text}</p>
-                        `;
-                        commentsContainer.prepend(newComment);
+                        if (commentsContainer) {
+                            // Удаляем сообщение "Нет комментариев" если есть
+                            const emptyMsg = commentsContainer.querySelector('.text-muted');
+                            if (emptyMsg) emptyMsg.remove();
+                            
+                            // Создаем новый комментарий
+                            const newComment = document.createElement('div');
+                            newComment.className = 'comment-item';
+                            const now = new Date();
+                            const timeStr = now.toLocaleString('ru-RU', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            
+                            let fileHtml = '';
+                            if (data.filePath) {
+                                fileHtml = `<a href="${data.filePath}" target="_blank" class="text-purple" style="font-size: 12px;">📎 ${data.fileName}</a>`;
+                            }
+                            
+                            newComment.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="comment-author">👤 {{ currentUser.email }}</span>
+                                    <span class="comment-time">${timeStr}</span>
+                                </div>
+                                <p class="comment-text">${text}</p>
+                                ${fileHtml}
+                            `;
+                            commentsContainer.prepend(newComment);
+                        }
+                        
+                        // Очищаем форму
                         form.querySelector('input[name="text"]').value = '';
                         form.querySelector('input[type="file"]').value = '';
                     } else {
@@ -1461,10 +1836,73 @@
                     }
                 })
                 .catch(err => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
                     console.error('Error:', err);
                     showToast('Ошибка при отправке комментария', 'error');
                 });
             });
         });
+
+        // Обновление прогресса области
+        function updateAreaProgress(areaCard) {
+            const tasks = areaCard.querySelectorAll('.task-item');
+            let total = 0;
+            let done = 0;
+            
+            tasks.forEach(task => {
+                const status = task.querySelector('.task-status-indicator');
+                if (status) {
+                    total++;
+                    if (status.classList.contains('done')) done++;
+                }
+            });
+            
+            if (total === 0) return;
+            
+            const percent = Math.round((done / total) * 100);
+            const progressBar = areaCard.querySelector('.area-progress-bar');
+            const progressText = areaCard.querySelector('.area-progress-text');
+            const areaIcon = areaCard.querySelector('.area-icon');
+            
+            if (progressBar) progressBar.style.width = percent + '%';
+            if (progressText) progressText.textContent = percent + '%';
+            if (areaIcon) areaIcon.textContent = percent === 100 ? '✅' : '📋';
+        }
+
+        // Обновление всех счетчиков
+        function updateAllCounters() {
+            // Обновляем счетчик участников
+            const membersCount = document.querySelectorAll('#membersPanelBody .d-flex').length;
+            const badge = document.querySelector('.card-header .badge');
+            if (badge) badge.textContent = membersCount;
+            
+            // Обновляем прогресс проекта
+            updateProjectProgress();
+        }
+
+        // Обновление прогресса проекта
+        function updateProjectProgress() {
+            const tasks = document.querySelectorAll('.task-item');
+            let total = 0;
+            let done = 0;
+            
+            tasks.forEach(task => {
+                const status = task.querySelector('.task-status-indicator');
+                if (status) {
+                    total++;
+                    if (status.classList.contains('done')) done++;
+                }
+            });
+            
+            if (total === 0) return;
+            
+            const percent = Math.round((done / total) * 100);
+            const progressBar = document.querySelector('.progress-bar');
+            const progressText = document.querySelector('.fw-bold.text-secondary');
+            
+            if (progressBar) progressBar.style.width = percent + '%';
+            if (progressText) progressText.textContent = `Общая готовность проекта: ${percent}%`;
+        }
     </script>
 {% endblock %}

@@ -441,6 +441,52 @@ class ProjectController extends AbstractController
         return new JsonResponse(['success' => true]);
     }
 
+    #[Route('/area/{id}/tasks', name: 'api_area_tasks', methods: ['GET'])]
+    public function getAreaTasks(int $id): JsonResponse
+    {
+        $area = $this->entityManager->getRepository(Area::class)->find($id);
+        if (!$area) {
+            return new JsonResponse(['success' => false, 'error' => 'Area not found'], 404);
+        }
+        
+        $tasks = [];
+        foreach ($area->getTasks() as $task) {
+            $tasks[] = [
+                'id' => $task->getId(),
+                'title' => $task->getTitle(),
+                'status' => $task->getStatus(),
+                'priority' => $task->getPriority(),
+                'deadline' => $task->getDeadline() ? $task->getDeadline()->format('Y-m-d') : null,
+                'subtasks' => $task->getSubtasks()->count(),
+                'doneSubtasks' => array_reduce($task->getSubtasks()->toArray(), function($carry, $sub) {
+                    return $carry + ($sub->getStatus() === 'done' ? 1 : 0);
+                }, 0)
+            ];
+        }
+        
+        return new JsonResponse(['success' => true, 'tasks' => $tasks]);
+    }
+
+    #[Route('/task/{id}/subtasks', name: 'api_task_subtasks', methods: ['GET'])]
+    public function getTaskSubtasks(int $id): JsonResponse
+    {
+        $task = $this->entityManager->getRepository(Task::class)->find($id);
+        if (!$task) {
+            return new JsonResponse(['success' => false, 'error' => 'Task not found'], 404);
+        }
+        
+        $subtasks = [];
+        foreach ($task->getSubtasks() as $subtask) {
+            $subtasks[] = [
+                'id' => $subtask->getId(),
+                'title' => $subtask->getTitle(),
+                'status' => $subtask->getStatus()
+            ];
+        }
+        
+        return new JsonResponse(['success' => true, 'subtasks' => $subtasks]);
+    }
+
    #[Route('/project/{id}/members', name: 'api_project_members', methods: ['GET'])]
     public function getProjectMembers(int $id): JsonResponse
     {
