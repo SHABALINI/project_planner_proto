@@ -49,9 +49,24 @@ class ProjectController extends AbstractController
                 $joinedProjects[] = $project;
             }
         }
+        // Объединяем все проекты
+            $allProjects = array_merge($ownedProjects, $joinedProjects);
+
+            // Сортируем: сначала закрепленные, потом по дате создания
+        usort($allProjects, function($a, $b) {
+            // Сначала закрепленные
+            if ($a->isPinned() && !$b->isPinned()) {
+                return -1;
+            }
+            if (!$a->isPinned() && $b->isPinned()) {
+                return 1;
+            }
+            // Если оба закреплены или оба нет - по дате создания (новые сверху)
+            return $b->getId() <=> $a->getId();
+        });
 
         return $this->render('project/dashboard.html.twig', [
-            'projects' => array_merge($ownedProjects, $joinedProjects),
+            'projects' => $allProjects,
         ]);
     }
 
@@ -157,6 +172,41 @@ class ProjectController extends AbstractController
             ], 500);
         }
     }
+
+    #[Route('/project/{id}/toggle-pin', name: 'api_project_toggle_pin', methods: ['POST'])]
+    public function togglePin(int $id): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+        }
+
+        $project = $this->entityManager->getRepository(Project::class)->find($id);
+        if (!$project) {
+            return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
+        }
+
+        // Проверяем, есть ли у пользователя доступ к проекту
+        $isOwner = ($project->getOwner() === $user);
+        $memberInfo = $this->entityManager->getRepository(ProjectMember::class)->findOneBy([
+            'project' => $project,
+            'user' => $user
+        ]);
+
+        if (!$isOwner && !$memberInfo) {
+            return new JsonResponse(['success' => false, 'error' => 'Access denied'], 403);
+        }
+
+        // Переключаем статус закрепления
+        $project->setIsPinned(!$project->isPinned());
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+            'success' => true,
+            'isPinned' => $project->isPinned()
+        ]);
+    }
+
 
     #[Route('/area/create', name: 'api_area_create', methods: ['POST'])]
     public function createArea(Request $request): JsonResponse

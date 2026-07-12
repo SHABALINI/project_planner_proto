@@ -383,10 +383,10 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Правовая роль:</label>
                                 <select id="memberRoleSelect" class="form-select" onchange="toggleRoleInterface(this.value)">
-                                    <option value="viewer">Зритель (просто смотреть за всем)</option>
-                                    <option value="executor">Исполнитель (только менять статус своих задач)</option>
+                                    <option value="viewer">Зритель (без взаимодействия)</option>
+                                    <option value="executor">Исполнитель (работа с задачами)</option>
                                     <option value="manager">Руководитель (управление своими областями)</option>
-                                    <option value="admin">Админ (полный доступ к проекту)</option>
+                                    <option value="admin">Админ (полный доступ)</option>
                                 </select>
                             </div>
                             <div id="projectAccessTree" class="border p-3 rounded bg-light" style="max-height: 250px; overflow-y: auto;">

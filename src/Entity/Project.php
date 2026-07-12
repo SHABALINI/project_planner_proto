@@ -28,6 +28,10 @@ class Project
     #[ORM\OneToMany(targetEntity: Area::class, mappedBy: 'project', orphanRemoval: true)]
     private Collection $areas;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isPinned = false;
+
+
     public function __construct()
     {
         $this->areas = new ArrayCollection();
@@ -89,6 +93,17 @@ class Project
             }
         }
 
+        return $this;
+    }
+
+    public function isPinned(): bool
+    {
+        return $this->isPinned;
+    }
+    
+    public function setIsPinned(bool $isPinned): static
+    {
+        $this->isPinned = $isPinned;
         return $this;
     }
 }
