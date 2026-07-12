@@ -138,7 +138,7 @@
             padding: 0;
             max-height: 0;
             overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .area-body.open {
@@ -646,10 +646,15 @@
                                                 <div class="mt-3 pt-3" style="border-top: 1px solid #f0f0f0;">
                                                     <div class="comments-container">
                                                         {% for comment in task.comments|default([]) %}
-                                                            <div class="comment-item">
+                                                            <div class="comment-item" id="comment-{{ comment.id }}">
                                                                 <div class="d-flex justify-content-between align-items-center">
                                                                     <span class="comment-author">👤 {{ comment.author.email|default(comment.author.userIdentifier) }}</span>
-                                                                    <span class="comment-time">{{ comment.createdAt|date('d.m.Y H:i') }}</span>
+                                                                    <div>
+                                                                        <span class="comment-time">{{ comment.createdAt|date('d.m.Y H:i') }}</span>
+                                                                        {% if comment.author == currentUser or userRole == 'admin' %}
+                                                                            <button class="btn btn-sm text-danger ms-2" style="border: none; background: none; font-size: 12px;" onclick="deleteComment({{ comment.id }})">✕</button>
+                                                                        {% endif %}
+                                                                    </div>
                                                                 </div>
                                                                 <p class="comment-text">{{ comment.text }}</p>
                                                                 {% if comment.filePath %}
@@ -661,7 +666,7 @@
                                                         {% endfor %}
                                                     </div>
 
-                                                    <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2">
+                                                    <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true">
                                                         <input type="hidden" name="task_id" value="{{ task.id }}">
                                                         <div class="d-flex gap-2">
                                                             <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">
@@ -1387,13 +1392,16 @@
             btn.textContent = '⏳';
             btn.disabled = true;
             
+            const title = titleInput.value.trim();
+            const deadline = deadlineInput.value || null;
+            
             fetch('{{ path("app_task_create") }}', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ 
                     area_id: areaId, 
-                    title: titleInput.value, 
-                    deadline: deadlineInput.value || null 
+                    title: title, 
+                    deadline: deadline
                 }) 
             })
             .then(res => res.json())
@@ -1401,11 +1409,69 @@
                 btn.textContent = originalText;
                 btn.disabled = false;
                 
-                if (data.success) {
+                if (data.success && data.id) {
                     showToast('Задача создана!', 'success');
-                    // Обновляем только список задач в этой области
-                    refreshTasksList(areaId);
-                    // Очищаем поля
+                    
+                    // === НОВОЕ: Добавляем задачу в DOM сразу ===
+                    const tasksContainer = document.getElementById(`tasksList-${areaId}`);
+                    if (tasksContainer) {
+                        const emptyMsg = tasksContainer.querySelector('.text-muted');
+                        if (emptyMsg) emptyMsg.remove();
+                        
+                        // Создаем HTML для новой задачи
+                        const taskHtml = `
+                            <div class="task-item" id="task-node-${data.id}">
+                                <div class="task-main" onclick="toggleTask(${data.id})">
+                                    <span class="task-status-indicator todo"></span>
+                                    <span class="task-title">${title}</span>
+                                    <div class="task-meta">
+                                        <span class="task-priority medium">medium</span>
+                                        ${deadline ? `<span class="task-deadline">📅 ${deadline}</span>` : ''}
+                                    </div>
+                                    <div class="task-actions" onclick="event.stopPropagation();">
+                                        <select class="form-select form-select-sm" style="width: 120px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam(${data.id}, 'status', this.value)">
+                                            <option value="todo" selected>⭕ Не выполнено</option>
+                                            <option value="progress">🔄 В работе</option>
+                                            <option value="done">✅ Выполнено</option>
+                                        </select>
+                                        <select class="form-select form-select-sm" style="width: 100px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam(${data.id}, 'priority', this.value)">
+                                            <option value="low">🟢 Низкий</option>
+                                            <option value="medium" selected>🟡 Средний</option>
+                                            <option value="high">🔴 Высокий</option>
+                                        </select>
+                                        <button class="btn-icon danger" onclick="deleteElement('task', ${data.id})">🗑</button>
+                                    </div>
+                                </div>
+                                <div class="subtask-list" id="task-body-${data.id}" style="display: none;">
+                                    <div class="d-flex gap-2 mb-2">
+                                        <input type="text" id="subtaskTitle-${data.id}" class="form-control form-control-sm" placeholder="+ Подзадача..." style="border-radius: 10px; max-width: 300px;">
+                                        <button class="btn btn-purple-outline btn-sm" onclick="createSubtask(${data.id})">Добавить</button>
+                                    </div>
+                                    <div id="subtasksList-${data.id}"></div>
+                                    <div class="mt-3 pt-3" style="border-top: 1px solid #f0f0f0;">
+                                        <div class="comments-container"></div>
+                                        <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2">
+                                            <input type="hidden" name="task_id" value="${data.id}">
+                                            <div class="d-flex gap-2">
+                                                <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">
+                                                <button type="submit" class="btn btn-purple btn-sm">Отправить</button>
+                                            </div>
+                                            <div class="mt-1">
+                                                <input type="file" name="file" class="form-control form-control-sm" style="border-radius: 10px; max-width: 250px;">
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        tasksContainer.insertAdjacentHTML('beforeend', taskHtml);
+                        
+                        // Обновляем прогресс области
+                        const areaCard = tasksContainer.closest('.area-card');
+                        if (areaCard) updateAreaProgress(areaCard);
+                        updateProjectProgress();
+                    }
+                    
                     titleInput.value = '';
                     deadlineInput.value = '';
                 } else {
@@ -1422,6 +1488,10 @@
 
         function createSubtask(taskId) {
             const titleInput = document.getElementById(`subtaskTitle-${taskId}`);
+            if (!titleInput) {
+                showToast('Ошибка: поле ввода не найдено', 'error');
+                return;
+            }
             if (!titleInput.value.trim()) {
                 showToast('Введите название подзадачи', 'warning');
                 return;
@@ -1447,17 +1517,32 @@
                 btn.textContent = originalText;
                 btn.disabled = false;
                 
-                if (data.success) {
+                if (data.success && data.id) {
                     showToast('Подзадача создана!', 'success');
                     
-                    // === НОВОЕ: Добавляем подзадачу в DOM сразу ===
-                    const subtasksContainer = document.getElementById(`subtasksList-${taskId}`);
+                    // Ищем контейнер для подзадач
+                    let subtasksContainer = document.getElementById(`subtasksList-${taskId}`);
+                    
+                    // Если контейнера нет, создаем его
+                    if (!subtasksContainer) {
+                        const taskBody = document.getElementById(`task-body-${taskId}`);
+                        if (taskBody) {
+                            // Ищем место для вставки подзадач
+                            const subtaskInput = taskBody.querySelector('.d-flex.gap-2.mb-2');
+                            if (subtaskInput) {
+                                // Создаем контейнер после поля ввода
+                                const container = document.createElement('div');
+                                container.id = `subtasksList-${taskId}`;
+                                subtaskInput.after(container);
+                                subtasksContainer = container;
+                            }
+                        }
+                    }
+                    
                     if (subtasksContainer) {
-                        // Удаляем сообщение "Нет подзадач" если есть
                         const emptyMsg = subtasksContainer.querySelector('.text-muted');
                         if (emptyMsg) emptyMsg.remove();
                         
-                        // Создаем новую подзадачу
                         const subtaskItem = document.createElement('div');
                         subtaskItem.className = 'subtask-item';
                         subtaskItem.innerHTML = `
@@ -1467,9 +1552,15 @@
                         `;
                         subtasksContainer.appendChild(subtaskItem);
                         
-                        // Обновляем прогресс задачи
                         const taskItem = subtasksContainer.closest('.task-item');
-                        if (taskItem) updateTaskProgress(taskItem);
+                        if (taskItem) {
+                            updateTaskProgress(taskItem);
+                            const areaCard = taskItem.closest('.area-card');
+                            if (areaCard) {
+                                updateAreaProgress(areaCard);
+                                updateProjectProgress();
+                            }
+                        }
                     }
                     
                     titleInput.value = '';
@@ -1619,6 +1710,7 @@
             // === Специальная обработка для задач ===
             if (type === 'task') {
                 const taskItem = document.getElementById(`task-node-${id}`);
+                console.log('Deleting task with ID:', id, 'Element found:', taskItem); // Для отладки
                 if (taskItem) {
                     taskItem.style.opacity = '0.5';
                     taskItem.style.pointerEvents = 'none';
@@ -1709,6 +1801,13 @@
 
         function deleteComment(commentId) {
             if (!confirm('Вы действительно хотите удалить этот комментарий?')) return;
+            
+            const commentItem = document.getElementById(`comment-${commentId}`);
+            if (commentItem) {
+                commentItem.style.opacity = '0.5';
+                commentItem.style.pointerEvents = 'none';
+            }
+            
             fetch(`/dashboard/comment/delete/${commentId}`, { 
                 method: 'POST' 
             })
@@ -1716,12 +1815,30 @@
             .then(data => {
                 if (data.success) {
                     showToast('Комментарий удален!', 'success');
-                    location.reload();
+                    if (commentItem) {
+                        commentItem.style.transition = 'all 0.3s ease';
+                        commentItem.style.transform = 'translateX(20px)';
+                        commentItem.style.opacity = '0';
+                        setTimeout(() => {
+                            commentItem.remove();
+                        }, 300);
+                    }
                 } else {
                     showToast('Ошибка: ' + (data.error || 'Не удалось удалить комментарий'), 'error');
+                    if (commentItem) {
+                        commentItem.style.opacity = '1';
+                        commentItem.style.pointerEvents = 'auto';
+                    }
                 }
             })
-            .catch(err => console.error('Error:', err));
+            .catch(err => {
+                console.error('Error:', err);
+                showToast('Ошибка при удалении комментария', 'error');
+                if (commentItem) {
+                    commentItem.style.opacity = '1';
+                    commentItem.style.pointerEvents = 'auto';
+                }
+            });
         }
 
         // ===== ПОИСК В МОДАЛКЕ =====
@@ -1763,86 +1880,128 @@
         });
 
         // ===== ОТПРАВКА КОММЕНТАРИЯ БЕЗ ПЕРЕЗАГРУЗКИ =====
-        document.querySelectorAll('form[action*="api_comment_create"]').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const formData = new FormData(this);
-                const text = formData.get('text');
-                const file = formData.get('file');
-                
-                if (!text.trim() && (!file || file.size === 0)) {
-                    showToast('Напишите комментарий или прикрепите файл', 'warning');
-                    return;
-                }
-                
-                const submitBtn = this.querySelector('button[type="submit"]');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = '⏳';
-                submitBtn.disabled = true;
-                
-                fetch('{{ path("api_comment_create") }}', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => {
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                    
-                    if (data.success) {
-                        showToast('Комментарий отправлен!', 'success');
-                        
-                        // === НОВОЕ: Добавляем комментарий в DOM сразу ===
-                        const commentsContainer = form.closest('.task-item').querySelector('.comments-container');
-                        if (commentsContainer) {
-                            // Удаляем сообщение "Нет комментариев" если есть
-                            const emptyMsg = commentsContainer.querySelector('.text-muted');
-                            if (emptyMsg) emptyMsg.remove();
-                            
-                            // Создаем новый комментарий
-                            const newComment = document.createElement('div');
-                            newComment.className = 'comment-item';
-                            const now = new Date();
-                            const timeStr = now.toLocaleString('ru-RU', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-                            
-                            let fileHtml = '';
-                            if (data.filePath) {
-                                fileHtml = `<a href="${data.filePath}" target="_blank" class="text-purple" style="font-size: 12px;">📎 ${data.fileName}</a>`;
-                            }
-                            
-                            newComment.innerHTML = `
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="comment-author">👤 {{ currentUser.email }}</span>
-                                    <span class="comment-time">${timeStr}</span>
-                                </div>
-                                <p class="comment-text">${text}</p>
-                                ${fileHtml}
-                            `;
-                            commentsContainer.prepend(newComment);
-                        }
-                        
-                        // Очищаем форму
-                        form.querySelector('input[name="text"]').value = '';
-                        form.querySelector('input[type="file"]').value = '';
-                    } else {
-                        showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                    }
-                })
-                .catch(err => {
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                    console.error('Error:', err);
-                    showToast('Ошибка при отправке комментария', 'error');
-                });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Находим все формы для комментариев
+            const commentForms = document.querySelectorAll('form[action*="api_comment_create"]');
+            console.log('Found comment forms:', commentForms.length); // Для отладки
+            
+            commentForms.forEach(form => {
+                // Удаляем старые обработчики, если есть
+                form.removeEventListener('submit', handleCommentSubmit);
+                // Добавляем новый
+                form.addEventListener('submit', handleCommentSubmit);
             });
         });
+
+        function handleCommentSubmit(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const form = this;
+            const formData = new FormData(form);
+            const text = formData.get('text');
+            const file = formData.get('file');
+            
+            if (!text.trim() && (!file || file.size === 0)) {
+                showToast('Напишите комментарий или прикрепите файл', 'warning');
+                return;
+            }
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '⏳';
+            submitBtn.disabled = true;
+            
+            fetch('{{ path("api_comment_create") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => {
+                        throw new Error('Server error: ' + res.status + ' - ' + text);
+                    });
+                }
+                return res.json();
+            })
+            .then(data => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+                
+                if (data.success) {
+                    showToast('Комментарий отправлен!', 'success');
+                    
+                    const taskItem = form.closest('.task-item');
+                    if (!taskItem) return;
+                    
+                    let commentsContainer = taskItem.querySelector('.comments-container');
+                    if (!commentsContainer) {
+                        const containerDiv = document.createElement('div');
+                        containerDiv.className = 'comments-container';
+                        const parent = form.parentElement;
+                        parent.insertBefore(containerDiv, form);
+                        commentsContainer = containerDiv;
+                    }
+                    
+                    const emptyMsg = commentsContainer.querySelector('.text-muted');
+                    if (emptyMsg) emptyMsg.remove();
+                    
+                    const newComment = document.createElement('div');
+                    newComment.className = 'comment-item';
+                    newComment.id = `comment-${data.id}`;
+                    
+                    const now = new Date();
+                    const timeStr = now.toLocaleString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    let fileHtml = '';
+                    if (data.filePath) {
+                        fileHtml = `<a href="${data.filePath}" target="_blank" class="text-purple" style="font-size: 12px;">📎 ${data.fileName}</a>`;
+                    }
+                    
+                    const isAdmin = '{{ userRole }}' === 'admin';
+                    const deleteBtn = isAdmin ? 
+                        `<button class="btn btn-sm text-danger ms-2" style="border: none; background: none; font-size: 12px;" onclick="deleteComment(${data.id})">✕</button>` : '';
+                    
+                    // Экранируем текст для безопасности
+                    const safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    
+                    newComment.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="comment-author">👤 ${data.author}</span>
+                            <div>
+                                <span class="comment-time">${timeStr}</span>
+                                ${deleteBtn}
+                            </div>
+                        </div>
+                        <p class="comment-text">${safeText}</p>
+                        ${fileHtml}
+                    `;
+                    commentsContainer.prepend(newComment);
+                    
+                    // Очищаем форму
+                    form.querySelector('input[name="text"]').value = '';
+                    const fileInput = form.querySelector('input[type="file"]');
+                    if (fileInput) fileInput.value = '';
+                } else {
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            })
+            .catch(err => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+                console.error('Error:', err);
+                showToast('Ошибка при отправке комментария', 'error');
+            });
+        }
 
         // Обновление прогресса области
         function updateAreaProgress(areaCard) {

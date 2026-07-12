@@ -271,16 +271,14 @@ class ProjectController extends AbstractController
         $this->entityManager->persist($task);
         $this->entityManager->flush();
 
-        // === НОВЫЙ КОД: Отправляем уведомления ===
         try {
             $this->notificationService->notifyNewTask($task, $user);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            // Логируем ошибку, но не прерываем выполнение
             error_log('Notification error: ' . $e->getMessage());
         }
 
-        return new JsonResponse(['success' => true]);
+        return new JsonResponse(['success' => true, 'id' => $task->getId()]);
     }
     #[Route('/subtask/create', name: 'api_subtask_create', methods: ['POST'])]
     public function createSubtask(Request $request): JsonResponse
@@ -307,7 +305,7 @@ class ProjectController extends AbstractController
         $this->entityManager->persist($subtask);
         $this->entityManager->flush();
 
-        // === НОВЫЙ КОД: Отправляем уведомления ===
+        // === ИСПРАВЛЕНО: Возвращаем ID созданной подзадачи ===
         try {
             $this->notificationService->notifyNewSubtask($subtask, $user);
             $this->entityManager->flush();
@@ -315,7 +313,7 @@ class ProjectController extends AbstractController
             error_log('Notification error: ' . $e->getMessage());
         }
 
-        return new JsonResponse(['success' => true]);
+        return new JsonResponse(['success' => true, 'id' => $subtask->getId()]);
     }
 
     #[Route('/task/update', name: 'app_task_update', methods: ['POST'])]
@@ -417,28 +415,77 @@ class ProjectController extends AbstractController
     #[Route('/delete/{type}/{id}', name: 'api_element_delete', methods: ['POST'])]
     public function deleteElement(string $type, int $id): JsonResponse
     {
-        $user = $this->getUser();
-        $entity = null;
-        if ($type === 'project') $entity = $this->entityManager->getRepository(Project::class)->find($id);
-        if ($type === 'area') $entity = $this->entityManager->getRepository(Area::class)->find($id);
-        if ($type === 'task') $entity = $this->entityManager->getRepository(Task::class)->find($id);
-        if ($type === 'subtask') $entity = $this->entityManager->getRepository(Subtask::class)->find($id);
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+            }
 
-        if (!$entity) return new JsonResponse(['success' => false], 404);
+            $entity = null;
+            
+            switch ($type) {
+                case 'project':
+                    $entity = $this->entityManager->getRepository(Project::class)->find($id);
+                    break;
+                case 'area':
+                    $entity = $this->entityManager->getRepository(Area::class)->find($id);
+                    break;
+                case 'task':
+                    $entity = $this->entityManager->getRepository(Task::class)->find($id);
+                    break;
+                case 'subtask':
+                    $entity = $this->entityManager->getRepository(Subtask::class)->find($id);
+                    break;
+                default:
+                    return new JsonResponse(['success' => false, 'error' => 'Invalid type: ' . $type], 400);
+            }
 
-        // Ищем проект для проверки роли удаления
-        $project = $type === 'project' ? $entity : ($type === 'area' ? $entity->getProject() : $entity->getTask()->getArea()->getProject());
-        $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
-        $role = $project->getOwner() === $user ? 'admin' : ($member ? $member->getRole() : 'viewer');
+            if (!$entity) {
+                return new JsonResponse(['success' => false, 'error' => 'Entity not found'], 404);
+            }
 
-        // Удалять структуры могут только админы, а руководители — только внутри своих областей
-        if ($role === 'viewer' || $role === 'executor') return new JsonResponse(['success' => false], 403);
-        if ($role === 'manager' && $type === 'area' && !$member->getAreas()->contains($entity)) return new JsonResponse(['success' => false], 403);
+            // Находим проект для проверки прав
+            if ($type === 'project') {
+                $project = $entity;
+            } elseif ($type === 'area') {
+                $project = $entity->getProject();
+            } elseif ($type === 'task') {
+                $project = $entity->getArea()->getProject();
+            } elseif ($type === 'subtask') {
+                $project = $entity->getTask()->getArea()->getProject();
+            } else {
+                return new JsonResponse(['success' => false, 'error' => 'Invalid type'], 400);
+            }
 
-        $this->entityManager->remove($entity);
-        $this->entityManager->flush();
+            // Проверяем права
+            $isOwner = ($project->getOwner() === $user);
+            $member = $this->entityManager->getRepository(ProjectMember::class)
+                ->findOneBy(['project' => $project, 'user' => $user]);
+            $role = $isOwner ? 'admin' : ($member ? $member->getRole() : 'viewer');
 
-        return new JsonResponse(['success' => true]);
+            if ($role === 'viewer' || $role === 'executor') {
+                return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
+            }
+
+            // Для менеджера проверяем, что он управляет своей областью
+            if ($role === 'manager' && $type === 'area' && !$member->getAreas()->contains($entity)) {
+                return new JsonResponse(['success' => false, 'error' => 'Not your area'], 403);
+            }
+
+            // Удаляем
+            $this->entityManager->remove($entity);
+            $this->entityManager->flush();
+
+            return new JsonResponse(['success' => true]);
+            
+        } catch (\Exception $e) {
+            // Логируем ошибку
+            error_log('Delete error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            return new JsonResponse([
+                'success' => false, 
+                'error' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     #[Route('/area/{id}/tasks', name: 'api_area_tasks', methods: ['GET'])]
@@ -732,21 +779,52 @@ class ProjectController extends AbstractController
         $comment->setTask($task);
         $comment->setAuthor($user);
 
+        $filePath = null;
+        $fileName = null;
+        
         // Обработка загрузки файла
         $file = $request->files->get('file');
         if ($file) {
-            // ... существующий код загрузки файла ...
+            $uploadsDirectory = $this->getParameter('kernel.project_dir') . '/public/uploads/comments';
+            $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $safeFilename = mb_strtolower($originalFilename);
+            $safeFilename = preg_replace('/[^a-z0-9_]+/u', '-', $safeFilename);
+            $safeFilename = trim($safeFilename, '-');
+            if (empty($safeFilename)) {
+                $safeFilename = 'attachment';
+            }
+            $finalFilename = $safeFilename . '-' . uniqid() . '.' . $file->guessExtension();
+            try {
+                $file->move($uploadsDirectory, $finalFilename);
+                $filePath = '/uploads/comments/' . $finalFilename;
+                $fileName = $file->getClientOriginalName();
+                $comment->setFilePath($filePath);
+                $comment->setFileName($fileName);
+            } catch (\Exception $e) {
+                return new JsonResponse(['success' => false, 'error' => 'File upload failed'], 500);
+            }
         }
 
         $this->entityManager->persist($comment);
         $this->entityManager->flush();
 
-        // === НОВЫЙ КОД: Отправляем уведомления ===
         try {
             $this->notificationService->notifyNewComment($comment, $user);
             $this->entityManager->flush();
         } catch (\Exception $e) {
             error_log('Notification error: ' . $e->getMessage());
+        }
+
+        // === ИСПРАВЛЕНО: Возвращаем JSON вместо редиректа ===
+        if ($request->isXmlHttpRequest()) {
+            return new JsonResponse([
+                'success' => true,
+                'id' => $comment->getId(),
+                'text' => $comment->getText(),
+                'filePath' => $filePath,
+                'fileName' => $fileName,
+                'author' => $user->getEmail()
+            ]);
         }
 
         return $this->redirectToRoute('app_project_view', ['id' => $project->getId()]);
