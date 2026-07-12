@@ -104,7 +104,11 @@ class ProjectController extends AbstractController
         $allowedTasks = $memberInfo ? array_map(fn($t) => $t->getId(), $memberInfo->getTasks()->toArray()) : [];
         $allowedSubtasks = $memberInfo ? array_map(fn($s) => $s->getId(), $memberInfo->getSubtasks()->toArray()) : [];
 
-        $projectMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
+        $allMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
+        $projectMembers = array_filter($allMembers, function($member) use ($project) {
+            // Исключаем владельца проекта
+            return $member->getUser()->getId() !== $project->getOwner()->getId();
+        });;
 
         // Сортируем по приоритету ролей
         $rolePriority = [
@@ -741,8 +745,11 @@ class ProjectController extends AbstractController
         }
         
         // Получаем всех участников
-        $members = $this->entityManager->getRepository(ProjectMember::class)
-            ->findBy(['project' => $project]);
+         $allMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
+    
+        $members = array_filter($allMembers, function($member) use ($project) {
+            return $member->getUser()->getId() !== $project->getOwner()->getId();
+        });
         
         // Сортируем по ролям
         $rolePriority = [
