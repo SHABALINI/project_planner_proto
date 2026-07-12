@@ -5,360 +5,707 @@
 
 {% block stylesheets %}
     <style>
-        .task-card { transition: all 0.2s ease; border-left: 5px solid #ffc107; }
-        .priority-high { border-left-color: #dc3545 !important; }
-        .priority-medium { border-left-color: #ffc107 !important; }
-        .priority-low { border-left-color: #0dcaf0 !important; }
-        
-        /* Стили для правой панели участников */
-        .hover-bg-light:hover {
-            background-color: #f8f9fa;
-            cursor: default;
-        }
-        
-        /* Анимация для индикатора онлайн */
-        .position-relative .position-absolute {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        /* Адаптивность для мобильных */
-        @media (max-width: 768px) {
-            .col-md-9, .col-md-3 {
-                width: 100%;
-            }
-            .sticky-top {
-                position: relative !important;
-                top: 0 !important;
-            }
-        }
-        .loading-spinner {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #3498db;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        /* ===== ОСНОВНЫЕ ЦВЕТА ===== */
+        :root {
+            --primary-purple: #7c3aed;
+            --primary-purple-dark: #6d28d9;
+            --primary-purple-light: #8b5cf6;
+            --primary-purple-bg: #f5f3ff;
+            --primary-purple-border: #ede9fe;
+            --text-dark: #1e1b4b;
+            --text-gray: #6b7280;
+            --bg-light: #fafafa;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        body {
+            background: var(--bg-light);
+        }
+
+        /* ===== ОБЛАСТИ (СПРИНТЫ) ===== */
+        .area-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--primary-purple-border);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .area-card:hover {
+            box-shadow: var(--card-shadow-hover);
+            border-color: var(--primary-purple-light);
+        }
+
+        .area-header {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+            padding: 16px 24px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+
+        .area-header:hover {
+            background: linear-gradient(135deg, var(--primary-purple-dark), #5b21b6);
+        }
+
+        .area-header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .area-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .area-title {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.3px;
+        }
+
+        .area-description {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            margin-top: 2px;
+        }
+
+        .area-stats {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .area-progress {
+            width: 120px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .area-progress-bar {
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+
+        .area-progress-text {
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .area-toggle {
+            color: white;
+            font-size: 18px;
+            transition: transform 0.3s ease;
+            width: 30px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .area-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .area-body {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .area-body.open {
+            max-height: 5000px;
+            padding: 20px 24px 24px;
+        }
+
+        /* ===== ЗАДАЧИ ===== */
+        .task-item {
+            background: var(--bg-light);
+            border-radius: 14px;
+            border: 1px solid #f0f0f0;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .task-item:hover {
+            border-color: var(--primary-purple-light);
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
+        }
+
+        .task-main {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+        }
+
+        .task-status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .task-status-indicator.todo { background: #ef4444; }
+        .task-status-indicator.progress { background: #f59e0b; }
+        .task-status-indicator.done { background: #10b981; }
+
+        .task-title {
+            flex: 1;
+            font-weight: 500;
+            color: var(--text-dark);
+            font-size: 15px;
+            min-width: 0;
+        }
+
+        .task-title.done {
+            text-decoration: line-through;
+            color: var(--text-gray);
+        }
+
+        .task-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .task-priority {
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .task-priority.high { background: #fef2f2; color: #dc2626; }
+        .task-priority.medium { background: #fffbeb; color: #d97706; }
+        .task-priority.low { background: #eff6ff; color: #2563eb; }
+
+        .task-deadline {
+            color: var(--text-gray);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .task-deadline.overdue {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .task-deadline.today {
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        .task-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .task-actions .btn-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-gray);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .task-actions .btn-icon:hover {
+            background: var(--primary-purple-bg);
+            color: var(--primary-purple);
+        }
+
+        .task-actions .btn-icon.danger:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* ===== ПОДЗАДАЧИ ===== */
+        .subtask-list {
+            padding: 0 18px 14px 52px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+            transition: all 0.2s ease;
+        }
+
+        .subtask-item:hover {
+            padding-left: 4px;
+        }
+
+        .subtask-checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: 6px;
+            border: 2px solid #d1d5db;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .subtask-checkbox:checked {
+            background: var(--primary-purple);
+            border-color: var(--primary-purple);
+        }
+
+        .subtask-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .subtask-label {
+            font-size: 14px;
+            color: var(--text-dark);
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .subtask-label.done {
+            text-decoration: line-through;
+            color: var(--text-gray);
+        }
+
+        /* ===== КНОПКИ ДЕЙСТВИЙ ===== */
+        .btn-purple {
+            background: var(--primary-purple);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 8px 20px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-purple:hover {
+            background: var(--primary-purple-dark);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-purple-outline {
+            background: transparent;
+            color: var(--primary-purple);
+            border: 2px solid var(--primary-purple);
+            border-radius: 12px;
+            padding: 6px 18px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-purple-outline:hover {
+            background: var(--primary-purple);
+            color: white;
+        }
+
+        /* ===== КОММЕНТАРИИ ===== */
+        .comment-item {
+            background: white;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s ease;
+        }
+
+        .comment-item:hover {
+            border-color: var(--primary-purple-border);
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: var(--primary-purple);
+            font-size: 13px;
+        }
+
+        .comment-time {
+            color: var(--text-gray);
+            font-size: 11px;
+        }
+
+        .comment-text {
+            margin-top: 4px;
+            color: var(--text-dark);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ===== АДАПТИВНОСТЬ ===== */
+        @media (max-width: 768px) {
+            .area-header {
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 14px 18px;
+            }
+            
+            .area-stats {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .area-progress {
+                flex: 1;
+            }
+            
+            .task-main {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .task-meta {
+                width: 100%;
+                justify-content: flex-start;
+                padding-left: 22px;
+            }
+            
+            .subtask-list {
+                padding-left: 18px;
+            }
+        }
+
+        /* ===== СКРОЛЛБАР ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-purple-light);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-purple);
+        }
+
+        /* Стили для модалки */
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            border-radius: 20px 20px 0 0;
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-footer {
+            border-top: none;
+            border-radius: 0 0 20px 20px;
         }
     </style>
 {% endblock %}
 
 {% block body %}
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+    
     <div class="container-fluid mt-3">
-    <div class="row">
-        {# Основной контент - 75% ширины #}
-        <div class="col-md-9">
-            <!-- Весь существующий контент проекта -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <a href="{{ path('app_dashboard') }}" class="btn btn-sm btn-outline-secondary mb-2">← К списку проектов</a>
-                    <h1 class="m-0 text-primary">📁 {{ project.title }} 
-                        <span class="badge bg-info text-dark fs-6 font-monospace">Роль: {{ userRole|upper }}</span>
-                    </h1>
+        <div class="row">
+            {# Основной контент - 75% ширины #}
+            <div class="col-md-9">
+                {# Заголовок проекта #}
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <a href="{{ path('app_dashboard') }}" class="btn btn-sm btn-outline-secondary mb-2">← К списку проектов</a>
+                        <h1 class="m-0 text-primary">📁 {{ project.title }} 
+                            <span class="badge bg-info text-dark fs-6 font-monospace">Роль: {{ userRole|upper }}</span>
+                        </h1>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Прогресс-бар -->
-            {% set totalProjectPoints = 0 %}{% set earnedProjectPoints = 0 %}
-            {% for area in project.areas %}
-                {% for task in area.tasks %}
-                    {% set totalProjectPoints = totalProjectPoints + 100 %}
-                    {% if task.status == 'done' %}{% set earnedProjectPoints = earnedProjectPoints + 100 %}
-                    {% elseif task.status == 'progress' %}{% set earnedProjectPoints = earnedProjectPoints + 50 %}{% endif %}
+                {# Прогресс-бар проекта #}
+                {% set totalProjectPoints = 0 %}{% set earnedProjectPoints = 0 %}
+                {% for area in project.areas %}
+                    {% for task in area.tasks %}
+                        {% set totalProjectPoints = totalProjectPoints + 100 %}
+                        {% if task.status == 'done' %}{% set earnedProjectPoints = earnedProjectPoints + 100 %}
+                        {% elseif task.status == 'progress' %}{% set earnedProjectPoints = earnedProjectPoints + 50 %}{% endif %}
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
-            {% set projectPercent = totalProjectPoints > 0 ? (earnedProjectPoints / totalProjectPoints * 100)|round : 0 %}
+                {% set projectPercent = totalProjectPoints > 0 ? (earnedProjectPoints / totalProjectPoints * 100)|round : 0 %}
 
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <small class="fw-bold text-secondary">Общая готовность проекта: {{ projectPercent }}%</small>
-                    <div class="progress" style="height: 12px;">
-                        <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ projectPercent }}%"></div>
-                    </div>
-                </div>
-            </div>
-
-
-        {% if userRole == 'admin' %}
-        <div class="bg-white p-3 rounded mb-4 border shadow-sm">
-            <h5>Добавить область (Спринт / Категорию)</h5>
-            <div class="row g-2">
-                <div class="col-md-5"><input type="text" id="areaTitle-{{ project.id }}" class="form-control form-control-sm" placeholder="Название области"></div>
-                <div class="col-md-5"><input type="text" id="areaDesc-{{ project.id }}" class="form-control form-control-sm" placeholder="Описание области"></div>
-                <div class="col-md-2"><button class="btn btn-success btn-sm w-100 fw-bold" onclick="createArea({{ project.id }})">+ Добавить</button></div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="mt-3">
-            {% for area in project.areas %}
-                {% set hasAreaAccess = (userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) or userRole == 'executor' or userRole == 'viewer') %}
-                
-                {% if hasAreaAccess %}
-                {% set totalAreaPoints = area.tasks|length * 100 %}{% set earnedAreaPoints = 0 %}
-                {% for task in area.tasks %}{% if task.status == 'done' %}{% set earnedAreaPoints = earnedAreaPoints + 100 %}{% elseif task.status == 'progress' %}{% set earnedAreaPoints = earnedAreaPoints + 50 %}{% endif %}{% endfor %}
-                {% set areaPercent = totalAreaPoints > 0 ? (earnedAreaPoints / totalAreaPoints * 100)|round : 0 %}
-
-                <div class="border p-4 mb-4 bg-white rounded shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="text-success fw-bold m-0">📍 {{ area.title }}</h5>
-                        {% if userRole == 'admin' %}
-                            <button class="btn btn-sm btn-outline-danger" style="padding: .2rem .4rem; font-size: .75rem;" onclick="deleteElement('area', {{ area.id }}, 'Удалить эту область и все её задачи?')">🗑 Удалить область</button>
-                        {% endif %}
-                    </div>
-                    {% if area.description %}<p class="text-muted small mb-2">{{ area.description }}</p>{% endif %}
-                    
-                    <div class="mb-3">
-                        <div class="progress" style="height: 6px;"><div class="progress-bar bg-success" role="progressbar" style="width: {{ areaPercent }}%"></div></div>
-                        <small class="text-muted" style="font-size: 11px;">Область завершена на {{ areaPercent }}%</small>
-                    </div>
-
-                    {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                    <div class="bg-light p-2 rounded mb-3 border">
-                        <div class="row g-2">
-                            <div class="col-md-6"><input type="text" id="taskTitle-{{ area.id }}" class="form-control form-control-sm" placeholder="Новая задача..."></div>
-                            <div class="col-md-4 d-flex align-items-center">
-                                <small class="text-muted me-1 small" style="font-size: 11px; white-space: nowrap;">Срок:</small>
-                                <input type="date" id="taskDeadline-{{ area.id }}" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md-2"><button class="btn btn-warning text-dark fw-bold btn-sm w-100" onclick="createTask({{ area.id }})">+ Задача</button></div>
+                <div class="card mb-4 shadow-sm" style="border-radius: 16px; border: none;">
+                    <div class="card-body">
+                        <small class="fw-bold text-secondary">Общая готовность проекта: {{ projectPercent }}%</small>
+                        <div class="progress" style="height: 12px; border-radius: 10px;">
+                            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ projectPercent }}%; border-radius: 10px;"></div>
                         </div>
                     </div>
-                    {% endif %}
+                </div>
 
-                    <div id="tasksList-{{ area.id }}">
-                        {% for task in area.tasks %}
-                            {% set hasTaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and task.id in allowedTasks)) %}
-                            
-                            {% if hasTaskAccess %}
-                            {% set totalSubs = task.subtasks|length %}{% set doneSubs = 0 %}{% for sub in task.subtasks %}{% if sub.status == 'done' %}{% set doneSubs = doneSubs + 1 %}{% endif %}{% endfor %}
-                            {% set taskPercent = totalSubs > 0 ? (doneSubs / totalSubs * 100)|round : 0 %}
+                {# Добавление области #}
+                {% if userRole == 'admin' %}
+                    <div class="bg-white p-3 rounded mb-4 border shadow-sm" style="border: 2px dashed var(--primary-purple-border); border-radius: 16px;">
+                        <h5>Добавить область (Спринт / Категорию)</h5>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <input type="text" id="areaTitle-{{ project.id }}" class="form-control form-control-sm" placeholder="Название области" style="border-radius: 10px;">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" id="areaDesc-{{ project.id }}" class="form-control form-control-sm" placeholder="Описание области" style="border-radius: 10px;">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-purple btn-sm w-100" onclick="createArea({{ project.id }})">+ Добавить</button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
 
-                            <div class="card mb-3 task-card priority-{{ task.priority }}" id="task-node-{{ task.id }}">
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="m-0 fw-bold text-dark">{{ task.title }}</h6>
-                                        <div class="d-flex align-items-center">
-                                            <span class="badge me-2 text-uppercase {% if task.status == 'todo' %}bg-danger{% elseif task.status == 'progress' %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                                                {% if task.status == 'todo' %}Не выполнено{% elseif task.status == 'progress' %}В работе{% else %}Выполнено{% endif %}
-                                            </span>
+                {# Области проекта #}
+                <div class="mt-3">
+                    {% for area in project.areas %}
+                        {% set hasAreaAccess = (userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) or userRole == 'executor' or userRole == 'viewer') %}
+                        
+                        {% if hasAreaAccess %}
+                        {% set totalAreaPoints = area.tasks|length * 100 %}{% set earnedAreaPoints = 0 %}
+                        {% for task in area.tasks %}{% if task.status == 'done' %}{% set earnedAreaPoints = earnedAreaPoints + 100 %}{% elseif task.status == 'progress' %}{% set earnedAreaPoints = earnedAreaPoints + 50 %}{% endif %}{% endfor %}
+                        {% set areaPercent = totalAreaPoints > 0 ? (earnedAreaPoints / totalAreaPoints * 100)|round : 0 %}
 
-                                            {% if userRole != 'viewer' %}
-                                                <select class="form-select form-select-sm d-inline-block w-auto me-1" onchange="updateTaskParam({{ task.id }}, 'status', this.value)">
-                                                    <option value="todo" {% if task.status == 'todo' %}selected{% endif %}>Не выполнено</option>
-                                                    <option value="progress" {% if task.status == 'progress' %}selected{% endif %}>В работе</option>
-                                                    <option value="done" {% if task.status == 'done' %}selected{% endif %}>Выполнено</option>
-                                                </select>
-                                            {% endif %}
-                                            
-                                            {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                                                <select class="form-select form-select-sm d-inline-block w-auto me-2" onchange="updateTaskParam({{ task.id }}, 'priority', this.value)">
-                                                    <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Низкий</option>
-                                                    <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>Средний</option>
-                                                    <option value="high" {% if task.priority == 'high' %}selected{% endif %}>Высокий</option>
-                                                </select>
-                                                <button class="btn btn-link text-danger p-0 border-0" onclick="deleteElement('task', {{ task.id }})">❌</button>
-                                            {% endif %}
-                                        </div>
+                        <div class="area-card" id="area-{{ area.id }}">
+                            <div class="area-header" onclick="toggleArea({{ area.id }})">
+                                <div class="area-header-left">
+                                    <div class="area-icon">
+                                        {% if areaPercent == 100 %}✅{% else %}📋{% endif %}
                                     </div>
-
-                                    <div class="d-flex align-items-center mb-2 bg-light p-1 rounded border">
-                                        <span class="badge bg-secondary me-2">📅 Дедлайн: {{ task.deadline ? task.deadline|date('d.m.Y') : 'Не указан' }}</span>
-                                        {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                                            <div class="d-flex align-items-center ms-auto">
-                                                <small class="text-muted me-1" style="font-size: 11px;">Изменить:</small>
-                                                <input type="date" class="form-control form-control-sm border-0 bg-transparent p-0" style="width: 130px; font-size: 12px;" value="{{ task.deadline ? task.deadline|date('Y-m-d') : '' }}" onblur="updateTaskParam({{ task.id }}, 'deadline', this.value)">
-                                            </div>
+                                    <div>
+                                        <div class="area-title">{{ area.title }}</div>
+                                        {% if area.description %}
+                                            <div class="area-description">{{ area.description }}</div>
                                         {% endif %}
                                     </div>
-
-                                    <div class="mb-2">
-                                        <input type="text" class="form-control form-control-sm border-0 bg-light" placeholder="Описание задачи..." value="{{ task.description }}" 
-                                               {% if userRole == 'executor' or userRole == 'viewer' %}disabled{% endif %} onchange="updateTaskParam({{ task.id }}, 'description', this.value)">
+                                </div>
+                                <div class="area-stats">
+                                    <div class="area-progress">
+                                        <div class="area-progress-bar" style="width: {{ areaPercent }}%"></div>
                                     </div>
-
-                                    {% if totalSubs > 0 %}
-                                    <div class="mb-2" style="font-size: 11px;">
-                                        <span class="text-muted">Чек-лист: {{ taskPercent }}%</span>
-                                        <div class="progress" style="height: 4px;"><div class="progress-bar bg-info" role="progressbar" style="width: {{ taskPercent }}%"></div></div>
-                                    </div>
+                                    <span class="area-progress-text">{{ areaPercent }}%</span>
+                                    <span class="area-toggle" id="area-toggle-{{ area.id }}">▼</span>
+                                    {% if userRole == 'admin' %}
+                                        <button class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: 12px; border-radius: 8px;" onclick="event.stopPropagation(); deleteElement('area', {{ area.id }}, 'Удалить эту область и все её задачи?')">🗑</button>
                                     {% endif %}
+                                </div>
+                            </div>
 
-                                    <div class="bg-light p-2 rounded">
-                                        <div id="subtasksList-{{ task.id }}">
-                                            {% for subtask in task.subtasks %}
-                                                {% set hasSubtaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and subtask.id in allowedSubtasks)) %}
-                                                {% if hasSubtaskAccess %}
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <div class="form-check small m-0">
-                                                        <input class="form-check-input" type="checkbox" {% if subtask.status == 'done' %}checked{% endif %} {% if userRole == 'viewer' %}disabled{% endif %} onchange="updateSubtaskStatus({{ subtask.id }}, this.checked)">
-                                                        <label class="form-check-label {% if subtask.status == 'done' %}text-decoration-line-through text-success fw-bold{% else %}text-danger{% endif %}">{{ subtask.title }}</label>
-                                                    </div>
-                                                    {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                                                        <button class="btn btn-link text-muted p-0 m-0 border-0" style="font-size: 11px;" onclick="deleteElement('subtask', {{ subtask.id }})">Удалить</button>
+                            <div class="area-body" id="area-body-{{ area.id }}">
+                                {# Добавление задачи #}
+                                {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
+                                    <div class="bg-white p-3 rounded mb-3" style="border: 2px dashed var(--primary-purple-border);">
+                                        <div class="row g-2">
+                                            <div class="col-md-5">
+                                                <input type="text" id="taskTitle-{{ area.id }}" class="form-control form-control-sm" placeholder="Название задачи..." style="border-radius: 10px;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="date" id="taskDeadline-{{ area.id }}" class="form-control form-control-sm" style="border-radius: 10px;">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <button class="btn btn-purple btn-sm w-100" onclick="createTask({{ area.id }})">+ Добавить задачу</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# Список задач #}
+                                <div id="tasksList-{{ area.id }}">
+                                    {% for task in area.tasks %}
+                                        {% set hasTaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and task.id in allowedTasks)) %}
+                                        
+                                        {% if hasTaskAccess %}
+                                        {% set totalSubs = task.subtasks|length %}{% set doneSubs = 0 %}{% for sub in task.subtasks %}{% if sub.status == 'done' %}{% set doneSubs = doneSubs + 1 %}{% endif %}{% endfor %}
+                                        {% set taskPercent = totalSubs > 0 ? (doneSubs / totalSubs * 100)|round : 0 %}
+
+                                        <div class="task-item" id="task-node-{{ task.id }}">
+                                            <div class="task-main" onclick="toggleTask({{ task.id }})">
+                                                <span class="task-status-indicator {{ task.status }}"></span>
+                                                <span class="task-title {% if task.status == 'done' %}done{% endif %}">{{ task.title }}</span>
+                                                
+                                                <div class="task-meta">
+                                                    <span class="task-priority {{ task.priority }}">{{ task.priority }}</span>
+                                                    
+                                                    {% if task.deadline %}
+                                                        {% set daysUntil = (task.deadline|date('U') - 'now'|date('U')) / 86400 %}
+                                                        <span class="task-deadline {% if daysUntil < 0 %}overdue{% elseif daysUntil < 1 %}today{% endif %}">
+                                                            📅 {{ task.deadline|date('d.m.Y') }}
+                                                            {% if daysUntil < 0 %} (просрочено){% elseif daysUntil < 1 %} (сегодня){% endif %}
+                                                        </span>
+                                                    {% endif %}
+                                                    
+                                                    {% if totalSubs > 0 %}
+                                                        <span class="text-muted" style="font-size: 11px;">📊 {{ taskPercent }}%</span>
                                                     {% endif %}
                                                 </div>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                        
-                                        <div class="mt-3 pt-3 border-top">
-                                        <h6 class="text-secondary small fw-bold mb-2">💬 Комментарии:</h6>
-                                        
-                                        <div class="comments-container mb-2" style="max-height: 200px; overflow-y: auto;">
-                                            {% for comment in task.comments|default([]) %}
-                                                <div class="bg-white border rounded p-2 mb-2 shadow-none position-relative" style="font-size: 13px;">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <span class="fw-bold text-primary">
-                                                            👤 {{ comment.author.email|default(comment.author.userIdentifier) }}
-                                                        </span>
-                                                        <span class="text-muted" style="font-size: 11px;">
-                                                            {{ comment.createdAt|date('d.m.Y H:i') }}
-                                                            {% set canDeleteComment = (comment.author == currentUser or userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas)) %}
-                                                            {% if canDeleteComment %}
-                                                                <button class="btn btn-link text-danger p-0 ms-2 text-decoration-none" style="font-size: 11px;" onclick="deleteComment({{ comment.id }})">🗑</button>
-                                                            {% endif %}
-                                                        </span>
+
+                                                <div class="task-actions" onclick="event.stopPropagation();">
+                                                    {% if userRole != 'viewer' %}
+                                                        <select class="form-select form-select-sm" style="width: 120px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam({{ task.id }}, 'status', this.value)">
+                                                            <option value="todo" {% if task.status == 'todo' %}selected{% endif %}>⭕ Не выполнено</option>
+                                                            <option value="progress" {% if task.status == 'progress' %}selected{% endif %}>🔄 В работе</option>
+                                                            <option value="done" {% if task.status == 'done' %}selected{% endif %}>✅ Выполнено</option>
+                                                        </select>
+                                                    {% endif %}
+                                                    
+                                                    {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
+                                                        <select class="form-select form-select-sm" style="width: 100px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam({{ task.id }}, 'priority', this.value)">
+                                                            <option value="low" {% if task.priority == 'low' %}selected{% endif %}>🟢 Низкий</option>
+                                                            <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>🟡 Средний</option>
+                                                            <option value="high" {% if task.priority == 'high' %}selected{% endif %}>🔴 Высокий</option>
+                                                        </select>
+                                                        <button class="btn-icon danger" onclick="deleteElement('task', {{ task.id }})">🗑</button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            {# Подзадачи и комментарии #}
+                                            <div class="subtask-list" id="task-body-{{ task.id }}" style="display: none;">
+                                                {# Подзадачи #}
+                                                {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
+                                                    <div class="d-flex gap-2 mb-2">
+                                                        <input type="text" id="subtaskTitle-{{ task.id }}" class="form-control form-control-sm" placeholder="+ Подзадача..." style="border-radius: 10px; max-width: 300px;">
+                                                        <button class="btn btn-purple-outline btn-sm" onclick="createSubtask({{ task.id }})">Добавить</button>
                                                     </div>
-                                                    <p class="m-0 text-dark comment-text-raw">{{ comment.text }}</p>
-                                                    {% if comment.filePath %}
-                                                        <div class="mt-1 bg-light p-1 rounded border d-inline-block">
-                                                            <a href="{{ comment.filePath }}" target="_blank" class="text-success text-decoration-none fw-bold" style="font-size: 11px;">
-                                                                📎 Скачать: {{ comment.fileName }}
-                                                            </a>
+                                                {% endif %}
+
+                                                {% for subtask in task.subtasks %}
+                                                    {% set hasSubtaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and subtask.id in allowedSubtasks)) %}
+                                                    {% if hasSubtaskAccess %}
+                                                        <div class="subtask-item">
+                                                            <input class="subtask-checkbox" type="checkbox" {% if subtask.status == 'done' %}checked{% endif %} {% if userRole == 'viewer' %}disabled{% endif %} onchange="updateSubtaskStatus({{ subtask.id }}, this.checked)">
+                                                            <span class="subtask-label {% if subtask.status == 'done' %}done{% endif %}">{{ subtask.title }}</span>
+                                                            {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
+                                                                <button class="btn btn-sm text-muted" style="border: none; background: none; font-size: 12px;" onclick="deleteElement('subtask', {{ subtask.id }})">✕</button>
+                                                            {% endif %}
                                                         </div>
                                                     {% endif %}
+                                                {% endfor %}
+
+                                                {# Комментарии #}
+                                                <div class="mt-3 pt-3" style="border-top: 1px solid #f0f0f0;">
+                                                    <div class="comments-container">
+                                                        {% for comment in task.comments|default([]) %}
+                                                            <div class="comment-item">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <span class="comment-author">👤 {{ comment.author.email|default(comment.author.userIdentifier) }}</span>
+                                                                    <span class="comment-time">{{ comment.createdAt|date('d.m.Y H:i') }}</span>
+                                                                </div>
+                                                                <p class="comment-text">{{ comment.text }}</p>
+                                                                {% if comment.filePath %}
+                                                                    <a href="{{ comment.filePath }}" target="_blank" class="text-purple" style="font-size: 12px;">📎 {{ comment.fileName }}</a>
+                                                                {% endif %}
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="text-muted small p-2">Нет комментариев</div>
+                                                        {% endfor %}
+                                                    </div>
+
+                                                    <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2">
+                                                        <input type="hidden" name="task_id" value="{{ task.id }}">
+                                                        <div class="d-flex gap-2">
+                                                            <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">
+                                                            <button type="submit" class="btn btn-purple btn-sm">Отправить</button>
+                                                        </div>
+                                                        <div class="mt-1">
+                                                            <input type="file" name="file" class="form-control form-control-sm" style="border-radius: 10px; max-width: 250px;">
+                                                        </div>
+                                                    </form>
                                                 </div>
-                                            {% else %}
-                                                <div class="text-muted small p-1">Комментариев пока нет.</div>
-                                            {% endfor %}
-                                        </div>
-
-                                        <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2">
-                                            <input type="hidden" name="task_id" value="{{ task.id }}">
-                                            <div class="input-group input-group-sm mb-1">
-                                                <input type="text" name="text" class="form-control" placeholder="Напишите комментарий или вставьте ссылку...">
-                                                <button type="submit" class="btn btn-primary fw-bold">Отправить</button>
                                             </div>
-                                            <div class="d-flex align-items-center bg-light p-1 rounded border" style="max-width: 300px;">
-                                                <small class="text-muted me-2" style="font-size: 11px; white-space: nowrap;">📎 Файл:</small>
-                                                <input type="file" name="file" class="form-control form-control-sm border-0 bg-transparent" style="font-size: 11px;">
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                        {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                                        <div class="input-group input-group-sm mt-2" style="max-width: 350px;">
-                                            <input type="text" id="subtaskTitle-{{ task.id }}" class="form-control" placeholder="+ Подзадача">
-                                            <button class="btn btn-outline-secondary" onclick="createSubtask({{ task.id }})">+</button>
                                         </div>
                                         {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="text-muted small text-center py-2">Нет задач.</div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            {% endfor %}
-        </div>
-    </div>
-
-    {# Правая панель с участникам - 25% ширины#}
-    <div class="col-md-3">
-            <div class="card shadow-sm sticky-top" style="top: 20px;">
-                <div class="card-header bg-dark text-white">
-                    <h6 class="mb-0">👥 Участники <span class="badge bg-light text-dark ms-2" id="membersCount">{{ project_members|length + 1 }}</span></h6>
-
-                    {% if userRole == 'admin' %}
-                        <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#membersModal" onclick="openMembersModal()">Управление</button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-2" id="membersPanelBody" style="max-height: calc(100vh - 200px); overflow-y: auto;">
-                    
-                    {# Владелец проекта #}
-                    <div class="d-flex align-items-center p-2 mb-1 rounded bg-primary bg-opacity-10">
-                        <div class="position-relative">
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
-                                 style="width: 40px; height: 40px; font-size: 18px; font-weight: bold;">
-                                {{ project.owner.email|first|upper }}
-                            </div>
-                            <span class="position-absolute bottom-0 end-0" style="width: 12px; height: 12px; background: #23a55a; border: 2px solid white; border-radius: 50%;"></span>
-                        </div>
-                        <div class="ms-2 flex-grow-1">
-                            <div class="fw-bold small">{{ project.owner.email }}</div>
-                            <div class="text-muted small">
-                                <span class="badge bg-warning text-dark"> Владелец</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# Остальные участники #}
-                    {% for member in project_members %}
-                        <div class="d-flex align-items-center p-2 mb-1 rounded hover-bg-light">
-                            <div class="position-relative">
-                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" 
-                                     style="width: 40px; height: 40px; font-size: 18px; font-weight: bold;">
-                                    {{ member.user.email|first|upper }}
-                                </div>
-                            </div>
-                            <div class="ms-2 flex-grow-1">
-                                <div class="fw-bold small text-truncate" style="max-width: 120px;">{{ member.user.email }}</div>
-                                <div class="text-muted small">
-                                    {% if member.role == 'admin' %}
-                                        <span class="badge bg-danger">Админ</span>
-                                    {% elseif member.role == 'manager' %}
-                                        <span class="badge bg-primary">Руководитель</span>
-                                        <span class="badge bg-secondary small">Областей: {{ member.areas|length }}</span>
-                                    {% elseif member.role == 'executor' %}
-                                        <span class="badge bg-success">Исполнитель</span>
-                                        <span class="badge bg-secondary small">Задач: {{ member.tasks|length }}</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">Зритель</span>
-                                    {% endif %}
+                                        <div class="text-muted small text-center py-3">Нет задач</div>
+                                    {% endfor %}
                                 </div>
                             </div>
-                            {# Кнопка удаления: только если userRole == 'admin' И member.user != project.owner И НЕ (member.role == 'admin' И userRole != 'owner') #}
-                            {% set canDelete = (userRole == 'admin' and member.user != project.owner) %}
-                            {% set isAdminDeletingAdmin = (member.role == 'admin' and userRole == 'admin' and project.owner != app.user) %}
-                            {% if canDelete and not isAdminDeletingAdmin %}
-                                <button class="btn btn-sm btn-outline-danger ms-1" 
-                                        onclick="removeMember({{ member.user.id }})" 
-                                        title="Удалить участника"
-                                        style="padding: 2px 6px; font-size: 12px;">
-                                    ×
-                                </button>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Правая панель с участниками - 25% ширины #}
+            <div class="col-md-3">
+                <div class="card shadow-sm sticky-top" style="top: 20px; border-radius: 16px; border: none; overflow: hidden;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #4c1d95, #5b21b6); border: none; padding: 14px 18px;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-white">👥 Участники <span class="badge bg-white text-dark ms-2" id="membersCount">{{ project_members|length + 1 }}</span></h6>
+                            {% if userRole == 'admin' %}
+                                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#membersModal" onclick="openMembersModal()" style="border-radius: 10px;">Управление</button>
                             {% endif %}
                         </div>
-                    {% endfor %}
-
-                    {# Если нет участников #}
-                    {% if project_members|length == 0 %}
-                        <div class="text-center text-muted small p-3">
-                            Нет участников
-                        </div>
-                    {% endif %}
+                    </div>
+                    <div class="card-body p-2" id="membersPanelBody" style="max-height: calc(100vh - 200px); overflow-y: auto; background: #f6f1f5;">
+                        <!-- Контент генерируется через JavaScript -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
+    {# Модалка управления участниками #}
     {% if userRole == 'admin' %}
     <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -417,7 +764,9 @@
                                 {% endfor %}
                             </div>
                             <button class="btn btn-primary w-100 mt-3 fw-bold" onclick="saveMemberData()">Сохранить настройки участника</button>
-                        </div> </div> </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -426,9 +775,9 @@
     <script>
         const projectId = {{ project.id }};
         const userRole = '{{ userRole }}';
-
         let currentSelectedUserId = null;
 
+        // ===== УПРАВЛЕНИЕ МОДАЛКОЙ =====
         function openMembersModal() {
             document.getElementById('memberSettingsZone').classList.add('d-none');
             const searchInput = document.getElementById('userSearchInput');
@@ -437,22 +786,14 @@
             const list = document.getElementById('usersModalList');
             list.innerHTML = '<div class="text-muted small p-2">⏳ Загрузка...</div>';
             
-            // Определяем isOwner
             const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
-            
-            console.log('Opening members modal, project ID:', projectId);
             
             fetch('{{ path("api_project_members", {"id": project.id}) }}')
                 .then(res => {
-                    console.log('API response status:', res.status);
-                    if (!res.ok) {
-                        throw new Error('HTTP error! status: ' + res.status);
-                    }
+                    if (!res.ok) throw new Error('HTTP error! status: ' + res.status);
                     return res.json();
                 })
                 .then(users => {
-                    console.log('Users data from API:', users);
-                    // Передаем isOwner как второй параметр
                     renderUsersList(users, isOwner);
                 })
                 .catch(err => {
@@ -465,8 +806,6 @@
             const list = document.getElementById('usersModalList');
             list.innerHTML = '';
             
-            console.log('Rendering users list. Users count:', users ? users.length : 0);
-            
             if (!users || users.length === 0) {
                 list.innerHTML = '<div class="text-muted small p-2">Нет зарегистрированных пользователей.</div>';
                 return;
@@ -474,9 +813,6 @@
             
             const currentEmail = '{{ currentUser.email }}';
             const filteredUsers = users.filter(u => u.email !== currentEmail);
-            
-            console.log('Current user email:', currentEmail);
-            console.log('Filtered users count:', filteredUsers.length);
 
             if (filteredUsers.length === 0) {
                 list.innerHTML = '<div class="text-muted small p-2">Нет других зарегистрированных пользователей.</div>';
@@ -488,8 +824,7 @@
                 const isMember = user.isMember;
                 const isAdmin = user.role === 'admin';
                 
-                // === ЛОГИКА С ИСПОЛЬЗОВАНИЕМ ПЕРЕДАННОГО isOwner ===
-                let statusText = isMember ? user.role : '';
+                let statusText = isMember ? user.role : 'не в проекте';
                 let statusClass = isMember ? 'bg-success' : 'bg-secondary';
                 
                 if (isAdmin && !isOwner) {
@@ -511,9 +846,7 @@
                 }
                 
                 btn.innerHTML = `
-                    <span>
-                        ${user.email}
-                    </span>
+                    <span>${user.email}</span>
                     <span class="badge ${statusClass}">${statusText}</span>
                 `;
                 
@@ -536,7 +869,6 @@
                 list.appendChild(btn);
             });
         }
-            
 
         function selectUserForEdition(user) {
             currentSelectedUserId = user.id;
@@ -544,34 +876,27 @@
             document.getElementById('memberRoleSelect').value = user.role;
             document.getElementById('memberSettingsZone').classList.remove('d-none');
 
-            // === ЛОГИКА БЛОКИРОВКИ АДМИНОВ ===
             const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
             const roleSelect = document.getElementById('memberRoleSelect');
             const saveButton = document.querySelector('#memberSettingsZone .btn-primary');
             
-            // Удаляем старое предупреждение если есть
             const existingWarning = document.getElementById('adminWarning');
             if (existingWarning) existingWarning.remove();
             
             if (user.role === 'admin' && !isOwner) {
-                // Если это админ и мы не владелец - блокируем
                 roleSelect.disabled = true;
                 saveButton.disabled = true;
                 saveButton.textContent = '⛔ Только владелец может изменять админа';
                 saveButton.classList.add('btn-secondary');
                 saveButton.classList.remove('btn-primary');
                 
-                // Показываем предупреждение
                 const warning = document.createElement('div');
                 warning.id = 'adminWarning';
                 warning.className = 'alert alert-warning mt-2';
                 warning.role = 'alert';
                 warning.innerHTML = '⚠️ <strong>Внимание!</strong> Только владелец проекта может изменять права администратора.';
-                
-                const parent = roleSelect.parentElement;
-                parent.appendChild(warning);
+                roleSelect.parentElement.appendChild(warning);
             } else {
-                // Разблокируем
                 roleSelect.disabled = false;
                 saveButton.disabled = false;
                 saveButton.textContent = 'Сохранить настройки участника';
@@ -579,7 +904,6 @@
                 saveButton.classList.add('btn-primary');
             }
 
-            // Снимаем все галочки
             document.querySelectorAll('.form-check-input').forEach(cb => cb.checked = false);
             user.areas.forEach(id => { const c = document.getElementById(`cb-area-${id}`); if(c) c.checked = true; });
             user.tasks.forEach(id => { const c = document.getElementById(`cb-task-${id}`); if(c) c.checked = true; });
@@ -615,23 +939,21 @@
             });
         }
 
+        // ===== СОХРАНЕНИЕ УЧАСТНИКА =====
         function saveMemberData() {
             const role = document.getElementById('memberRoleSelect').value;
             const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
             
-            // Проверка: если пытаемся изменить админа
             const selectedUser = currentSelectedUserId;
-            // Находим выбранного пользователя в списке
             const userItem = document.querySelector(`.user-search-item[data-user-id="${selectedUser}"]`);
             if (userItem) {
-                const isAdmin = userItem.innerHTML.includes('Админ');
+                const isAdmin = userItem.innerHTML.includes('Админ') || userItem.innerHTML.includes('🔒');
                 if (isAdmin && !isOwner) {
                     showToast('Только владелец может изменять права админа', 'warning');
                     return;
                 }
             }
             
-            // Проверка: если пытаемся сделать админом
             if (role === 'admin' && !isOwner) {
                 showToast('Только владелец может назначать админов', 'warning');
                 return;
@@ -666,10 +988,8 @@
                 
                 if(data.success) { 
                     document.getElementById('memberSettingsZone').classList.add('d-none');
-                    
                     refreshMembersPanel();
                     
-                    // Обновляем список в модалке
                     fetch('{{ path("api_project_members", {"id": project.id}) }}')
                         .then(res => res.json())
                         .then(users => {
@@ -694,10 +1014,10 @@
             });
         }
 
+        // ===== УДАЛЕНИЕ УЧАСТНИКА =====
         function removeMember(userId) {
             if (!confirm('Удалить участника?')) return;
             
-            // Показываем индикатор на кнопке
             const buttons = document.querySelectorAll(`button[onclick*="removeMember(${userId})"]`);
             buttons.forEach(btn => {
                 btn.textContent = '⏳';
@@ -710,22 +1030,16 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    // Обновляем панель справа
                     refreshMembersPanel();
-                    
-                    // Обновляем список в модалке
                     fetch('{{ path("api_project_members", {"id": project.id}) }}')
                         .then(res => res.json())
                         .then(users => {
                             renderUsersList(users);
-                            // Скрываем панель настроек
                             document.getElementById('memberSettingsZone').classList.add('d-none');
                         });
-                    
                     showToast('Участник удален!', 'success');
                 } else {
-                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-                    // Восстанавливаем кнопки
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
                     buttons.forEach(btn => {
                         btn.textContent = '×';
                         btn.disabled = false;
@@ -734,7 +1048,7 @@
             })
             .catch(err => {
                 console.error('Error:', err);
-                alert('Ошибка при удалении участника');
+                showToast('Ошибка при удалении участника', 'error');
                 buttons.forEach(btn => {
                     btn.textContent = '×';
                     btn.disabled = false;
@@ -742,6 +1056,7 @@
             });
         }
 
+        // ===== ПАНЕЛЬ УЧАСТНИКОВ =====
         function refreshMembersPanel() {
             fetch(`/dashboard/project/${projectId}/members-panel`)
                 .then(res => res.json())
@@ -753,24 +1068,18 @@
                 .catch(err => console.error('Error refreshing members:', err));
         }
 
-        // Функция обновления HTML панели
         function updateMembersPanel(members, total) {
             const panelBody = document.getElementById('membersPanelBody');
             const currentUserRole = '{{ userRole }}';
-            const isOwner = currentUserRole === 'admin' && {{ project.owner.id == app.user.id ? 'true' : 'false' }};
             if (!panelBody) return;
             
-            // Обновляем счетчик участников
             const badge = document.querySelector('.card-header .badge');
             if (badge) {
                 badge.textContent = total;
             }
             
-            // Очищаем панель
             panelBody.innerHTML = '';
             
-            
-            // Рендерим каждого участника
             members.forEach(member => {
                 const isOwner = member.isOwner;
                 const firstLetter = member.email.charAt(0).toUpperCase();
@@ -790,11 +1099,9 @@
                 
                 let showDeleteButton = false;
                 if (!isOwner && currentUserRole === 'admin') {
-                    // Если текущий пользователь - владелец, может удалять всех
                     if ({{ project.owner.id == app.user.id ? 'true' : 'false' }}) {
                         showDeleteButton = true;
                     } else {
-                        // Если текущий пользователь - админ (не владелец), не может удалять других админов
                         if (member.role !== 'admin') {
                             showDeleteButton = true;
                         }
@@ -833,12 +1140,12 @@
                 panelBody.innerHTML += memberHtml;
             });
             
-            // Если нет участников
             if (members.length === 0) {
                 panelBody.innerHTML = '<div class="text-center text-muted small p-3">Нет участников</div>';
             }
         }
 
+        // ===== TOAST УВЕДОМЛЕНИЯ =====
         function showToast(message, type = 'success') {
             let container = document.getElementById('toastContainer');
             if (!container) {
@@ -871,7 +1178,6 @@
             
             container.appendChild(toast);
             
-            // Авто-удаление через 3 секунды
             setTimeout(() => {
                 if (toast.parentElement) {
                     toast.classList.remove('show');
@@ -880,68 +1186,285 @@
             }, 3000);
         }
 
+        // ===== АНИМАЦИИ ИНТЕРФЕЙСА =====
+        function toggleArea(areaId) {
+            const body = document.getElementById(`area-body-${areaId}`);
+            const toggle = document.getElementById(`area-toggle-${areaId}`);
+            
+            if (!body) return;
+            
+            if (body.classList.contains('open')) {
+                body.classList.remove('open');
+                if (toggle) toggle.classList.add('collapsed');
+            } else {
+                body.classList.add('open');
+                if (toggle) toggle.classList.remove('collapsed');
+            }
+        }
+
+        function toggleTask(taskId) {
+            const body = document.getElementById(`task-body-${taskId}`);
+            if (body) {
+                if (body.style.display === 'none' || body.style.display === '') {
+                    body.style.display = 'block';
+                } else {
+                    body.style.display = 'none';
+                }
+            }
+        }
+
+        // ===== CRUD ОПЕРАЦИИ =====
         function createArea(projectId) {
             const titleInput = document.getElementById(`areaTitle-${projectId}`);
             const descInput = document.getElementById(`areaDesc-${projectId}`);
-            if (!titleInput.value.trim()) return;
-            fetch('{{ path("api_area_create") }}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, title: titleInput.value, description: descInput.value }) }).then(() => location.reload());
+            if (!titleInput.value.trim()) {
+                showToast('Введите название области', 'warning');
+                return;
+            }
+            fetch('{{ path("api_area_create") }}', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    project_id: projectId, 
+                    title: titleInput.value, 
+                    description: descInput.value 
+                }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Область создана!', 'success');
+                    location.reload();
+                } else {
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showToast('Ошибка при создании области', 'error');
+            });
         }
 
         function createTask(areaId) {
             const titleInput = document.getElementById(`taskTitle-${areaId}`);
             const deadlineInput = document.getElementById(`taskDeadline-${areaId}`);
-            if (!titleInput.value.trim()) return;
-            fetch('{{ path("app_task_create") }}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ area_id: areaId, title: titleInput.value, deadline: deadlineInput.value || null }) }).then(() => location.reload());
+            if (!titleInput.value.trim()) {
+                showToast('Введите название задачи', 'warning');
+                return;
+            }
+            fetch('{{ path("app_task_create") }}', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    area_id: areaId, 
+                    title: titleInput.value, 
+                    deadline: deadlineInput.value || null 
+                }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Задача создана!', 'success');
+                    location.reload();
+                } else {
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showToast('Ошибка при создании задачи', 'error');
+            });
         }
 
         function createSubtask(taskId) {
             const titleInput = document.getElementById(`subtaskTitle-${taskId}`);
-            if (!titleInput.value.trim()) return;
-            fetch('{{ path("api_subtask_create") }}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_id: taskId, title: titleInput.value }) }).then(() => location.reload());
+            if (!titleInput.value.trim()) {
+                showToast('Введите название подзадачи', 'warning');
+                return;
+            }
+            fetch('{{ path("api_subtask_create") }}', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    task_id: taskId, 
+                    title: titleInput.value 
+                }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Подзадача создана!', 'success');
+                    location.reload();
+                } else {
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showToast('Ошибка при создании подзадачи', 'error');
+            });
         }
 
         function updateTaskParam(taskId, paramName, paramValue) {
-            fetch('{{ path("app_task_update") }}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task_id: taskId, field: paramName, value: paramValue }) }).then(() => location.reload());
+            fetch('{{ path("app_task_update") }}', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    task_id: taskId, 
+                    field: paramName, 
+                    value: paramValue 
+                }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Параметр обновлен!', 'success');
+                    location.reload();
+                } else {
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showToast('Ошибка при обновлении', 'error');
+            });
         }
 
         function updateSubtaskStatus(subtaskId, isChecked) {
-            fetch('{{ path("api_subtask_update") }}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subtask_id: subtaskId, status: isChecked ? 'done' : 'todo' }) }).then(() => location.reload());
+            fetch('{{ path("api_subtask_update") }}', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    subtask_id: subtaskId, 
+                    status: isChecked ? 'done' : 'todo' 
+                }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            })
+            .catch(err => console.error('Error:', err));
         }
 
         function deleteElement(type, id, confirmMessage = null) {
             if (confirmMessage && !confirm(confirmMessage)) return;
-            fetch(`/dashboard/delete/${type}/${id}`, { method: 'POST' }).then(res => res.json()).then(data => { if (data.success) location.reload(); });
+            fetch(`/dashboard/delete/${type}/${id}`, { 
+                method: 'POST' 
+            })
+            .then(res => res.json())
+            .then(data => { 
+                if (data.success) {
+                    showToast('Элемент удален!', 'success');
+                    location.reload();
+                } else {
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showToast('Ошибка при удалении', 'error');
+            });
         }
 
         function deleteComment(commentId) {
             if (!confirm('Вы действительно хотите удалить этот комментарий?')) return;
-            fetch(`/dashboard/comment/delete/${commentId}`, { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) location.reload();
-                    else alert('Ошибка: ' + (data.error || 'Не удалось удалить комментарий'));
-                }).catch(err => console.error(err));
+            fetch(`/dashboard/comment/delete/${commentId}`, { 
+                method: 'POST' 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Комментарий удален!', 'success');
+                    location.reload();
+                } else {
+                    showToast('Ошибка: ' + (data.error || 'Не удалось удалить комментарий'), 'error');
+                }
+            })
+            .catch(err => console.error('Error:', err));
         }
 
+        // ===== ПОИСК В МОДАЛКЕ =====
         document.getElementById('userSearchInput').addEventListener('input', function(e) {
             const searchText = e.target.value.toLowerCase();
             document.querySelectorAll('.user-search-item').forEach(function(item) {
                 const email = item.getAttribute('data-email');
-                if (email && email.includes(searchText)) item.classList.remove('d-none');
-                else item.classList.add('d-none');
+                if (email && email.includes(searchText)) {
+                    item.classList.remove('d-none');
+                } else {
+                    item.classList.add('d-none');
+                }
             });
         });
 
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
         document.addEventListener("DOMContentLoaded", function() {
+            // Открываем первую область по умолчанию
+            const firstAreaBody = document.querySelector('.area-body');
+            if (firstAreaBody) {
+                firstAreaBody.classList.add('open');
+                const firstToggle = document.querySelector('.area-toggle');
+                if (firstToggle) firstToggle.classList.remove('collapsed');
+            }
+            
+            // Загружаем участников
             refreshMembersPanel();
+            
+            // Обработка ссылок в комментариях
             const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-            document.querySelectorAll(".comment-text-raw").forEach(el => {
+            document.querySelectorAll(".comment-text").forEach(el => {
                 let rawText = el.innerHTML;
                 let processedText = rawText.replace(urlPattern, '<a href="$1" target="_blank" class="text-primary text-decoration-underline">$1</a>');
                 el.innerHTML = processedText;
             });
         });
-    </script>
 
-    
+        // ===== ОТПРАВКА КОММЕНТАРИЯ БЕЗ ПЕРЕЗАГРУЗКИ =====
+        document.querySelectorAll('form[action*="api_comment_create"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const taskId = formData.get('task_id');
+                const text = formData.get('text');
+                
+                if (!text.trim() && !formData.get('file').name) {
+                    showToast('Напишите комментарий или прикрепите файл', 'warning');
+                    return;
+                }
+                
+                fetch('{{ path("api_comment_create") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Комментарий отправлен!', 'success');
+                        // Добавляем комментарий в список без перезагрузки
+                        const commentsContainer = form.closest('.task-item').querySelector('.comments-container');
+                        const newComment = document.createElement('div');
+                        newComment.className = 'comment-item';
+                        newComment.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="comment-author">👤 {{ currentUser.email }}</span>
+                                <span class="comment-time">${new Date().toLocaleString()}</span>
+                            </div>
+                            <p class="comment-text">${text}</p>
+                        `;
+                        commentsContainer.prepend(newComment);
+                        form.querySelector('input[name="text"]').value = '';
+                        form.querySelector('input[type="file"]').value = '';
+                    } else {
+                        showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showToast('Ошибка при отправке комментария', 'error');
+                });
+            });
+        });
+    </script>
 {% endblock %}
