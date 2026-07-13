@@ -592,35 +592,22 @@ class ProjectController extends AbstractController
         $user = $this->entityManager->getRepository(User::class)->find($data['user_id'] ?? 0);
         if (!$user) return new JsonResponse(['success' => false], 404);
 
+        // Проверка прав на изменение админов
         $targetMember = $this->entityManager->getRepository(ProjectMember::class)
-        ->findOneBy(['project' => $project, 'user' => $user]);
-    
+            ->findOneBy(['project' => $project, 'user' => $user]);
+        
         $isOwner = ($project->getOwner() === $currentUser);
         $isTargetAdmin = $targetMember && $targetMember->getRole() === 'admin';
         $newRole = $data['role'] ?? 'viewer';
         
-        // 1. Если это админ и мы не владелец - запрещаем любые изменения
         if ($isTargetAdmin && !$isOwner) {
-            return new JsonResponse([
-                'success' => false, 
-                'error' => 'Only the project owner can modify admin permissions'
-            ], 403);
+            return new JsonResponse(['success' => false, 'error' => 'Only the project owner can modify admin permissions'], 403);
         }
-        
-        // 2. Если мы пытаемся сделать админом и мы не владелец - запрещаем
         if ($newRole === 'admin' && !$isOwner) {
-            return new JsonResponse([
-                'success' => false, 
-                'error' => 'Only the project owner can grant admin permissions'
-            ], 403);
+            return new JsonResponse(['success' => false, 'error' => 'Only the project owner can grant admin permissions'], 403);
         }
-        
-        // 3. Если мы пытаемся понизить админа и мы не владелец - запрещаем
         if ($isTargetAdmin && $newRole !== 'admin' && !$isOwner) {
-            return new JsonResponse([
-                'success' => false, 
-                'error' => 'Only the project owner can revoke admin permissions'
-            ], 403);
+            return new JsonResponse(['success' => false, 'error' => 'Only the project owner can revoke admin permissions'], 403);
         }
 
         // Проверяем, был ли участник уже добавлен
@@ -629,48 +616,61 @@ class ProjectController extends AbstractController
 
         $isNewMember = ($existingMember === null);
 
-
-        $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]) ?? new ProjectMember();
+        $member = $this->entityManager->getRepository(ProjectMember::class)
+            ->findOneBy(['project' => $project, 'user' => $user]) ?? new ProjectMember();
         $member->setProject($project);
         $member->setUser($user);
         $member->setRole($data['role'] ?? 'viewer');
 
+        // Очищаем все связи
         foreach ($member->getAreas() as $a) $member->removeArea($a);
         foreach ($member->getTasks() as $t) $member->removeTask($t);
         foreach ($member->getSubtasks() as $s) $member->removeSubtask($s);
 
         $selectedAreas = $data['areas'] ?? [];
         $selectedTasks = $data['tasks'] ?? [];
-        $selectedSubtasks = $data['subtasks'] ?? [];
 
-        foreach ($project->getAreas() as $area) {
-            $isAreaChecked = in_array($area->getId(), $selectedAreas);
-            if ($isAreaChecked && $member->getRole() === 'manager') $member->addArea($area);
-
-            foreach ($area->getTasks() as $task) {
-                $isTaskChecked = in_array($task->getId(), $selectedTasks);
-                if (($isAreaChecked || $isTaskChecked) && $member->getRole() === 'executor') {
-                    $member->addTask($task);
+        // === НОВАЯ ЛОГИКА ДЛЯ EXECUTOR ===
+        if ($member->getRole() === 'executor') {
+            // Сначала обрабатываем области
+            foreach ($project->getAreas() as $area) {
+                $isAreaChecked = in_array($area->getId(), $selectedAreas);
+                
+                if ($isAreaChecked) {
+                    // Если область выбрана - добавляем область и ВСЕ задачи в ней
                     $member->addArea($area);
-                }
-
-                foreach ($task->getSubtasks() as $subtask) {
-                    $isSubtaskChecked = in_array($subtask->getId(), $selectedSubtasks);
-                    if (($isAreaChecked || $isTaskChecked || $isSubtaskChecked) && $member->getRole() === 'executor') {
-                        $member->addSubtask($subtask);
+                    foreach ($area->getTasks() as $task) {
+                        $member->addTask($task);
+                    }
+                } else {
+                    // Если область не выбрана - проверяем отдельные задачи
+                    foreach ($area->getTasks() as $task) {
+                        $isTaskChecked = in_array($task->getId(), $selectedTasks);
+                        if ($isTaskChecked) {
+                            $member->addTask($task);
+                            // Также добавляем область, чтобы задача была видна
+                            $member->addArea($area);
+                        }
                     }
                 }
             }
+        } elseif ($member->getRole() === 'manager') {
+            // Для менеджера только области
+            foreach ($project->getAreas() as $area) {
+                if (in_array($area->getId(), $selectedAreas)) {
+                    $member->addArea($area);
+                }
+            }
         }
-        $currentUser = $this->getUser(); // Получаем текущего пользователя
+
+        $currentUser = $this->getUser();
 
         if ($isNewMember) {
             $message = $currentUser->getUserIdentifier() . " 👤 добавил(а) вас в проект «" . $project->getTitle() . "»";
             $targetUrl = $this->generateUrl('app_project_view', ['id' => $project->getId()]);
             
-            // Отправляем уведомление ТОЛЬКО тому, кого добавили
             $this->notificationService->sendNotificationToUser(
-                $user,  // Получатель - добавляемый пользователь
+                $user,
                 $project,
                 $message,
                 $targetUrl

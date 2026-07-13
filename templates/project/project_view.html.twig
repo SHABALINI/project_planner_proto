@@ -560,7 +560,7 @@
                 {# Области проекта #}
                 <div class="mt-3">
                     {% for area in project.areas %}
-                        {% set hasAreaAccess = (userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) or userRole == 'executor' or userRole == 'viewer') %}
+                        {% set hasAreaAccess = (userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) or (userRole == 'executor' and area.id in allowedAreas) or (userRole == 'viewer')) %}
                         
                         {% if hasAreaAccess %}
                         {% set totalAreaPoints = area.tasks|length * 100 %}{% set earnedAreaPoints = 0 %}
@@ -636,7 +636,7 @@
                                                     {% endif %}
                                                     
                                                     {% if totalSubs > 0 %}
-                                                        <span class="text-muted" style="font-size: 11px;">📊 {{ taskPercent }}%</span>
+                                                        <span class="text-muted" style="font-size: 11px;">⛳ Подзадач {{ taskPercent }}%</span>
                                                     {% endif %}
                                                 </div>
 
@@ -671,7 +671,7 @@
                                                 {% endif %}
 
                                                 {% for subtask in task.subtasks %}
-                                                    {% set hasSubtaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and subtask.id in allowedSubtasks)) %}
+                                                    {% set hasSubtaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and task.id in allowedTasks)) %}
                                                     {% if hasSubtaskAccess %}
                                                         <div class="subtask-item">
                                                             <input class="subtask-checkbox" type="checkbox" {% if subtask.status == 'done' %}checked{% endif %} {% if userRole == 'viewer' %}disabled{% endif %} onchange="updateSubtaskStatus({{ subtask.id }}, this.checked)">
@@ -797,14 +797,6 @@
                                                     <input class="form-check-input task-cb" type="checkbox" value="{{ task.id }}" id="cb-task-{{ task.id }}" data-area="{{ area.id }}" onchange="handleTaskCbChange({{ task.id }}, this.checked)">
                                                     <label class="form-check-label text-dark" for="cb-task-{{ task.id }}">🔹 {{ task.title }}</label>
                                                 </div>
-                                                {% for subtask in task.subtasks %}
-                                                    <div class="ms-4">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input subtask-cb" type="checkbox" value="{{ subtask.id }}" id="cb-subtask-{{ subtask.id }}" data-task="{{ task.id }}">
-                                                            <label class="form-check-label text-muted small" for="cb-subtask-{{ subtask.id }}">▪️ {{ subtask.title }}</label>
-                                                        </div>
-                                                    </div>
-                                                {% endfor %}
                                             </div>
                                         {% endfor %}
                                     </div>
@@ -927,6 +919,7 @@
             const roleSelect = document.getElementById('memberRoleSelect');
             const saveButton = document.querySelector('#memberSettingsZone .btn-primary');
             
+            // Удаляем старое предупреждение
             const existingWarning = document.getElementById('adminWarning');
             if (existingWarning) existingWarning.remove();
             
@@ -951,39 +944,109 @@
                 saveButton.classList.add('btn-primary');
             }
 
+            // Снимаем все галочки
             document.querySelectorAll('.form-check-input').forEach(cb => cb.checked = false);
-            user.areas.forEach(id => { const c = document.getElementById(`cb-area-${id}`); if(c) c.checked = true; });
-            user.tasks.forEach(id => { const c = document.getElementById(`cb-task-${id}`); if(c) c.checked = true; });
-            user.subtasks.forEach(id => { const c = document.getElementById(`cb-subtask-${id}`); if(c) c.checked = true; });
+            
+            // Устанавливаем галочки для областей
+            user.areas.forEach(id => { 
+                const c = document.getElementById(`cb-area-${id}`); 
+                if(c) c.checked = true; 
+            });
+            
+            // Устанавливаем галочки для задач
+            user.tasks.forEach(id => { 
+                const c = document.getElementById(`cb-task-${id}`); 
+                if(c) c.checked = true; 
+            });
+            
+            // Подзадачи больше не используем
+            // user.subtasks.forEach(id => { ... });
 
             toggleRoleInterface(user.role);
         }
 
         function toggleRoleInterface(role) {
             const tree = document.getElementById('projectAccessTree');
+            const areaCheckboxes = document.querySelectorAll('.area-cb');
+            const taskCheckboxes = document.querySelectorAll('.task-cb');
+            const subtaskCheckboxes = document.querySelectorAll('.subtask-cb');
+            
             if (role === 'admin' || role === 'viewer') {
                 tree.classList.add('d-none');
-            } else {
-                tree.classList.remove('d-none');
+                return;
+            }
+            
+            tree.classList.remove('d-none');
+            
+            if (role === 'manager') {
+                // Для менеджера показываем только области
                 document.querySelectorAll('.task-node').forEach(node => {
-                    node.style.display = (role === 'manager') ? 'none' : 'block';
+                    node.style.display = 'none';
+                });
+                // Делаем области активными
+                areaCheckboxes.forEach(cb => {
+                    cb.disabled = false;
+                    cb.closest('.area-node').style.opacity = '1';
+                });
+                // Скрываем подзадачи
+                document.querySelectorAll('.subtask-cb').forEach(cb => {
+                    cb.closest('.subtask-item')?.style.setProperty('display', 'none', 'important');
+                });
+            } else if (role === 'executor') {
+                // Для исполнителя показываем все
+                document.querySelectorAll('.task-node').forEach(node => {
+                    node.style.display = 'block';
+                });
+                // Области и задачи активны
+                areaCheckboxes.forEach(cb => {
+                    cb.disabled = false;
+                    cb.closest('.area-node').style.opacity = '1';
+                });
+                taskCheckboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+                // Скрываем подзадачи (они не нужны)
+                document.querySelectorAll('.subtask-cb').forEach(cb => {
+                    cb.closest('.subtask-item')?.style.setProperty('display', 'none', 'important');
                 });
             }
         }
 
         function handleAreaCbChange(areaId, isChecked) {
-            if (document.getElementById('memberRoleSelect').value !== 'executor') return;
-            document.querySelectorAll(`.task-cb[data-area="${areaId}"]`).forEach(taskCb => {
-                taskCb.checked = isChecked;
-                handleTaskCbChange(taskCb.value, isChecked);
-            });
+            const role = document.getElementById('memberRoleSelect').value;
+            
+            if (role === 'manager') {
+                // Для менеджера ничего не делаем дополнительно
+                return;
+            }
+            
+            if (role === 'executor') {
+                // Для исполнителя: при выборе области - выбираем все задачи
+                document.querySelectorAll(`.task-cb[data-area="${areaId}"]`).forEach(taskCb => {
+                    taskCb.checked = isChecked;
+                });
+            }
         }
 
         function handleTaskCbChange(taskId, isChecked) {
-            if (document.getElementById('memberRoleSelect').value !== 'executor') return;
-            document.querySelectorAll(`.subtask-cb[data-task="${taskId}"]`).forEach(subtaskCb => {
-                subtaskCb.checked = isChecked;
-            });
+            const role = document.getElementById('memberRoleSelect').value;
+            
+            if (role !== 'executor') return;
+            
+            // При изменении задачи проверяем, все ли задачи в области выбраны
+            const taskCb = document.querySelector(`.task-cb[value="${taskId}"]`);
+            if (!taskCb) return;
+            
+            const areaId = taskCb.dataset.area;
+            const areaCb = document.getElementById(`cb-area-${areaId}`);
+            if (!areaCb) return;
+            
+            // Проверяем, все ли задачи в области выбраны
+            const tasksInArea = document.querySelectorAll(`.task-cb[data-area="${areaId}"]`);
+            const allChecked = Array.from(tasksInArea).every(cb => cb.checked);
+            
+            // Если все задачи выбраны - выбираем область
+            areaCb.checked = allChecked;
         }
 
         // ===== СОХРАНЕНИЕ УЧАСТНИКА =====
@@ -1010,7 +1073,8 @@
 
             const areas = Array.from(document.querySelectorAll('.area-cb:checked')).map(cb => parseInt(cb.value));
             const tasks = Array.from(document.querySelectorAll('.task-cb:checked')).map(cb => parseInt(cb.value));
-            const subtasks = Array.from(document.querySelectorAll('.subtask-cb:checked')).map(cb => parseInt(cb.value));
+            // Подзадачи больше не отправляем
+            // const subtasks = Array.from(document.querySelectorAll('.subtask-cb:checked')).map(cb => parseInt(cb.value));
 
             const saveBtn = document.querySelector('#memberSettingsZone .btn-primary');
             const originalText = saveBtn.textContent;
@@ -1024,8 +1088,8 @@
                     user_id: currentSelectedUserId, 
                     role: role, 
                     areas: areas, 
-                    tasks: tasks, 
-                    subtasks: subtasks 
+                    tasks: tasks
+                    // subtasks: subtasks — больше не отправляем
                 })
             })
             .then(res => res.json())
@@ -1362,7 +1426,7 @@
             }
             
             if (progressText) {
-                progressText.textContent = `📊 ${percent}%`;
+                progressText.textContent = `Выполнено подзадач ${percent}%`;
             }
         }
 
