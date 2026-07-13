@@ -619,7 +619,7 @@
 
         <div class="notification-actions">
             {% if not n.isRead %}
-                <button class="btn-action mark-read" onclick="markAsRead({{ n.id }})">✔ Прочитано</button>
+                <button class="btn-action mark-read" onclick="markAsRead({{ n.id }})">✔ Прочитать</button>
             {% endif %}
             {% if n.targetUrl %}
                 <button class="btn-action go-to" onclick="goToNotification({{ n.id }}, '{{ n.targetUrl }}')">Перейти →</button>

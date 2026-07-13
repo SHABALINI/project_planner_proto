@@ -733,17 +733,18 @@
             </div>
 
             {# Правая панель с участниками - 25% ширины #}
-            <div class="col-md-3">
+           <div class="col-md-3">
                 <div class="card shadow-sm sticky-top" style="top: 20px; border-radius: 16px; border: none; overflow: hidden;">
                     <div class="card-header" style="background: linear-gradient(135deg, #4c1d95, #5b21b6); border: none; padding: 14px 18px;">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="mb-0 text-white">👥 Участники <span class="badge bg-white text-dark ms-2" id="membersCount">{{ project_members|length + 1 }}</span></h6>
+                            {# Кнопка "Управление" видна только админам #}
                             {% if userRole == 'admin' %}
                                 <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#membersModal" onclick="openMembersModal()" style="border-radius: 10px;">Управление</button>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="card-body p-2" id="membersPanelBody" style="max-height: calc(100vh - 200px); overflow-y: auto; background: #f6f1f5;">
+                    <div class="card-body p-2" id="membersPanelBody" style="max-height: calc(100vh - 200px); overflow-y: auto; background: #fafafa;">
                         <!-- Контент генерируется через JavaScript -->
                     </div>
                 </div>
@@ -1104,9 +1105,11 @@
 
         // ===== ПАНЕЛЬ УЧАСТНИКОВ =====
         function refreshMembersPanel() {
+            console.log('refreshMembersPanel called');
             fetch(`/dashboard/project/${projectId}/members-panel`)
                 .then(res => res.json())
                 .then(data => {
+                    console.log('Members data:', data);
                     if (data.success) {
                         updateMembersPanel(data.members, data.total);
                     }
@@ -1115,16 +1118,28 @@
         }
 
         function updateMembersPanel(members, total) {
+            console.log('updateMembersPanel called with members:', members, 'total:', total); 
+
             const panelBody = document.getElementById('membersPanelBody');
             const currentUserRole = '{{ userRole }}';
-            if (!panelBody) return;
+
+            if (!panelBody) {
+                return;
+                console.error('Panel body not found!'); 
+            }
             
             const badge = document.querySelector('.card-header .badge');
             if (badge) {
-                badge.textContent = total;
+                badge.textContent = total || 0;
             }
             
             panelBody.innerHTML = '';
+
+            // Проверяем, есть ли участники
+            if (!members || members.length === 0) {
+                panelBody.innerHTML = '<div class="text-center text-muted small p-3">Нет участников</div>';
+                return;
+            }
             
             members.forEach(member => {
                 const isOwner = member.isOwner;
@@ -1935,17 +1950,20 @@
         }
 
         // ===== ПОИСК В МОДАЛКЕ =====
-        document.getElementById('userSearchInput').addEventListener('input', function(e) {
-            const searchText = e.target.value.toLowerCase();
-            document.querySelectorAll('.user-search-item').forEach(function(item) {
-                const email = item.getAttribute('data-email');
-                if (email && email.includes(searchText)) {
-                    item.classList.remove('d-none');
-                } else {
-                    item.classList.add('d-none');
-                }
+        const userSearchInput = document.getElementById('userSearchInput');
+        if (userSearchInput) {
+            userSearchInput.addEventListener('input', function(e) {
+                const searchText = e.target.value.toLowerCase();
+                document.querySelectorAll('.user-search-item').forEach(function(item) {
+                    const email = item.getAttribute('data-email');
+                    if (email && email.includes(searchText)) {
+                        item.classList.remove('d-none');
+                    } else {
+                        item.classList.add('d-none');
+                    }
+                });
             });
-        });
+        }
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         document.addEventListener("DOMContentLoaded", function() {
@@ -1971,7 +1989,7 @@
                 el.innerHTML = processedText;
             });
 
-            // === НАХОДИМ ФОРМЫ КОММЕНТАРИЕВ ===
+            // Находим формы комментариев
             const commentForms = document.querySelectorAll('form[action*="api_comment_create"]');
             console.log('Found comment forms:', commentForms.length);
             
@@ -1979,6 +1997,22 @@
                 form.removeEventListener('submit', handleCommentSubmit);
                 form.addEventListener('submit', handleCommentSubmit);
             });
+            
+            // Поиск в модалке (только для админов) 
+            const userSearchInput = document.getElementById('userSearchInput');
+            if (userSearchInput) {
+                userSearchInput.addEventListener('input', function(e) {
+                    const searchText = e.target.value.toLowerCase();
+                    document.querySelectorAll('.user-search-item').forEach(function(item) {
+                        const email = item.getAttribute('data-email');
+                        if (email && email.includes(searchText)) {
+                            item.classList.remove('d-none');
+                        } else {
+                            item.classList.add('d-none');
+                        }
+                    });
+                });
+            }
         });
 
         function handleCommentSubmit(e) {

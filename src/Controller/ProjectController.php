@@ -868,9 +868,13 @@ class ProjectController extends AbstractController
             return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
         }
         
-        // Получаем всех участников
-         $allMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
-    
+        // Убираем проверку прав на просмотр участников
+        // Любой, кто имеет доступ к проекту, может видеть участников
+        
+        // Получаем всех участников, исключая владельца
+        $allMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
+        error_log('Members found: ' . count($allMembers));
+        
         $members = array_filter($allMembers, function($member) use ($project) {
             return $member->getUser()->getId() !== $project->getOwner()->getId();
         });
