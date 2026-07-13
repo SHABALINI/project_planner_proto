@@ -5,7 +5,7 @@
 
 {% block stylesheets %}
 <style>
-    /* ===== ОСНОВНЫЕ ЦВЕТА ===== */
+    /*  ОСНОВНЫЕ ЦВЕТА  */
     :root {
         --primary-purple: #7c3aed;
         --primary-purple-dark: #6d28d9;
@@ -23,7 +23,7 @@
         padding: 24px 20px;
     }
 
-    /* ===== ШАПКА ===== */
+    /*  ШАПКА  */
     .notifications-header {
         display: flex;
         justify-content: space-between;
@@ -88,7 +88,7 @@
         transform: none;
     }
 
-    /* ===== ФИЛЬТРЫ ===== */
+    /*  ФИЛЬТРЫ  */
     .notifications-filters {
         display: flex;
         gap: 12px;
@@ -215,7 +215,7 @@
         }
     }
 
-    /* ===== СПИСОК УВЕДОМЛЕНИЙ ===== */
+    /*  СПИСОК УВЕДОМЛЕНИЙ  */
     .notifications-list {
         display: flex;
         flex-direction: column;
@@ -389,7 +389,7 @@
         transform: scale(1.02);
     }
 
-    /* ===== ПУСТОЕ СОСТОЯНИЕ ===== */
+    /*  ПУСТОЕ СОСТОЯНИЕ  */
     .empty-notifications {
         text-align: center;
         padding: 60px 20px;
@@ -418,7 +418,7 @@
         margin: 0 auto;
     }
 
-    /* ===== АДАПТИВНОСТЬ ===== */
+    /*  АДАПТИВНОСТЬ  */
     @media (max-width: 768px) {
         .notifications-container {
             padding: 16px 12px;
@@ -629,7 +629,7 @@
 {% endmacro %}
 
 <script>
-    // ===== ФИЛЬТРАЦИЯ ЧЕРЕЗ ВЫПАДАЮЩИЙ СПИСОК =====
+    //  ФИЛЬТРАЦИЯ ЧЕРЕЗ ВЫПАДАЮЩИЙ СПИСОК 
     function filterNotificationsBySelect(value) {
         // Обновляем активные кнопки
         document.querySelectorAll('.quick-filters .filter-btn').forEach(b => {
@@ -639,7 +639,7 @@
         filterNotifications(value, null);
     }
 
-    // ===== ФИЛЬТРАЦИЯ =====
+    //  ФИЛЬТРАЦИЯ 
     function filterNotifications(filter, btn) {
         // Обновляем активную кнопку (если есть)
         if (btn) {
@@ -695,7 +695,7 @@
         }
     }
 
-    // ===== ОТМЕТКА ОДНОГО УВЕДОМЛЕНИЯ КАК ПРОЧИТАННОГО =====
+    //  ОТМЕТКА ОДНОГО УВЕДОМЛЕНИЯ КАК ПРОЧИТАННОГО 
     function markAsRead(id) {
         fetch(`/dashboard/notifications/read/${id}`, { method: 'POST' })
             .then(res => res.json())
@@ -716,7 +716,7 @@
             .catch(err => console.error('Error:', err));
     }
 
-    // ===== ОТМЕТКА ВСЕХ КАК ПРОЧИТАННЫХ =====
+    //  ОТМЕТКА ВСЕХ КАК ПРОЧИТАННЫХ 
     function markAllAsRead() {
         const btn = document.getElementById('markAllReadBtn');
         const originalText = btn.textContent;
@@ -756,7 +756,7 @@
             });
     }
 
-    // ===== ПЕРЕХОД ПО УВЕДОМЛЕНИЮ =====
+    //  ПЕРЕХОД ПО УВЕДОМЛЕНИЮ 
     function goToNotification(id, url) {
         // Сначала отмечаем как прочитанное
         fetch(`/dashboard/notifications/read/${id}`, { method: 'POST' })
@@ -768,7 +768,7 @@
             });
     }
 
-    // ===== ОБНОВЛЕНИЕ СЧЕТЧИКОВ =====
+    //  ОБНОВЛЕНИЕ СЧЕТЧИКОВ 
     function updateCounters() {
         const unreadItems = document.querySelectorAll('.notification-item[data-read="false"]');
         const unreadCount = unreadItems.length;
@@ -813,7 +813,7 @@
         }
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    //  ИНИЦИАЛИЗАЦИЯ 
     document.addEventListener('DOMContentLoaded', function() {
         // Обновляем счетчики при загрузке
         updateCounters();

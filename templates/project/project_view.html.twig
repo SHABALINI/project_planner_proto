@@ -5,7 +5,7 @@
 
 {% block stylesheets %}
     <style>
-        /* ===== ОСНОВНЫЕ ЦВЕТА ===== */
+        /*   ОСНОВНЫЕ ЦВЕТА   */
         :root {
             --primary-purple: #7c3aed;
             --primary-purple-dark: #6d28d9;
@@ -23,7 +23,253 @@
             background: var(--bg-light);
         }
 
-        /* ===== ОБЛАСТИ (СПРИНТЫ) ===== */
+        /*   ВЕРХНЯЯ ЧАСТЬ ПРОЕКТА   */
+        .project-header {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid #f0f0f0;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            color: var(--text-gray);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            text-decoration: none;
+            background: #f8f7fc;
+            border: 1px solid #f0f0f0;
+        }
+
+        .btn-back:hover {
+            background: var(--primary-purple-bg);
+            color: var(--primary-purple);
+            border-color: var(--primary-purple-border);
+            transform: translateX(-2px);
+        }
+
+        .project-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .project-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0;
+            letter-spacing: -0.3px;
+            word-break: break-word;
+        }
+
+        .role-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .role-badge.role-admin {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .role-badge.role-manager {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .role-badge.role-executor {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .role-badge.role-viewer {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .project-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-gray);
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .project-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .meta-item {
+            font-size: 13px;
+            color: var(--text-gray);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .meta-icon {
+            font-size: 14px;
+        }
+
+        /*   ПРОГРЕСС   */
+        .project-progress-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px 24px;
+            border: 1px solid #f0f0f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .progress-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .progress-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-purple);
+        }
+
+        .progress-track {
+            height: 8px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--primary-purple), var(--primary-purple-light));
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .progress-steps .step {
+            font-size: 11px;
+            color: #d1d5db;
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .progress-steps .step.active {
+            color: var(--primary-purple);
+        }
+
+        /*   АДАПТИВНОСТЬ   */
+        @media (max-width: 768px) {
+            .project-header {
+                padding: 16px 18px;
+            }
+            
+            .project-title {
+                font-size: 20px;
+            }
+            
+            .project-meta {
+                gap: 12px;
+            }
+            
+            .meta-item {
+                font-size: 12px;
+            }
+            
+            .project-status {
+                font-size: 12px;
+            }
+            
+            .role-badge {
+                font-size: 10px;
+                padding: 2px 10px;
+            }
+            
+            .project-progress-card {
+                padding: 14px 18px;
+            }
+            
+            .progress-steps .step {
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .project-header .d-flex {
+                flex-wrap: wrap;
+            }
+            
+            .project-title {
+                font-size: 18px;
+            }
+            
+            .project-meta {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .progress-steps .step {
+                font-size: 9px;
+            }
+            
+            .progress-steps .step:nth-child(2),
+            .progress-steps .step:nth-child(3) {
+                display: none;
+            }
+        }
+
+        /*   ОБЛАСТИ (СПРИНТЫ)   */
         .area-card {
             background: white;
             border-radius: 20px;
@@ -146,7 +392,7 @@
             padding: 20px 24px 24px;
         }
 
-        /* ===== ЗАДАЧИ ===== */
+        /*   ЗАДАЧИ   */
         .task-item {
             background: var(--bg-light);
             border-radius: 14px;
@@ -262,7 +508,7 @@
             color: #dc2626;
         }
 
-        /* ===== ПОДЗАДАЧИ ===== */
+        /*   ПОДЗАДАЧИ   */
         .subtask-list {
             padding: 0 18px 14px 52px;
             border-top: 1px solid #f0f0f0;
@@ -321,7 +567,7 @@
             color: var(--text-gray);
         }
 
-        /* ===== КНОПКИ ДЕЙСТВИЙ ===== */
+        /*   КНОПКИ ДЕЙСТВИЙ   */
         .btn-purple {
             background: var(--primary-purple);
             color: white;
@@ -354,7 +600,7 @@
             color: white;
         }
 
-        /* ===== КОММЕНТАРИИ ===== */
+        /*   КОММЕНТАРИИ   */
         .comments-container {
             max-height: 300px;
             overflow-y: auto;
@@ -427,7 +673,7 @@
             padding: 20px 0;
         }
 
-        /* ===== АДАПТИВНОСТЬ ===== */
+        /*   АДАПТИВНОСТЬ   */
         @media (max-width: 768px) {
             .area-header {
                 flex-wrap: wrap;
@@ -460,7 +706,7 @@
             }
         }
 
-        /* ===== СКРОЛЛБАР ===== */
+        /*   СКРОЛЛБАР   */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -509,13 +755,50 @@
         <div class="row">
             {# Основной контент - 75% ширины #}
             <div class="col-md-9">
-                {# Заголовок проекта #}
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <a href="{{ path('app_dashboard') }}" class="btn btn-sm btn-outline-secondary mb-2">← К списку проектов</a>
-                        <h1 class="m-0 text-primary">Проект: {{ project.title }} 
-                            <span class="badge bg-info text-dark fs-6 font-monospace">Роль: {{ userRole|upper }}</span>
-                        </h1>
+
+                {#   ВЕРХНЯЯ ЧАСТЬ СТРАНИЦЫ   #}
+                <div class="project-header mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        {# Кнопка назад с иконкой #}
+                        <a href="{{ path('app_dashboard') }}" class="btn-back" title="К списку проектов">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                        </a>
+                        
+                        {# Информация о проекте #}
+                        <div class="project-info">
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <h1 class="project-title">
+                                    📁 {{ project.title }}
+                                </h1>
+                                <span class="role-badge role-{{ userRole }}">
+                                    {{ userRole|upper }}
+                                </span>
+                                <span class="project-status">
+                                    <span class="status-dot"></span>
+                                    Активен
+                                </span>
+                            </div>
+                            <div class="project-meta">
+                                <span class="meta-item">
+                                    <span class="meta-icon">⛳</span>
+                                    {{ project.areas|length }} областей
+                                </span>
+                                <span class="meta-item">
+                                    <span class="meta-icon">📋</span>
+                                    {% set totalTasks = 0 %}
+                                    {% for area in project.areas %}
+                                        {% set totalTasks = totalTasks + area.tasks|length %}
+                                    {% endfor %}
+                                    {{ totalTasks }} задач
+                                </span>
+                                <span class="meta-item">
+                                    <span class="meta-icon">👥</span>
+                                    {{ project_members|length + 1 }} участников
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -529,15 +812,24 @@
                     {% endfor %}
                 {% endfor %}
                 {% set projectPercent = totalProjectPoints > 0 ? (earnedProjectPoints / totalProjectPoints * 100)|round : 0 %}
-
-                <div class="card mb-4 shadow-sm" style="border-radius: 16px; border: none;">
-                    <div class="card-body">
-                        <small class="fw-bold text-secondary">Общая готовность проекта: {{ projectPercent }}%</small>
-                        <div class="progress" style="height: 12px; border-radius: 10px;">
-                            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ projectPercent }}%; border-radius: 10px;"></div>
-                        </div>
+                {#   ПРОГРЕСС-БАР ПРОЕКТА   #}
+                <div class="project-progress-card mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="progress-label">Общий прогресс</span>
+                        <span class="progress-value">{{ projectPercent }}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width: {{ projectPercent }}%"></div>
+                    </div>
+                    <div class="progress-steps">
+                        <span class="step {% if projectPercent >= 0 %}active{% endif %}">Начато</span>
+                        <span class="step {% if projectPercent >= 33 %}active{% endif %}">В работе</span>
+                        <span class="step {% if projectPercent >= 66 %}active{% endif %}">Почти готово</span>
+                        <span class="step {% if projectPercent >= 100 %}active{% endif %}">Завершено ✅</span>
                     </div>
                 </div>
+
+                
 
                 {# Добавление области #}
                 {% if userRole == 'admin' %}
@@ -571,7 +863,7 @@
                             <div class="area-header" onclick="toggleArea({{ area.id }})">
                                 <div class="area-header-left">
                                     <div class="area-icon">
-                                        {% if areaPercent == 100 %}✅{% else %}📋{% endif %}
+                                        {% if areaPercent == 100 %}✅{% else %}⛳{% endif %}
                                     </div>
                                     <div>
                                         <div class="area-title">{{ area.title }}</div>
@@ -636,7 +928,7 @@
                                                     {% endif %}
                                                     
                                                     {% if totalSubs > 0 %}
-                                                        <span class="text-muted" style="font-size: 11px;">⛳ Подзадач {{ taskPercent }}%</span>
+                                                        <span class="text-muted" style="font-size: 11px;">Сделано Подзадач {{ taskPercent }}%</span>
                                                     {% endif %}
                                                 </div>
 
@@ -816,7 +1108,7 @@
         const userRole = '{{ userRole }}';
         let currentSelectedUserId = null;
 
-        // ===== УПРАВЛЕНИЕ МОДАЛКОЙ =====
+        //   УПРАВЛЕНИЕ МОДАЛКОЙ  
         function openMembersModal() {
             document.getElementById('memberSettingsZone').classList.add('d-none');
             const searchInput = document.getElementById('userSearchInput');
@@ -1049,7 +1341,7 @@
             areaCb.checked = allChecked;
         }
 
-        // ===== СОХРАНЕНИЕ УЧАСТНИКА =====
+        //   СОХРАНЕНИЕ УЧАСТНИКА  
         function saveMemberData() {
             const role = document.getElementById('memberRoleSelect').value;
             const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
@@ -1125,7 +1417,7 @@
             });
         }
 
-        // ===== УДАЛЕНИЕ УЧАСТНИКА =====
+        //   УДАЛЕНИЕ УЧАСТНИКА  
         function removeMember(userId) {
             if (!confirm('Удалить участника?')) return;
             
@@ -1167,7 +1459,7 @@
             });
         }
 
-        // ===== ПАНЕЛЬ УЧАСТНИКОВ =====
+        //   ПАНЕЛЬ УЧАСТНИКОВ  
         function refreshMembersPanel() {
             console.log('refreshMembersPanel called');
             fetch(`/dashboard/project/${projectId}/members-panel`)
@@ -1270,7 +1562,7 @@
             }
         }
 
-        // ===== TOAST УВЕДОМЛЕНИЯ =====
+        //   TOAST УВЕДОМЛЕНИЯ  
         function showToast(message, type = 'success') {
             let container = document.getElementById('toastContainer');
             if (!container) {
@@ -1311,7 +1603,7 @@
             }, 3000);
         }
 
-        // ===== АНИМАЦИИ ИНТЕРФЕЙСА =====
+        //   АНИМАЦИИ ИНТЕРФЕЙСА  
         function toggleArea(areaId) {
             const body = document.getElementById(`area-body-${areaId}`);
             const toggle = document.getElementById(`area-toggle-${areaId}`);
@@ -1345,7 +1637,7 @@
             }
         }
 
-        // ===== Для обновления UI ======
+        //   Для обновления UI  =
         // Обновление списка задач в области
         function refreshTasksList(areaId) {
             fetch(`/dashboard/area/${areaId}/tasks`)
@@ -1474,7 +1766,7 @@
             saveAreaState();
         }
 
-        // ===== CRUD ОПЕРАЦИИ =====
+        //   CRUD ОПЕРАЦИИ  
         function createArea(projectId) {
             const titleInput = document.getElementById(`areaTitle-${projectId}`);
             const descInput = document.getElementById(`areaDesc-${projectId}`);
@@ -2013,7 +2305,7 @@
             });
         }
 
-        // ===== ПОИСК В МОДАЛКЕ =====
+        //   ПОИСК В МОДАЛКЕ  
         const userSearchInput = document.getElementById('userSearchInput');
         if (userSearchInput) {
             userSearchInput.addEventListener('input', function(e) {
@@ -2029,7 +2321,7 @@
             });
         }
 
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        //   ИНИЦИАЛИЗАЦИЯ  
         document.addEventListener("DOMContentLoaded", function() {
             // Открываем первую область по умолчанию
             const firstAreaBody = document.querySelector('.area-body');
