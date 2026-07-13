@@ -355,35 +355,76 @@
         }
 
         /* ===== КОММЕНТАРИИ ===== */
+        .comments-container {
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+            scroll-behavior: smooth;
+        }
+
+        /* Стилизация скроллбара для комментариев */
+        .comments-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .comments-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .comments-container::-webkit-scrollbar-thumb {
+            background: var(--primary-purple-light);
+            border-radius: 10px;
+        }
+
+        .comments-container::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-purple);
+        }
+
         .comment-item {
             background: white;
             border-radius: 12px;
             padding: 12px 16px;
-            margin-bottom: 10px;
             border: 1px solid #f0f0f0;
             transition: all 0.2s ease;
+            flex-shrink: 0;
+            animation: commentFadeIn 0.3s ease;
+        }
+
+        @keyframes commentFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .comment-item:hover {
             border-color: var(--primary-purple-border);
         }
 
-        .comment-author {
-            font-weight: 600;
-            color: var(--primary-purple);
-            font-size: 13px;
+        .comment-item:last-child {
+            margin-bottom: 0;
         }
 
-        .comment-time {
+        /* Индикатор новых комментариев */
+        .comment-item.new-comment {
+            border-left: 3px solid var(--primary-purple);
+            background: var(--primary-purple-bg);
+        }
+
+        /* Пустое состояние */
+        .comments-empty {
+            text-align: center;
             color: var(--text-gray);
-            font-size: 11px;
-        }
-
-        .comment-text {
-            margin-top: 4px;
-            color: var(--text-dark);
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 13px;
+            padding: 20px 0;
         }
 
         /* ===== АДАПТИВНОСТЬ ===== */
@@ -644,7 +685,7 @@
 
                                                 {# Комментарии #}
                                                 <div class="mt-3 pt-3" style="border-top: 1px solid #f0f0f0;">
-                                                    <div class="comments-container">
+                                                    <div class="comments-container" id="comments-container-{{ task.id }}">
                                                         {% for comment in task.comments|default([]) %}
                                                             <div class="comment-item" id="comment-{{ comment.id }}">
                                                                 <div class="d-flex justify-content-between align-items-center">
@@ -662,11 +703,11 @@
                                                                 {% endif %}
                                                             </div>
                                                         {% else %}
-                                                            <div class="text-muted small p-2">Нет комментариев</div>
+                                                            <div class="comments-empty">Нет комментариев</div>
                                                         {% endfor %}
                                                     </div>
 
-                                                    <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true">
+                                                    <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true" data-task-id="{{ task.id }}">
                                                         <input type="hidden" name="task_id" value="{{ task.id }}">
                                                         <div class="d-flex gap-2">
                                                             <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">
@@ -1212,6 +1253,13 @@
             if (body) {
                 if (body.style.display === 'none' || body.style.display === '') {
                     body.style.display = 'block';
+                    // Прокручиваем к комментариям после открытия
+                    setTimeout(() => {
+                        const commentsContainer = document.getElementById(`comments-container-${taskId}`);
+                        if (commentsContainer && commentsContainer.children.length > 0) {
+                            commentsContainer.scrollTop = commentsContainer.scrollHeight;
+                        }
+                    }, 100);
                 } else {
                     body.style.display = 'none';
                 }
@@ -1449,8 +1497,10 @@
                                     </div>
                                     <div id="subtasksList-${data.id}"></div>
                                     <div class="mt-3 pt-3" style="border-top: 1px solid #f0f0f0;">
-                                        <div class="comments-container"></div>
-                                        <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2">
+                                        <div class="comments-container" id="comments-container-${data.id}">
+                                            <div class="comments-empty">Нет комментариев</div>
+                                        </div>
+                                        <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true" data-task-id="${data.id}">
                                             <input type="hidden" name="task_id" value="${data.id}">
                                             <div class="d-flex gap-2">
                                                 <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">
@@ -1856,6 +1906,14 @@
                         commentItem.style.opacity = '0';
                         setTimeout(() => {
                             commentItem.remove();
+                            // Проверяем, остались ли комментарии в контейнере
+                            const container = commentItem.closest('.comments-container');
+                            if (container && container.children.length === 0) {
+                                const emptyMsg = document.createElement('div');
+                                emptyMsg.className = 'comments-empty';
+                                emptyMsg.textContent = 'Нет комментариев';
+                                container.appendChild(emptyMsg);
+                            }
                         }, 300);
                     }
                 } else {
@@ -1912,18 +1970,13 @@
                 let processedText = rawText.replace(urlPattern, '<a href="$1" target="_blank" class="text-primary text-decoration-underline">$1</a>');
                 el.innerHTML = processedText;
             });
-        });
 
-        // ===== ОТПРАВКА КОММЕНТАРИЯ БЕЗ ПЕРЕЗАГРУЗКИ =====
-        document.addEventListener('DOMContentLoaded', function() {
-            // Находим все формы для комментариев
+            // === НАХОДИМ ФОРМЫ КОММЕНТАРИЕВ ===
             const commentForms = document.querySelectorAll('form[action*="api_comment_create"]');
-            console.log('Found comment forms:', commentForms.length); // Для отладки
+            console.log('Found comment forms:', commentForms.length);
             
             commentForms.forEach(form => {
-                // Удаляем старые обработчики, если есть
                 form.removeEventListener('submit', handleCommentSubmit);
-                // Добавляем новый
                 form.addEventListener('submit', handleCommentSubmit);
             });
         });
@@ -2020,12 +2073,23 @@
                         <p class="comment-text">${safeText}</p>
                         ${fileHtml}
                     `;
-                    commentsContainer.prepend(newComment);
+                    commentsContainer.appendChild(newComment);
+            
+                    // Прокручиваем к последнему комментарию
+                    commentsContainer.scrollTop = commentsContainer.scrollHeight;
+                    
+                    // Убираем подсветку нового комментария через 3 секунды
+                    setTimeout(() => {
+                        newComment.classList.remove('new-comment');
+                    }, 3000);
                     
                     // Очищаем форму
                     form.querySelector('input[name="text"]').value = '';
                     const fileInput = form.querySelector('input[type="file"]');
                     if (fileInput) fileInput.value = '';
+                    
+                    // Фокусируем поле ввода для следующего комментария
+                    form.querySelector('input[name="text"]').focus();
                 } else {
                     showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
                 }
