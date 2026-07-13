@@ -4,7 +4,7 @@ symfony server:start -d
 
 symfony server:stop
 
-lt --port 8000
+npx localtunnel --port 8000
 
 php bin/console make:migration
 

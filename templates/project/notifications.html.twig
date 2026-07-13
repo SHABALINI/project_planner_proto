@@ -5,192 +5,833 @@
 
 {% block stylesheets %}
 <style>
-    /* Стиль почтового ящика (Gmail-like) */
-    .mail-item {
-        border-bottom: 1px solid #e0e0e0;
-        transition: background-color 0.15s ease;
-        cursor: pointer;
+    /* ===== ОСНОВНЫЕ ЦВЕТА ===== */
+    :root {
+        --primary-purple: #7c3aed;
+        --primary-purple-dark: #6d28d9;
+        --primary-purple-light: #8b5cf6;
+        --primary-purple-bg: #f5f3ff;
+        --primary-purple-border: #ede9fe;
+        --text-dark: #1e1b4b;
+        --text-gray: #6b7280;
+        --bg-light: #fafafa;
     }
-    .mail-item:hover {
-        background-color: #f8f9fa !important;
+
+    .notifications-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px 20px;
     }
-    .mail-unread {
-        background-color: #edf4fc !important; /* Непрочитанные подсвечены синевой */
+
+    /* ===== ШАПКА ===== */
+    .notifications-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .notifications-header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .notifications-header-left h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+    }
+
+    .notifications-header-left .unread-badge {
+        background: var(--primary-purple-bg);
+        color: var(--primary-purple);
+        padding: 2px 14px;
+        border-radius: 20px;
+        font-size: 14px;
         font-weight: 600;
     }
-    .mail-project-badge {
-        min-width: 120px;
-        max-width: 180px;
+
+    .notifications-header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
     }
-    .breadcrumb-item + .breadcrumb-item::before {
-        content: "➔" !important;
-        color: #6c757d;
+
+    .btn-mark-all-read {
+        background: var(--primary-purple);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-mark-all-read:hover {
+        background: var(--primary-purple-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    .btn-mark-all-read:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* ===== ФИЛЬТРЫ ===== */
+    .notifications-filters {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 12px 16px;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #f0f0f0;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-select-wrapper {
+        position: relative;
+        min-width: 240px;
+    }
+
+    .filter-select-wrapper::after {
+        content: '▼';
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 12px;
+        pointer-events: none;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 10px 36px 10px 14px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-dark);
+        background: white;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        transition: all 0.2s ease;
+    }
+
+    .filter-select:hover {
+        border-color: var(--primary-purple-light);
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary-purple);
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    .filter-select option {
+        padding: 8px;
+    }
+
+    .filter-select option:disabled {
+        color: var(--text-gray);
+        font-style: italic;
+    }
+
+    /* Быстрые фильтры для популярных проектов */
+    .quick-filters {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .quick-filters .filter-btn {
+        padding: 8px 14px;
+        border: 1px solid #e5e7eb;
+        background: white;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-gray);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .quick-filters .filter-btn:hover {
+        background: var(--primary-purple-bg);
+        border-color: var(--primary-purple-light);
+        color: var(--primary-purple);
+    }
+
+    .quick-filters .filter-btn.active {
+        background: var(--primary-purple);
+        border-color: var(--primary-purple);
+        color: white;
+    }
+
+    .quick-filters .filter-btn .count-unread {
+        background: #ef4444;
+        color: white;
+        padding: 0 6px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 600;
+        min-width: 18px;
+        text-align: center;
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .notifications-filters {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            padding: 12px;
+        }
+
+        .filter-select-wrapper {
+            min-width: 100%;
+        }
+
+        .quick-filters {
+            justify-content: flex-start;
+        }
+    }
+
+    /* ===== СПИСОК УВЕДОМЛЕНИЙ ===== */
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .notification-item {
+        background: white;
+        border-radius: 12px;
+        padding: 14px 20px;
+        border: 1px solid #f0f0f0;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .notification-item:hover {
+        border-color: var(--primary-purple-border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .notification-item.unread {
+        background: var(--primary-purple-bg);
+        border-color: var(--primary-purple-border);
+    }
+
+    .notification-item.unread::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--primary-purple);
+        border-radius: 0 4px 4px 0;
+    }
+
+    /* Иконка уведомления */
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .notification-icon.project {
+        background: var(--primary-purple-bg);
+        color: var(--primary-purple);
+    }
+
+    .notification-icon.task {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .notification-icon.comment {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .notification-icon.member {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .notification-icon.system {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    /* Контент уведомления */
+    .notification-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notification-title {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+
+    .notification-title .project-name {
+        color: var(--primary-purple);
+    }
+
+    .notification-message {
+        color: var(--text-gray);
+        font-size: 13px;
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    .notification-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--text-gray);
+        flex-wrap: wrap;
+    }
+
+    .notification-meta .time {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .notification-meta .project-tag {
+        background: var(--primary-purple-bg);
+        color: var(--primary-purple);
+        padding: 1px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    /* Действия */
+    .notification-actions {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+        align-items: center;
+        margin-top: 2px;
+    }
+
+    .notification-actions .btn-action {
+        padding: 4px 10px;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: transparent;
+        color: var(--text-gray);
+    }
+
+    .notification-actions .btn-action:hover {
+        background: var(--primary-purple-bg);
+        color: var(--primary-purple);
+    }
+
+    .notification-actions .btn-action.mark-read {
+        color: var(--primary-purple);
+    }
+
+    .notification-actions .btn-action.mark-read:hover {
+        background: var(--primary-purple-bg);
+    }
+
+    .notification-actions .btn-action.go-to {
+        background: var(--primary-purple);
+        color: white;
+        padding: 4px 14px;
+        border-radius: 6px;
+    }
+
+    .notification-actions .btn-action.go-to:hover {
+        background: var(--primary-purple-dark);
+        transform: scale(1.02);
+    }
+
+    /* ===== ПУСТОЕ СОСТОЯНИЕ ===== */
+    .empty-notifications {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+        border: 2px dashed #e5e7eb;
+    }
+
+    .empty-notifications .empty-icon {
+        font-size: 56px;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    .empty-notifications h3 {
+        color: var(--text-dark);
+        font-weight: 600;
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+
+    .empty-notifications p {
+        color: var(--text-gray);
+        font-size: 14px;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    /* ===== АДАПТИВНОСТЬ ===== */
+    @media (max-width: 768px) {
+        .notifications-container {
+            padding: 16px 12px;
+        }
+
+        .notifications-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .notifications-header-actions {
+            justify-content: stretch;
+        }
+
+        .btn-mark-all-read {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .notifications-filters {
+            gap: 2px;
+            padding: 4px;
+        }
+
+        .notifications-filters .filter-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .notification-item {
+            padding: 12px 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+        }
+
+        .notification-actions {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+
+        .notification-meta {
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .notifications-filters .filter-btn {
+            font-size: 11px;
+            padding: 4px 10px;
+        }
+
+        .notification-item {
+            padding: 10px 12px;
+        }
+
+        .notification-title {
+            font-size: 13px;
+        }
+
+        .notification-message {
+            font-size: 12px;
+        }
+    }
+
+    /* Анимация при появлении */
+    @keyframes slideInNotification {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .notification-item {
+        animation: slideInNotification 0.25s ease;
     }
 </style>
 {% endblock %}
 
 {% block body %}
-<div class="container mt-5" style="max-width: 1200px;">
-    
-    <nav aria-label="breadcrumb" class="mb-4 bg-white p-3 rounded border shadow-sm">
-        <ol class="breadcrumb m-0 fw-bold">
-            <li class="breadcrumb-item"><a href="{{ path('app_dashboard') }}" class="text-decoration-none">🏠 Главная</a></li>
-            <li class="breadcrumb-item active text-secondary" id="bc-root">🔔 Центр уведомлений</li>
-            <li class="breadcrumb-item d-none text-primary" id="bc-project">Проект: ...</li>
-        </ol>
-    </nav>
+<div class="notifications-container">
+    {# Шапка #}
+    <div class="notifications-header">
+        <div class="notifications-header-left">
+            <h1>🔔 Уведомления</h1>
+            <span class="unread-badge" id="unreadCount">
+                {% if totalUnreadCount > 0 %}
+                    {{ totalUnreadCount }} непрочитанных
+                {% else %}
+                    Все прочитано ✨
+                {% endif %}
+            </span>
+        </div>
+        <div class="notifications-header-actions">
+            <button class="btn-mark-all-read" id="markAllReadBtn" onclick="markAllAsRead()" {% if totalUnreadCount == 0 %}disabled{% endif %}>
+                ✅ Отметить все прочитанными
+            </button>
+        </div>
+    </div>
 
-    <div class="row">
-        <div class="col-md-2 mb-4">
-            <div class="list-group shadow-sm" id="notificationTabs" role="tablist">
-                <button class="list-group-item list-group-item-action active d-flex justify-content-between align-items-center py-2 fw-bold" 
-                        id="tab-all-trigger" data-bs-toggle="list" href="#tab-all" role="tab" onclick="updateBreadcrumbs('all')">
-                    <span>🌍 Все уведомления</span>
-                    {% if totalUnreadCount > 0 %}
-                        <span class="badge bg-danger rounded-pill unread-global-counter">{{ totalUnreadCount }}</span>
-                    {% endif %}
-                </button>
-
-                {% set totalProjectsCount = groupedProjects|length %}
+    {# Фильтры - выпадающий список #}
+    <div class="notifications-filters">
+        <div class="filter-select-wrapper">
+            <select class="filter-select" id="filterSelect" onchange="filterNotificationsBySelect(this.value)">
+                <option value="all">📬 Все уведомления ({{ allNotifications|length }})</option>
+                <option value="unread">🔵 Непрочитанные {% if totalUnreadCount > 0 %}({{ totalUnreadCount }}){% endif %}</option>
+                <option value="read">✅ Прочитанные</option>
+                {% if groupedProjects|length > 0 %}
+                    <option disabled>──────────</option>
+                    <option disabled>📁 По проектам:</option>
+                    {% for pId, data in groupedProjects %}
+                        <option value="project-{{ pId }}">
+                            {{ data.project.title }} 
+                            {% if data.unreadCount > 0 %}🔴 {{ data.unreadCount }}{% endif %}
+                        </option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        
+        {# Быстрые фильтры для часто используемых проектов (макс 3) #}
+        {% if groupedProjects|length <= 3 %}
+            <div class="quick-filters">
                 {% for pId, data in groupedProjects %}
-                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2" 
-                            id="tab-project-{{ pId }}-trigger" data-bs-toggle="list" href="#tab-project-{{ pId }}" role="tab" onclick="updateBreadcrumbs('project', '{{ data.project.title }}')">
-                        <span class="text-truncate" style="max-width: 140px;">📁 {{ data.project.title }}</span>
+                    <button class="filter-btn quick-filter" data-filter="project-{{ pId }}" onclick="filterNotifications('project-{{ pId }}', this)">
+                        {{ data.project.title|length > 12 ? data.project.title|slice(0, 12) ~ '…' : data.project.title }}
                         {% if data.unreadCount > 0 %}
-                            <span class="badge bg-danger rounded-pill project-unread-badge-{{ pId }}">{{ data.unreadCount }}</span>
+                            <span class="count-unread">{{ data.unreadCount }}</span>
                         {% endif %}
                     </button>
                 {% endfor %}
             </div>
-        </div>
+        {% endif %}
+    </div>
 
-        <div class="col-md-10">
-            <div class="tab-content bg-white rounded border shadow-sm p-0">
-                
-                <div class="tab-pane fade show active" id="tab-all" role="tabpanel">
-                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
-                        <h6 class="m-0 fw-bold text-secondary">Общий список входящих</h6>
-                        {% if totalUnreadCount > 0 %}
-                            <button class="btn btn-xs btn-outline-primary btn-sm fw-bold" onclick="markGroupAsRead(0)">Прочитать все</button>
-                        {% endif %}
-                    </div>
-                    <div class="mail-list-container">
-                        {% for n in allNotifications %}
-                            {{ _self.renderMailRow(n, 'all') }}
-                        {% else %}
-                            <div class="p-5 text-center text-muted">У вас пока нет уведомлений.</div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {% for pId, data in groupedProjects %}
-                    <div class="tab-pane fade" id="tab-project-{{ pId }}" role="tabpanel">
-                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
-                            <h6 class="m-0 fw-bold text-primary">Проект: {{ data.project.title }}</h6>
-                            {% if data.unreadCount > 0 %}
-                                <button class="btn btn-xs btn-outline-primary btn-sm fw-bold project-read-all-btn-{{ pId }}" onclick="markGroupAsRead({{ pId }})">Прочитать все по проекту</button>
-                            {% endif %}
-                        </div>
-                        <div class="mail-list-container">
-                            {% for n in data.items %}
-                                {{ _self.renderMailRow(n, 'proj-' ~ pId) }}
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endfor %}
-
+    {# Список уведомлений #}
+    <div class="notifications-list" id="notificationsList">
+        {% if allNotifications|length > 0 %}
+            {% for n in allNotifications %}
+                {{ _self.renderNotification(n) }}
+            {% endfor %}
+        {% else %}
+            <div class="empty-notifications">
+                <span class="empty-icon">🎉</span>
+                <h3>У вас нет уведомлений</h3>
+                <p>Когда появятся новые уведомления, они будут отображаться здесь</p>
             </div>
-        </div>
+        {% endif %}
     </div>
 </div>
 
-{# Макрос для рендеринга строки "письма" (чтобы не дублировать верстку) #}
-{% macro renderMailRow(n, prefix) %}
-    <div class="mail-item d-flex align-items-center p-3 {% if not n.isRead %}mail-unread{% endif %}" id="node-{{ prefix }}-{{ n.id }}">
+{# Макрос для рендеринга уведомления #}
+{% macro renderNotification(n) %}
+    {% set iconMap = {
+        'project': '📁',
+        'task': '📋',
+        'comment': '💬',
+        'member': '👤',
+        'system': '⚙️'
+    } %}
+    {% set iconType = n.type|default('system') %}
+    {% set icon = iconMap[iconType]|default('📌') %}
 
-        <div class="mail-project-badge text-truncate pe-2 text-primary fw-bold small" style="width: 110px; min-width: 110px;">
-            📍 {{ n.title }}
+    <div class="notification-item {% if not n.isRead %}unread{% endif %}" 
+         id="notification-{{ n.id }}" 
+         data-id="{{ n.id }}" 
+         data-read="{{ n.isRead ? 'true' : 'false' }}"
+         data-project="{{ n.project.id }}">
+        
+        <div class="notification-icon {{ iconType }}">
+            {{ icon }}
         </div>
 
-        <div class="flex-grow-1 text-dark small me-2" style="word-break: break-word; line-height: 1.4;">
-            {{ n.message }}
+        <div class="notification-content">
+            <div class="notification-title">
+                <span class="project-name">{{ n.title }}</span>
+            </div>
+            <div class="notification-message">{{ n.message }}</div>
+            <div class="notification-meta">
+                <span class="time">🕐 {{ n.createdAt|date('d.m.Y H:i') }}</span>
+                <span class="project-tag">📁 {{ n.project.title }}</span>
+                {% if not n.isRead %}
+                    <span class="badge" style="background: var(--primary-purple); color: white; font-size: 10px; padding: 1px 8px; border-radius: 12px;">Новое</span>
+                {% endif %}
+            </div>
         </div>
 
-        <div class="text-muted small me-3 font-monospace align-self-center" style="font-size: 11px; white-space: nowrap;">
-            {{ n.createdAt|date('H:i d.m.Y') }}
-        </div>
-
-        <div class="d-flex gap-1 align-self-center">
+        <div class="notification-actions">
             {% if not n.isRead %}
-                <button class="btn btn-sm btn-success py-0 px-2 btn-mark-read-{{ n.id }}" style="font-size: 11px; height: 22px;" onclick="actionMarkRead({{ n.id }})">Прочитано</button>
+                <button class="btn-action mark-read" onclick="markAsRead({{ n.id }})">✔ Прочитано</button>
             {% endif %}
             {% if n.targetUrl %}
-                <a href="{{ n.targetUrl }}" class="btn btn-sm btn-primary py-0 px-2 text-white text-decoration-none" style="font-size: 11px; height: 22px; line-height: 22px;" onclick="actionGoTo({{ n.id }}, '{{ n.targetUrl }}', event)">Перейти</a>
+                <button class="btn-action go-to" onclick="goToNotification({{ n.id }}, '{{ n.targetUrl }}')">Перейти →</button>
             {% endif %}
         </div>
     </div>
 {% endmacro %}
 
 <script>
-    // Динамическое обновление Хлебных Крошек при кликах по табам без перезагрузки
-    function updateBreadcrumbs(type, projectTitle = '') {
-        const bcRoot = document.getElementById('bc-root');
-        const bcProject = document.getElementById('bc-project');
+    // ===== ФИЛЬТРАЦИЯ ЧЕРЕЗ ВЫПАДАЮЩИЙ СПИСОК =====
+    function filterNotificationsBySelect(value) {
+        // Обновляем активные кнопки
+        document.querySelectorAll('.quick-filters .filter-btn').forEach(b => {
+            b.classList.remove('active');
+        });
         
-        if (type === 'all') {
-            bcRoot.classList.remove('text-primary');
-            bcRoot.classList.add('text-secondary');
-            bcProject.classList.add('d-none');
+        filterNotifications(value, null);
+    }
+
+    // ===== ФИЛЬТРАЦИЯ =====
+    function filterNotifications(filter, btn) {
+        // Обновляем активную кнопку (если есть)
+        if (btn) {
+            document.querySelectorAll('.quick-filters .filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // Обновляем выпадающий список
+            const select = document.getElementById('filterSelect');
+            if (select) select.value = filter;
+        }
+
+        const items = document.querySelectorAll('.notification-item');
+        let visibleCount = 0;
+
+        items.forEach(item => {
+            let show = false;
+            
+            if (filter === 'all') {
+                show = true;
+            } else if (filter === 'unread') {
+                show = item.dataset.read === 'false';
+            } else if (filter === 'read') {
+                show = item.dataset.read === 'true';
+            } else if (filter.startsWith('project-')) {
+                const projectId = filter.replace('project-', '');
+                show = item.dataset.project == projectId;
+            }
+            
+            if (show) {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // Показываем сообщение если ничего не найдено
+        const list = document.getElementById('notificationsList');
+        let emptyMsg = list.querySelector('.empty-notifications');
+        
+        if (visibleCount === 0) {
+            if (!emptyMsg) {
+                const msg = document.createElement('div');
+                msg.className = 'empty-notifications';
+                msg.innerHTML = `
+                    <span class="empty-icon">🔍</span>
+                    <h3>Нет уведомлений</h3>
+                    <p>По выбранному фильтру ничего не найдено</p>
+                `;
+                list.appendChild(msg);
+            }
         } else {
-            bcRoot.classList.remove('text-secondary');
-            bcRoot.classList.add('text-primary');
-            bcProject.innerText = `Проект: ${projectTitle}`;
-            bcProject.classList.remove('d-none');
+            if (emptyMsg) emptyMsg.remove();
         }
     }
 
-    // Логика нажатия на кнопку "Прочитано" (AJAX)
-    function actionMarkRead(id) {
+    // ===== ОТМЕТКА ОДНОГО УВЕДОМЛЕНИЯ КАК ПРОЧИТАННОГО =====
+    function markAsRead(id) {
         fetch(`/dashboard/notifications/read/${id}`, { method: 'POST' })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    // Находим все строчки этого письма (в общем списке и в списке проекта) и убираем жирность/синеву
-                    document.querySelectorAll(`[id$="-${id}"]`).forEach(row => {
-                        row.classList.remove('mail-unread');
-                        const btn = row.querySelector(`.btn-mark-read-${id}`);
-                        if (btn) btn.remove();
-                    });
-                    
-                    // Уменьшаем счетчики уведомлений в шапке/меню динамически
-                    decrementCounters();
+                    const item = document.getElementById(`notification-${id}`);
+                    if (item) {
+                        item.classList.remove('unread');
+                        item.dataset.read = 'true';
+                        const badge = item.querySelector('.badge');
+                        if (badge) badge.remove();
+                        const markBtn = item.querySelector('.mark-read');
+                        if (markBtn) markBtn.remove();
+                    }
+                    updateCounters();
                 }
+            })
+            .catch(err => console.error('Error:', err));
+    }
+
+    // ===== ОТМЕТКА ВСЕХ КАК ПРОЧИТАННЫХ =====
+    function markAllAsRead() {
+        const btn = document.getElementById('markAllReadBtn');
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Обновление...';
+        btn.disabled = true;
+
+        fetch(`/dashboard/notifications/read-all/0`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelectorAll('.notification-item.unread').forEach(item => {
+                        item.classList.remove('unread');
+                        item.dataset.read = 'true';
+                        const badge = item.querySelector('.badge');
+                        if (badge) badge.remove();
+                        const markBtn = item.querySelector('.mark-read');
+                        if (markBtn) markBtn.remove();
+                    });
+                    updateCounters();
+                    
+                    btn.textContent = '✅ Все прочитаны';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.disabled = false;
+                    }, 2000);
+                } else {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    showToast('Ошибка при отметке', 'error');
+                }
+            })
+            .catch(err => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                console.error('Error:', err);
+                showToast('Ошибка при отметке', 'error');
             });
     }
 
-    // Логика нажатия на "Перейти"
-    function actionGoTo(id, url, event) {
-        event.preventDefault();
+    // ===== ПЕРЕХОД ПО УВЕДОМЛЕНИЮ =====
+    function goToNotification(id, url) {
+        // Сначала отмечаем как прочитанное
         fetch(`/dashboard/notifications/read/${id}`, { method: 'POST' })
             .then(() => {
-                // Перенаправляем пользователя на конкретный элемент проекта
+                window.location.href = url;
+            })
+            .catch(() => {
                 window.location.href = url;
             });
     }
 
-    // Прочитать группу (все или конкретный проект)
-    function markGroupAsRead(projectId) {
-        fetch(`/dashboard/notifications/read-all/${projectId}`, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) location.reload(); // Перезагружаем для чистого обновления всех таблиц
-            });
+    // ===== ОБНОВЛЕНИЕ СЧЕТЧИКОВ =====
+    function updateCounters() {
+        const unreadItems = document.querySelectorAll('.notification-item[data-read="false"]');
+        const unreadCount = unreadItems.length;
+
+        // Обновляем бейдж в шапке
+        const unreadBadge = document.getElementById('unreadCount');
+        if (unreadBadge) {
+            if (unreadCount > 0) {
+                unreadBadge.textContent = `${unreadCount} непрочитанных`;
+            } else {
+                unreadBadge.textContent = 'Все прочитано ✨';
+            }
+        }
+
+        // Обновляем кнопку "Отметить все"
+        const markAllBtn = document.getElementById('markAllReadBtn');
+        if (markAllBtn) {
+            markAllBtn.disabled = unreadCount === 0;
+        }
+
+        // Обновляем фильтры
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            const filter = btn.dataset.filter;
+            if (filter === 'unread') {
+                const countSpan = btn.querySelector('.count-unread');
+                if (countSpan) {
+                    if (unreadCount > 0) {
+                        countSpan.textContent = unreadCount;
+                        countSpan.style.display = '';
+                    } else {
+                        countSpan.style.display = 'none';
+                    }
+                } else if (unreadCount > 0) {
+                    btn.innerHTML += ` <span class="count-unread">${unreadCount}</span>`;
+                }
+            }
+        });
+
+        // Обновляем счетчик в сайдбаре (глобальная функция из base.html.twig)
+        if (typeof refreshNotificationCounter === 'function') {
+            refreshNotificationCounter();
+        }
     }
 
-    function decrementCounters() {
-        // Здесь можно написать микро-логику уменьшения цифр в реальном времени, 
-        // но для полной точности счетчиков сайдбара и табов, если писем прочитано много, 
-        // лучше в конце вызвать обновление или позволить шаблону подхватить это при следующем переходе.
-    }
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обновляем счетчики при загрузке
+        updateCounters();
+
+        // Автообновление каждые 30 секунд
+        setInterval(() => {
+            // Проверяем новые уведомления
+            fetch('/dashboard/notifications/unread-count-api', { method: 'GET' })
+                .then(res => res.json())
+                .then(data => {
+                    // Если есть изменения, обновляем счетчики
+                    const currentUnread = document.querySelectorAll('.notification-item[data-read="false"]').length;
+                    if (currentUnread !== data.count) {
+                        // Можно добавить логику для загрузки новых уведомлений
+                    }
+                })
+                .catch(() => {});
+        }, 30000);
+    });
 </script>
 {% endblock %}

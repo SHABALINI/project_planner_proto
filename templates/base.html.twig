@@ -3,24 +3,32 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Канбан-Планировщик{% endblock %}</title>
+        <title>{% block title %}Планировщик проектов{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         
         <style>
             :root {
-                --sidebar-width: 260px;
+                --sidebar-width: 280px;
+                --primary-purple: #7c3aed;
+                --primary-purple-dark: #6d28d9;
+                --primary-purple-light: #8b5cf6;
+                --primary-purple-bg: #f5f3ff;
+                --sidebar-bg: #0f0a1a;
+                --sidebar-hover: #1a1128;
+                --sidebar-active: rgba(124, 58, 237, 0.2);
+                --text-muted-sidebar: #8b7aa8;
             }
 
-            /* Базовые стили для тела страницы с открытым сайдбаром */
+            /* ===== САЙДБАР ===== */
             body.with-sidebar {
                 padding-left: var(--sidebar-width);
-                transition: padding-left 0.3s ease;
+                transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 position: relative;
+                background: #f8f7fc;
             }
 
-            /* Сайдбар */
             .custom-sidebar {
                 position: fixed;
                 top: 0;
@@ -28,103 +36,402 @@
                 bottom: 0;
                 width: var(--sidebar-width);
                 z-index: 1040;
-                transition: transform 0.3s ease;
-                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                background: var(--sidebar-bg);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
             }
 
-            /* Кнопка вызова меню (появляется только когда сайдбар закрыт) */
+            /* Брендинг */
+            .sidebar-brand {
+                padding: 24px 20px 20px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                flex-shrink: 0;
+            }
+
+            .sidebar-brand .brand-content {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .sidebar-brand .brand-logo {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                text-decoration: none;
+            }
+
+            .sidebar-brand .brand-icon {
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light));
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                flex-shrink: 0;
+            }
+
+            .sidebar-brand .brand-name {
+                color: white;
+                font-size: 18px;
+                font-weight: 700;
+                letter-spacing: -0.3px;
+            }
+
+            .sidebar-brand .brand-name span {
+                color: var(--primary-purple-light);
+            }
+
+            .sidebar-brand .collapse-btn {
+                background: rgba(255, 255, 255, 0.08);
+                border: none;
+                color: var(--text-muted-sidebar);
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-size: 14px;
+            }
+
+            .sidebar-brand .collapse-btn:hover {
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+            }
+
+            /* Навигация */
+            .sidebar-nav {
+                flex: 1;
+                overflow-y: auto;
+                padding: 16px 12px 8px;
+            }
+
+            .sidebar-nav::-webkit-scrollbar {
+                width: 3px;
+            }
+
+            .sidebar-nav::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .sidebar-nav::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+            }
+
+            .sidebar-nav::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            .sidebar-nav .nav-section {
+                margin-bottom: 20px;
+            }
+
+            .sidebar-nav .nav-section-title {
+                color: var(--text-muted-sidebar);
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                padding: 0 12px 8px;
+                opacity: 0.5;
+            }
+
+            .sidebar-nav .nav-link {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                padding: 10px 14px;
+                border-radius: 12px;
+                color: rgba(255, 255, 255, 0.6);
+                text-decoration: none;
+                transition: all 0.2s ease;
+                font-size: 14px;
+                font-weight: 500;
+                position: relative;
+            }
+
+            .sidebar-nav .nav-link .nav-icon {
+                font-size: 18px;
+                width: 24px;
+                text-align: center;
+                flex-shrink: 0;
+            }
+
+            .sidebar-nav .nav-link .nav-text {
+                flex: 1;
+            }
+
+            .sidebar-nav .nav-link .nav-badge {
+                background: #ef4444;
+                color: white;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 1px 8px;
+                border-radius: 20px;
+                min-width: 20px;
+                text-align: center;
+                line-height: 18px;
+            }
+
+            .sidebar-nav .nav-link:hover {
+                background: var(--sidebar-hover);
+                color: white;
+            }
+
+            .sidebar-nav .nav-link.active {
+                background: var(--sidebar-active);
+                color: white;
+                box-shadow: inset 3px 0 0 var(--primary-purple);
+            }
+
+            .sidebar-nav .nav-link.active .nav-icon {
+                color: var(--primary-purple-light);
+            }
+
+            /* Профиль внизу */
+            .sidebar-footer {
+                padding: 16px 20px 20px;
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+                flex-shrink: 0;
+            }
+
+            .sidebar-footer .user-info {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 8px 12px;
+                border-radius: 12px;
+                transition: all 0.2s ease;
+                cursor: default;
+            }
+
+            .sidebar-footer .user-info:hover {
+                background: var(--sidebar-hover);
+            }
+
+            .sidebar-footer .user-avatar {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 600;
+                font-size: 14px;
+                flex-shrink: 0;
+            }
+
+            .sidebar-footer .user-details {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .sidebar-footer .user-email {
+                color: white;
+                font-size: 13px;
+                font-weight: 500;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .sidebar-footer .user-status {
+                color: var(--text-muted-sidebar);
+                font-size: 11px;
+            }
+
+            .sidebar-footer .user-status .dot {
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #22c55e;
+                margin-right: 6px;
+                animation: pulseDot 2s infinite;
+            }
+
+            @keyframes pulseDot {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.4; }
+            }
+
+            .sidebar-footer .logout-btn {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 14px;
+                border-radius: 10px;
+                color: rgba(255, 255, 255, 0.4);
+                text-decoration: none;
+                font-size: 13px;
+                transition: all 0.2s ease;
+                margin-top: 4px;
+            }
+
+            .sidebar-footer .logout-btn:hover {
+                background: rgba(239, 68, 68, 0.15);
+                color: #ef4444;
+            }
+
+            /* Кнопка бургер-меню (когда сайдбар скрыт) */
             .burger-menu-btn {
                 position: fixed;
-                top: 15px;
-                left: 15px;
+                top: 16px;
+                left: 16px;
                 z-index: 1030;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                display: none; /* Скрыта по умолчанию, так как сайдбар открыт */
+                background: var(--sidebar-bg);
+                color: white;
+                border: none;
+                padding: 10px 16px;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 14px;
+                display: none;
+                align-items: center;
+                gap: 10px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                cursor: pointer;
+                transition: all 0.2s ease;
             }
 
-            /* Состояние: Сайдбар СВЕРНУТ */
+            .burger-menu-btn:hover {
+                transform: scale(1.02);
+                background: var(--sidebar-hover);
+            }
+
+            .burger-menu-btn .badge-notification {
+                background: #ef4444;
+                color: white;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 1px 8px;
+                border-radius: 20px;
+                min-width: 20px;
+                text-align: center;
+                line-height: 18px;
+            }
+
+            /* Состояния сайдбара */
             body.sidebar-collapsed {
                 padding-left: 0 !important;
             }
+
             body.sidebar-collapsed .custom-sidebar {
                 transform: translateX(-100%);
             }
+
             body.sidebar-collapsed .burger-menu-btn {
-                display: block; /* Показываем кнопку, когда меню скрылось */
+                display: flex !important;
             }
 
-            /* Адаптивность для мобильных устройств (автоматически скрываем на экранах < 768px) */
+            /* Мобильная адаптивность */
             @media (max-width: 767.98px) {
                 body.with-sidebar {
                     padding-left: 0 !important;
                 }
+
                 .custom-sidebar {
                     transform: translateX(-100%);
                 }
+
                 .burger-menu-btn {
-                    display: block;
+                    display: flex !important;
                 }
+
                 body.sidebar-mobile-open .custom-sidebar {
+                    transform: translateX(0);
+                }
+
+                body.sidebar-mobile-open .burger-menu-btn {
+                    display: none !important;
+                }
+            }
+
+            /* Toast контейнер (глобальный) */
+            #toastContainer {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                max-width: 360px;
+                width: 100%;
+            }
+
+            .toast-custom {
+                background: white;
+                border-radius: 12px;
+                padding: 14px 18px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+                border-left: 4px solid var(--primary-purple);
+                animation: slideInRight 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .toast-custom.success { border-left-color: #22c55e; }
+            .toast-custom.error { border-left-color: #ef4444; }
+            .toast-custom.warning { border-left-color: #f59e0b; }
+            .toast-custom.info { border-left-color: #3b82f6; }
+
+            .toast-custom .toast-icon {
+                font-size: 20px;
+                flex-shrink: 0;
+            }
+
+            .toast-custom .toast-message {
+                flex: 1;
+                font-size: 14px;
+                color: var(--text-dark);
+            }
+
+            .toast-custom .toast-close {
+                background: none;
+                border: none;
+                color: #9ca3af;
+                cursor: pointer;
+                font-size: 18px;
+                padding: 0 4px;
+                transition: color 0.2s ease;
+            }
+
+            .toast-custom .toast-close:hover {
+                color: var(--text-dark);
+            }
+
+            @keyframes slideInRight {
+                from {
+                    opacity: 0;
+                    transform: translateX(40px);
+                }
+                to {
+                    opacity: 1;
                     transform: translateX(0);
                 }
             }
 
-            /* Анимация для закрепления */
-            .project-card {
-                transition: all 0.3s ease;
-            }
-
-            .pin-btn {
-                transition: all 0.3s ease;
-            }
-
-            .pin-btn.pinned {
-                color: #ffc107;
-                animation: pinPulse 0.5s ease;
-            }
-
-            @keyframes pinPulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.4); }
-                100% { transform: scale(1); }
-            }
-
-            /* Эффект при наведении на карточку */
-            .project-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
-            }
-
-            /* Анимация появления карточки при загрузке */
-            .project-card {
-                animation: fadeInUp 0.5s ease;
-            }
-
-            @keyframes fadeInUp {
+            @keyframes slideOutRight {
                 from {
-                    opacity: 0;
-                    transform: translateY(20px);
+                    opacity: 1;
+                    transform: translateX(0);
                 }
                 to {
-                    opacity: 1;
-                    transform: translateY(0);
+                    opacity: 0;
+                    transform: translateX(40px);
                 }
-            }
-
-            /* Эффект для закрепленных проектов */
-            .pinned-section .project-card {
-                border-left: 4px solid #ffc107;
-            }
-
-            /* Пульсация для новых проектов */
-            .project-card.new {
-                animation: newProjectPulse 2s ease;
-            }
-
-            @keyframes newProjectPulse {
-                0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
-                70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
             }
         </style>
 
@@ -141,43 +448,66 @@
     <body class="bg-light {% if app.user %}with-sidebar{% endif %}">
         
         {% if app.user %}
-            <button class="btn btn-dark burger-menu-btn rounded-pill px-3 fw-bold position-fixed" type="button" onclick="toggleSidebar()">
+            {# Бургер-меню для мобильных и свернутого сайдбара #}
+            <button class="burger-menu-btn" type="button" onclick="toggleSidebar()">
                 ☰ Меню
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="global-sidebar-badge">0</span>
+                <span class="badge-notification d-none" id="burger-badge">0</span>
             </button>
 
-            <div class="custom-sidebar bg-dark text-white d-flex flex-column justify-content-between p-3">
-                <div>
-                    <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-secondary">
-                        <h5 class="m-0 text-info text-truncate" style="max-width: 180px;">📋 Планировщик</h5>
-                        <button type="button" class="btn btn-sm btn-outline-light border-0" onclick="toggleSidebar()" title="Свернуть меню">
-                            ◀
-                        </button>
-                    </div>
-                    
-                    <div class="nav flex-column nav-pills">
-                        <a href="{{ path('app_dashboard') }}" class="nav-link text-white my-1 py-2 {% if app.request.attributes.get('_route') == 'app_dashboard' or app.request.attributes.get('_route') == 'app_project_view' %}active bg-primary fw-bold{% endif %}">
-                            📁 Проекты
+            {# Сайдбар #}
+            <div class="custom-sidebar">
+                {# Бренд #}
+                <div class="sidebar-brand">
+                    <div class="brand-content">
+                        <a href="{{ path('app_dashboard') }}" class="brand-logo">
+                            <div class="brand-icon">📋</div>
+                            <span class="brand-name">Plan<span>Flow</span></span>
                         </a>
-                        
-                        <a href="{{ path('app_notifications_center') }}" class="nav-link text-white my-1 py-2 d-flex justify-content-between align-items-center {% if app.request.attributes.get('_route') == 'app_notifications_center' %}active bg-primary fw-bold{% endif %}">
-                            <span>🔔 Уведомления</span>
-                            <span class="badge bg-danger rounded-pill d-none" id="inner-sidebar-badge">0</span>
-                        </a>
-                        
-                        <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Личные сообщения» находится в разработке'); return false;">
-                            💬 Личные сообщения
-                        </a>
-                        
-                        <a href="#" class="nav-link text-white my-1 py-2 opacity-75" onclick="alert('Раздел «Профиль» находится в разработке'); return false;">
-                            👤 Мой профиль
-                        </a>
+                        <button class="collapse-btn" onclick="toggleSidebar()" title="Свернуть меню">◀</button>
                     </div>
                 </div>
 
-                <div class="border-top border-secondary pt-3">
-                    <div class="small text-muted mb-2 text-truncate">Юзер: <strong class="text-light">{{ app.user.email }}</strong></div>
-                    <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger w-100">Выйти</a>
+                {# Навигация #}
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <div class="nav-section-title">Основное</div>
+                        <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' or app.request.attributes.get('_route') == 'app_project_view' %}active{% endif %}">
+                            <span class="nav-icon">📁</span>
+                            <span class="nav-text">Проекты</span>
+                        </a>
+                        <a href="{{ path('app_notifications_center') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_notifications_center' %}active{% endif %}">
+                            <span class="nav-icon">🔔</span>
+                            <span class="nav-text">Уведомления</span>
+                            <span class="nav-badge d-none" id="sidebar-badge">0</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-section">
+                        <div class="nav-section-title">Команда</div>
+                        <a href="#" class="nav-link opacity-75" onclick="showComingSoon('Приглашения')">
+                            <span class="nav-icon">📩</span>
+                            <span class="nav-text">Приглашения</span>
+                            <span class="nav-badge d-none" id="invite-badge">0</span>
+                        </a>
+                        <a href="#" class="nav-link opacity-75" onclick="showComingSoon('Профиль')">
+                            <span class="nav-icon">👤</span>
+                            <span class="nav-text">Мой профиль</span>
+                        </a>
+                    </div>
+                </nav>
+
+                {# Футер с пользователем #}
+                <div class="sidebar-footer">
+                    <div class="user-info">
+                        <div class="user-avatar">{{ app.user.email|first|upper }}</div>
+                        <div class="user-details">
+                            <div class="user-email">{{ app.user.email }}</div>
+                            <div class="user-status"><span class="dot"></span>В сети</div>
+                        </div>
+                    </div>
+                    <a href="{{ path('app_logout') }}" class="logout-btn">
+                         Выйти
+                    </a>
                 </div>
             </div>
 
@@ -192,31 +522,94 @@
                     }
                 }
 
-                document.addEventListener('DOMContentLoaded', () => {
-                    if (window.innerWidth >= 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
-                        document.body.classList.add('sidebar-collapsed');
-                    }
-                    // Запуск живого счетчика
-                    refreshSidebarNotificationCounter();
-                });
+                function showComingSoon(section) {
+                    showToast('Раздел «' + section + '» находится в разработке 🚀', 'info');
+                }
 
-                function refreshSidebarNotificationCounter() {
+                // Глобальная функция для тостов
+                function showToast(message, type = 'success') {
+                    let container = document.getElementById('toastContainer');
+                    if (!container) {
+                        container = document.createElement('div');
+                        container.id = 'toastContainer';
+                        document.body.appendChild(container);
+                    }
+                    
+                    const icons = {
+                        success: '✅',
+                        error: '❌',
+                        warning: '⚠️',
+                        info: 'ℹ️'
+                    };
+                    
+                    const toast = document.createElement('div');
+                    toast.className = `toast-custom ${type}`;
+                    toast.innerHTML = `
+                        <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+                        <span class="toast-message">${message}</span>
+                        <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+                    `;
+                    
+                    container.appendChild(toast);
+                    
+                    setTimeout(() => {
+                        if (toast.parentElement) {
+                            toast.style.animation = 'slideOutRight 0.3s ease forwards';
+                            setTimeout(() => toast.remove(), 300);
+                        }
+                    }, 4000);
+                }
+
+                // Обновление счетчика уведомлений
+                function refreshNotificationCounter() {
                     fetch('/dashboard/notifications/unread-count-api', { method: 'GET' })
                         .then(res => res.json())
                         .then(data => {
                             const count = data.count;
-                            const globalBadge = document.getElementById('global-sidebar-badge');
-                            const innerBadge = document.getElementById('inner-sidebar-badge');
                             
-                            if (count > 0) {
-                                if(globalBadge) { globalBadge.innerText = count; globalBadge.classList.remove('d-none'); }
-                                if(innerBadge) { innerBadge.innerText = count; innerBadge.classList.remove('d-none'); }
-                            } else {
-                                if(globalBadge) globalBadge.classList.add('d-none');
-                                if(innerBadge) innerBadge.classList.add('d-none');
+                            // Обновляем бейдж в сайдбаре
+                            const sidebarBadge = document.getElementById('sidebar-badge');
+                            if (sidebarBadge) {
+                                if (count > 0) {
+                                    sidebarBadge.textContent = count;
+                                    sidebarBadge.classList.remove('d-none');
+                                } else {
+                                    sidebarBadge.classList.add('d-none');
+                                }
                             }
-                        }).catch(() => {});
+                            
+                            // Обновляем бейдж на бургер-кнопке
+                            const burgerBadge = document.getElementById('burger-badge');
+                            if (burgerBadge) {
+                                if (count > 0) {
+                                    burgerBadge.textContent = count;
+                                    burgerBadge.classList.remove('d-none');
+                                } else {
+                                    burgerBadge.classList.add('d-none');
+                                }
+                            }
+                        })
+                        .catch(() => {});
                 }
+
+                // Инициализация
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (window.innerWidth >= 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
+                        document.body.classList.add('sidebar-collapsed');
+                    }
+                    
+                    refreshNotificationCounter();
+                    
+                    // Обновляем счетчик каждые 30 секунд
+                    setInterval(refreshNotificationCounter, 30000);
+                });
+
+                // Обновляем счетчик при переходе на страницу уведомлений
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        refreshNotificationCounter();
+                    }
+                });
             </script>
         {% endif %}
 
