@@ -1468,7 +1468,9 @@
                         
                         // Обновляем прогресс области
                         const areaCard = tasksContainer.closest('.area-card');
-                        if (areaCard) updateAreaProgress(areaCard);
+                        if (areaCard) {
+                            updateAreaProgress(areaCard);
+                        }
                         updateProjectProgress();
                     }
                     
@@ -1577,10 +1579,10 @@
         }
 
         function updateTaskParam(taskId, paramName, paramValue) {
-            // Показываем индикатор загрузки на выпадающем списке
             const select = event.target;
             const originalBg = select.style.backgroundColor;
             select.style.backgroundColor = '#fef3c7';
+            select.disabled = true;
             
             fetch('{{ path("app_task_update") }}', { 
                 method: 'POST', 
@@ -1594,17 +1596,39 @@
             .then(res => res.json())
             .then(data => {
                 select.style.backgroundColor = originalBg;
+                select.disabled = false;
                 
                 if (data.success) {
                     showToast('Параметр обновлен!', 'success');
-                    // Обновляем визуальное состояние задачи без перезагрузки
+                    
+                    // Обновляем визуальное состояние задачи
                     updateTaskVisual(taskId, paramName, paramValue);
+                    
+                    // Если изменился статус, обновляем прогресс
+                    if (paramName === 'status') {
+                        const taskItem = document.getElementById(`task-node-${taskId}`);
+                        if (taskItem) {
+                            const areaCard = taskItem.closest('.area-card');
+                            if (areaCard) {
+                                updateAreaProgress(areaCard);
+                            }
+                            updateProjectProgress();
+                        }
+                    }
                 } else {
                     showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                    // Возвращаем старое значение
+                    const taskItem = document.getElementById(`task-node-${taskId}`);
+                    if (taskItem && paramName === 'status') {
+                        const indicator = taskItem.querySelector('.task-status-indicator');
+                        const currentStatus = indicator ? indicator.className.replace('task-status-indicator ', '') : 'todo';
+                        select.value = currentStatus;
+                    }
                 }
             })
             .catch(err => {
                 select.style.backgroundColor = originalBg;
+                select.disabled = false;
                 console.error('Error:', err);
                 showToast('Ошибка при обновлении', 'error');
             });
@@ -1639,22 +1663,31 @@
                     
                     const taskItem = checkbox.closest('.task-item');
                     if (taskItem) {
+                        // Обновляем прогресс задачи
                         updateTaskProgress(taskItem);
-                        // Обновляем прогресс области и проекта
+                        
+                        // Обновляем прогресс области
                         const areaCard = taskItem.closest('.area-card');
                         if (areaCard) {
                             updateAreaProgress(areaCard);
-                            updateProjectProgress();
                         }
+                        
+                        // Обновляем общий прогресс проекта
+                        updateProjectProgress();
                     }
                     
                     showToast('Статус обновлен!', 'success');
+                } else {
+                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                    // Возвращаем чекбокс в исходное состояние
+                    checkbox.checked = !isChecked;
                 }
             })
             .catch(err => {
                 checkbox.disabled = false;
                 console.error('Error:', err);
                 showToast('Ошибка при обновлении', 'error');
+                checkbox.checked = !isChecked;
             });
         }
 
@@ -1731,7 +1764,9 @@
                                 taskItem.remove();
                                 // Обновляем прогресс области
                                 const areaCard = taskItem.closest('.area-card');
-                                if (areaCard) updateAreaProgress(areaCard);
+                                if (areaCard) {
+                                    updateAreaProgress(areaCard);
+                                }
                                 updateAllCounters();
                             }, 300);
                         }
@@ -2013,11 +2048,25 @@
                 const status = task.querySelector('.task-status-indicator');
                 if (status) {
                     total++;
-                    if (status.classList.contains('done')) done++;
+                    if (status.classList.contains('done')) {
+                        done++;
+                    } else if (status.classList.contains('progress')) {
+                        // Прогресс считается как половинчатый
+                        done += 0.5;
+                    }
                 }
             });
             
-            if (total === 0) return;
+            if (total === 0) {
+                // Если нет задач, показываем 0%
+                const progressBar = areaCard.querySelector('.area-progress-bar');
+                const progressText = areaCard.querySelector('.area-progress-text');
+                const areaIcon = areaCard.querySelector('.area-icon');
+                if (progressBar) progressBar.style.width = '0%';
+                if (progressText) progressText.textContent = '0%';
+                if (areaIcon) areaIcon.textContent = '📋';
+                return;
+            }
             
             const percent = Math.round((done / total) * 100);
             const progressBar = areaCard.querySelector('.area-progress-bar');
@@ -2050,18 +2099,33 @@
                 const status = task.querySelector('.task-status-indicator');
                 if (status) {
                     total++;
-                    if (status.classList.contains('done')) done++;
+                    if (status.classList.contains('done')) {
+                        done++;
+                    } else if (status.classList.contains('progress')) {
+                        done += 0.5;
+                    }
                 }
             });
             
-            if (total === 0) return;
+            if (total === 0) {
+                const progressBar = document.querySelector('.progress-bar');
+                const progressText = document.querySelector('.fw-bold.text-secondary');
+                if (progressBar) progressBar.style.width = '0%';
+                if (progressText) progressText.textContent = 'Общая готовность проекта: 0%';
+                return;
+            }
             
             const percent = Math.round((done / total) * 100);
             const progressBar = document.querySelector('.progress-bar');
             const progressText = document.querySelector('.fw-bold.text-secondary');
             
-            if (progressBar) progressBar.style.width = percent + '%';
-            if (progressText) progressText.textContent = `Общая готовность проекта: ${percent}%`;
+            if (progressBar) {
+                progressBar.style.width = percent + '%';
+                progressBar.setAttribute('aria-valuenow', percent);
+            }
+            if (progressText) {
+                progressText.textContent = `Общая готовность проекта: ${percent}%`;
+            }
         }
     </script>
 {% endblock %}
