@@ -1,0 +1,16 @@
+{# templates/components/project/_comment_item.html.twig #}
+<div class="comment-item" id="comment-{{ comment.id }}">
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="comment-author">👤 {{ comment.author.email|default(comment.author.userIdentifier) }}</span>
+        <div>
+            <span class="comment-time">{{ comment.createdAt|date('d.m.Y H:i') }}</span>
+            {% if comment.author == currentUser or userRole == 'admin' %}
+                <button class="btn btn-sm text-danger ms-2" style="border: none; background: none; font-size: 12px;" onclick="deleteComment({{ comment.id }})">✕</button>
+            {% endif %}
+        </div>
+    </div>
+    <p class="comment-text">{{ comment.text|e }}</p>
+    {% if comment.filePath %}
+        <a href="{{ comment.filePath }}" target="_blank" class="text-purple" style="font-size: 12px;">📎 {{ comment.fileName }}</a>
+    {% endif %}
+</div>

@@ -4,834 +4,588 @@
 {% block title %}{{ project.title }} — Планировщик{% endblock %}
 
 {% block stylesheets %}
-    <style>
-        /*   ОСНОВНЫЕ ЦВЕТА   */
-        :root {
-            --primary-purple: #7c3aed;
-            --primary-purple-dark: #6d28d9;
-            --primary-purple-light: #8b5cf6;
-            --primary-purple-bg: #f5f3ff;
-            --primary-purple-border: #ede9fe;
-            --text-dark: #1e1b4b;
-            --text-gray: #6b7280;
-            --bg-light: #fafafa;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
+<style>
+    /*  УНИКАЛЬНЫЕ СТИЛИ ДЛЯ СТРАНИЦЫ ПРОЕКТА  */
+    
+    /* Верхняя часть */
+    .project-header {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        border: 1px solid #f0f0f0;
+    }
 
-        body {
-            background: var(--bg-light);
-        }
+    .btn-back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        color: var(--text-gray);
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        text-decoration: none;
+        background: #f8f7fc;
+        border: 1px solid #f0f0f0;
+    }
+    .btn-back:hover {
+        background: var(--primary-purple-bg);
+        color: var(--primary-purple);
+        border-color: var(--primary-purple-border);
+        transform: translateX(-2px);
+    }
 
-        /*   ВЕРХНЯЯ ЧАСТЬ ПРОЕКТА   */
-        .project-header {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-            border: 1px solid #f0f0f0;
-        }
+    .project-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+        letter-spacing: -0.3px;
+        word-break: break-word;
+    }
 
-        .btn-back {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            color: var(--text-gray);
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-            text-decoration: none;
-            background: #f8f7fc;
-            border: 1px solid #f0f0f0;
-        }
+    .role-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 14px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    .role-badge.role-admin { background: #fef2f2; color: #dc2626; }
+    .role-badge.role-manager { background: #eff6ff; color: #2563eb; }
+    .role-badge.role-executor { background: #d1fae5; color: #059669; }
+    .role-badge.role-viewer { background: #f3f4f6; color: #6b7280; }
 
-        .btn-back:hover {
-            background: var(--primary-purple-bg);
-            color: var(--primary-purple);
-            border-color: var(--primary-purple-border);
-            transform: translateX(-2px);
-        }
+    .project-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--text-gray);
+        white-space: nowrap;
+    }
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
 
-        .project-info {
-            flex: 1;
-            min-width: 0;
-        }
+    .project-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+    }
+    .meta-item {
+        font-size: 13px;
+        color: var(--text-gray);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .meta-icon { font-size: 14px; }
 
-        .project-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin: 0;
-            letter-spacing: -0.3px;
-            word-break: break-word;
-        }
+    /* Прогресс */
+    .project-progress-card {
+        background: white;
+        border-radius: 16px;
+        padding: 18px 24px;
+        border: 1px solid #f0f0f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .progress-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+    .progress-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--primary-purple);
+    }
+    .progress-track {
+        height: 8px;
+        background: #f3f4f6;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 10px;
+        background: linear-gradient(90deg, var(--primary-purple), var(--primary-purple-light));
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+    }
+    .progress-steps .step {
+        font-size: 11px;
+        color: #d1d5db;
+        transition: color 0.3s ease;
+        font-weight: 500;
+    }
+    .progress-steps .step.active {
+        color: var(--primary-purple);
+    }
 
-        .role-badge {
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 14px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
+    /* Области */
+    .area-card {
+        background: white;
+        border-radius: 20px;
+        border: 1px solid var(--primary-purple-border);
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 20px;
+        overflow: hidden;
+        position: relative;
+    }
+    .area-card:hover {
+        box-shadow: var(--card-shadow-hover);
+        border-color: var(--primary-purple-light);
+    }
 
-        .role-badge.role-admin {
-            background: #fef2f2;
-            color: #dc2626;
-        }
+    .area-header {
+        background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+        padding: 16px 24px;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.3s ease;
+    }
+    .area-header:hover {
+        background: linear-gradient(135deg, var(--primary-purple-dark), #5b21b6);
+    }
 
-        .role-badge.role-manager {
-            background: #eff6ff;
-            color: #2563eb;
-        }
+    .area-header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+        min-width: 0;
+    }
+    .area-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    .area-title {
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: -0.3px;
+    }
+    .area-description {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+        margin-top: 2px;
+    }
 
-        .role-badge.role-executor {
-            background: #d1fae5;
-            color: #059669;
-        }
+    .area-stats {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+    }
+    .area-progress {
+        width: 120px;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+    .area-progress-bar {
+        height: 100%;
+        background: white;
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+    .area-progress-text {
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        min-width: 40px;
+        text-align: right;
+    }
+    .area-toggle {
+        color: white;
+        font-size: 18px;
+        transition: transform 0.3s ease;
+        width: 30px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .area-toggle.collapsed {
+        transform: rotate(-90deg);
+    }
 
-        .role-badge.role-viewer {
-            background: #f3f4f6;
-            color: #6b7280;
-        }
+    .area-body {
+        padding: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .area-body.open {
+        max-height: 5000px;
+        padding: 20px 24px 24px;
+    }
 
-        .project-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: var(--text-gray);
-            white-space: nowrap;
-        }
+    /* Задачи */
+    .task-item {
+        background: var(--bg-light);
+        border-radius: 14px;
+        border: 1px solid #f0f0f0;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .task-item:hover {
+        border-color: var(--primary-purple-light);
+        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
+    }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #22c55e;
-            animation: pulse-dot 2s infinite;
-        }
+    .task-main {
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        cursor: pointer;
+    }
 
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
+    .task-status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .task-status-indicator.todo { background: #ef4444; }
+    .task-status-indicator.progress { background: #f59e0b; }
+    .task-status-indicator.done { background: #10b981; }
 
-        .project-meta {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 6px;
-        }
+    .task-title {
+        flex: 1;
+        font-weight: 500;
+        color: var(--text-dark);
+        font-size: 15px;
+        min-width: 0;
+    }
+    .task-title.done {
+        text-decoration: line-through;
+        color: var(--text-gray);
+    }
 
-        .meta-item {
-            font-size: 13px;
-            color: var(--text-gray);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
+    .task-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--text-gray);
+    }
+    .task-priority {
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .task-priority.high { background: #fef2f2; color: #dc2626; }
+    .task-priority.medium { background: #fffbeb; color: #d97706; }
+    .task-priority.low { background: #eff6ff; color: #2563eb; }
 
-        .meta-icon {
-            font-size: 14px;
-        }
+    .task-deadline {
+        color: var(--text-gray);
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    .task-deadline.overdue { color: #dc2626; font-weight: 600; }
+    .task-deadline.today { color: #d97706; font-weight: 600; }
 
-        /*   ПРОГРЕСС   */
-        .project-progress-card {
-            background: white;
-            border-radius: 16px;
-            padding: 18px 24px;
-            border: 1px solid #f0f0f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        }
+    .task-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .task-actions .btn-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: var(--text-gray);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .task-actions .btn-icon:hover {
+        background: var(--primary-purple-bg);
+        color: var(--primary-purple);
+    }
+    .task-actions .btn-icon.danger:hover {
+        background: #fef2f2;
+        color: #dc2626;
+    }
 
-        .progress-label {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-dark);
-        }
+    /* Подзадачи */
+    .subtask-list {
+        padding: 0 18px 14px 52px;
+        border-top: 1px solid #f0f0f0;
+    }
+    .subtask-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        transition: all 0.2s ease;
+    }
+    .subtask-item:hover {
+        padding-left: 4px;
+    }
 
-        .progress-value {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--primary-purple);
-        }
+    .subtask-checkbox {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        border: 2px solid #d1d5db;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        appearance: none;
+        -webkit-appearance: none;
+        position: relative;
+        flex-shrink: 0;
+    }
+    .subtask-checkbox:checked {
+        background: var(--primary-purple);
+        border-color: var(--primary-purple);
+    }
+    .subtask-checkbox:checked::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+    }
 
-        .progress-track {
-            height: 8px;
-            background: #f3f4f6;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-        }
+    .subtask-label {
+        font-size: 14px;
+        color: var(--text-dark);
+        flex: 1;
+        cursor: pointer;
+    }
+    .subtask-label.done {
+        text-decoration: line-through;
+        color: var(--text-gray);
+    }
 
-        .progress-fill {
-            height: 100%;
-            border-radius: 10px;
-            background: linear-gradient(90deg, var(--primary-purple), var(--primary-purple-light));
-            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-        }
+    /* Комментарии */
+    .comments-container {
+        max-height: 300px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-right: 4px;
+        scroll-behavior: smooth;
+    }
+    .comments-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    .comments-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .comments-container::-webkit-scrollbar-thumb {
+        background: var(--primary-purple-light);
+        border-radius: 10px;
+    }
+    .comments-container::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-purple);
+    }
 
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 2s infinite;
-        }
+    .comment-item {
+        background: white;
+        border-radius: 12px;
+        padding: 12px 16px;
+        border: 1px solid #f0f0f0;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        animation: commentFadeIn 0.3s ease;
+    }
+    @keyframes commentFadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .comment-item:hover {
+        border-color: var(--primary-purple-border);
+    }
+    .comment-item:last-child { margin-bottom: 0; }
 
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
+    .comment-item.new-comment {
+        border-left: 3px solid var(--primary-purple);
+        background: var(--primary-purple-bg);
+    }
 
-        .progress-steps {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 8px;
-        }
+    .comments-empty {
+        text-align: center;
+        color: var(--text-gray);
+        font-size: 13px;
+        padding: 20px 0;
+    }
 
-        .progress-steps .step {
-            font-size: 11px;
-            color: #d1d5db;
-            transition: color 0.3s ease;
-            font-weight: 500;
-        }
+    .comment-author {
+        font-weight: 600;
+        color: var(--primary-purple);
+        font-size: 13px;
+    }
+    .comment-time {
+        color: var(--text-gray);
+        font-size: 11px;
+    }
+    .comment-text {
+        margin-top: 4px;
+        color: var(--text-dark);
+        font-size: 14px;
+        line-height: 1.5;
+    }
 
-        .progress-steps .step.active {
-            color: var(--primary-purple);
-        }
-
-        /*   АДАПТИВНОСТЬ   */
-        @media (max-width: 768px) {
-            .project-header {
-                padding: 16px 18px;
-            }
-            
-            .project-title {
-                font-size: 20px;
-            }
-            
-            .project-meta {
-                gap: 12px;
-            }
-            
-            .meta-item {
-                font-size: 12px;
-            }
-            
-            .project-status {
-                font-size: 12px;
-            }
-            
-            .role-badge {
-                font-size: 10px;
-                padding: 2px 10px;
-            }
-            
-            .project-progress-card {
-                padding: 14px 18px;
-            }
-            
-            .progress-steps .step {
-                font-size: 10px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .project-header .d-flex {
-                flex-wrap: wrap;
-            }
-            
-            .project-title {
-                font-size: 18px;
-            }
-            
-            .project-meta {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            
-            .progress-steps .step {
-                font-size: 9px;
-            }
-            
-            .progress-steps .step:nth-child(2),
-            .progress-steps .step:nth-child(3) {
-                display: none;
-            }
-        }
-
-        /*   ОБЛАСТИ (СПРИНТЫ)   */
-        .area-card {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid var(--primary-purple-border);
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin-bottom: 20px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .area-card:hover {
-            box-shadow: var(--card-shadow-hover);
-            border-color: var(--primary-purple-light);
-        }
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .project-header { padding: 16px 18px; }
+        .project-title { font-size: 20px; }
+        .project-meta { gap: 12px; }
+        .meta-item { font-size: 12px; }
+        .project-status { font-size: 12px; }
+        .role-badge { font-size: 10px; padding: 2px 10px; }
+        
+        .project-progress-card { padding: 14px 18px; }
+        .progress-steps .step { font-size: 10px; }
 
         .area-header {
-            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
-            padding: 16px 24px;
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.3s ease;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 14px 18px;
         }
-
-        .area-header:hover {
-            background: linear-gradient(135deg, var(--primary-purple-dark), #5b21b6);
-        }
-
-        .area-header-left {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .area-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-
-        .area-title {
-            color: white;
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0;
-            letter-spacing: -0.3px;
-        }
-
-        .area-description {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 13px;
-            margin-top: 2px;
-        }
-
         .area-stats {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-shrink: 0;
+            width: 100%;
+            justify-content: flex-start;
         }
-
-        .area-progress {
-            width: 120px;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.25);
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .area-progress-bar {
-            height: 100%;
-            background: white;
-            border-radius: 10px;
-            transition: width 0.6s ease;
-        }
-
-        .area-progress-text {
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-            min-width: 40px;
-            text-align: right;
-        }
-
-        .area-toggle {
-            color: white;
-            font-size: 18px;
-            transition: transform 0.3s ease;
-            width: 30px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        .area-toggle.collapsed {
-            transform: rotate(-90deg);
-        }
-
-        .area-body {
-            padding: 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .area-body.open {
-            max-height: 5000px;
-            padding: 20px 24px 24px;
-        }
-
-        /*   ЗАДАЧИ   */
-        .task-item {
-            background: var(--bg-light);
-            border-radius: 14px;
-            border: 1px solid #f0f0f0;
-            margin-bottom: 12px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .task-item:hover {
-            border-color: var(--primary-purple-light);
-            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
-        }
+        .area-progress { flex: 1; }
 
         .task-main {
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            cursor: pointer;
-        }
-
-        .task-status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .task-status-indicator.todo { background: #ef4444; }
-        .task-status-indicator.progress { background: #f59e0b; }
-        .task-status-indicator.done { background: #10b981; }
-
-        .task-title {
-            flex: 1;
-            font-weight: 500;
-            color: var(--text-dark);
-            font-size: 15px;
-            min-width: 0;
-        }
-
-        .task-title.done {
-            text-decoration: line-through;
-            color: var(--text-gray);
-        }
-
-        .task-meta {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-            font-size: 12px;
-            color: var(--text-gray);
-        }
-
-        .task-priority {
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .task-priority.high { background: #fef2f2; color: #dc2626; }
-        .task-priority.medium { background: #fffbeb; color: #d97706; }
-        .task-priority.low { background: #eff6ff; color: #2563eb; }
-
-        .task-deadline {
-            color: var(--text-gray);
-            font-size: 12px;
-            white-space: nowrap;
-        }
-
-        .task-deadline.overdue {
-            color: #dc2626;
-            font-weight: 600;
-        }
-
-        .task-deadline.today {
-            color: #d97706;
-            font-weight: 600;
-        }
-
-        .task-actions {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        .task-actions .btn-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            border: none;
-            background: transparent;
-            color: var(--text-gray);
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .task-actions .btn-icon:hover {
-            background: var(--primary-purple-bg);
-            color: var(--primary-purple);
-        }
-
-        .task-actions .btn-icon.danger:hover {
-            background: #fef2f2;
-            color: #dc2626;
-        }
-
-        /*   ПОДЗАДАЧИ   */
-        .subtask-list {
-            padding: 0 18px 14px 52px;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .subtask-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 0;
-            transition: all 0.2s ease;
-        }
-
-        .subtask-item:hover {
-            padding-left: 4px;
-        }
-
-        .subtask-checkbox {
-            width: 18px;
-            height: 18px;
-            border-radius: 6px;
-            border: 2px solid #d1d5db;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            appearance: none;
-            -webkit-appearance: none;
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .subtask-checkbox:checked {
-            background: var(--primary-purple);
-            border-color: var(--primary-purple);
-        }
-
-        .subtask-checkbox:checked::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .subtask-label {
-            font-size: 14px;
-            color: var(--text-dark);
-            flex: 1;
-            cursor: pointer;
-        }
-
-        .subtask-label.done {
-            text-decoration: line-through;
-            color: var(--text-gray);
-        }
-
-        /*   КНОПКИ ДЕЙСТВИЙ   */
-        .btn-purple {
-            background: var(--primary-purple);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 8px 20px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .btn-purple:hover {
-            background: var(--primary-purple-dark);
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
-        }
-
-        .btn-purple-outline {
-            background: transparent;
-            color: var(--primary-purple);
-            border: 2px solid var(--primary-purple);
-            border-radius: 12px;
-            padding: 6px 18px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .btn-purple-outline:hover {
-            background: var(--primary-purple);
-            color: white;
-        }
-
-        /*   КОММЕНТАРИИ   */
-        .comments-container {
-            max-height: 300px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 8px;
-            padding-right: 4px;
-            scroll-behavior: smooth;
         }
+        .task-meta {
+            width: 100%;
+            justify-content: flex-start;
+            padding-left: 22px;
+        }
+        .subtask-list { padding-left: 18px; }
+    }
 
-        /* Стилизация скроллбара для комментариев */
-        .comments-container::-webkit-scrollbar {
-            width: 4px;
-        }
+    @media (max-width: 480px) {
+        .project-header .d-flex { flex-wrap: wrap; }
+        .project-title { font-size: 18px; }
+        .project-meta { flex-wrap: wrap; gap: 8px; }
+        .progress-steps .step { font-size: 9px; }
+        .progress-steps .step:nth-child(2),
+        .progress-steps .step:nth-child(3) { display: none; }
+    }
+</style>
+{% endblock %}
 
-        .comments-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .comments-container::-webkit-scrollbar-thumb {
-            background: var(--primary-purple-light);
-            border-radius: 10px;
-        }
-
-        .comments-container::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-purple);
-        }
-
-        .comment-item {
-            background: white;
-            border-radius: 12px;
-            padding: 12px 16px;
-            border: 1px solid #f0f0f0;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-            animation: commentFadeIn 0.3s ease;
-        }
-
-        @keyframes commentFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .comment-item:hover {
-            border-color: var(--primary-purple-border);
-        }
-
-        .comment-item:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Индикатор новых комментариев */
-        .comment-item.new-comment {
-            border-left: 3px solid var(--primary-purple);
-            background: var(--primary-purple-bg);
-        }
-
-        /* Пустое состояние */
-        .comments-empty {
-            text-align: center;
-            color: var(--text-gray);
-            font-size: 13px;
-            padding: 20px 0;
-        }
-
-        /*   АДАПТИВНОСТЬ   */
-        @media (max-width: 768px) {
-            .area-header {
-                flex-wrap: wrap;
-                gap: 10px;
-                padding: 14px 18px;
-            }
-            
-            .area-stats {
-                width: 100%;
-                justify-content: flex-start;
-            }
-            
-            .area-progress {
-                flex: 1;
-            }
-            
-            .task-main {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            
-            .task-meta {
-                width: 100%;
-                justify-content: flex-start;
-                padding-left: 22px;
-            }
-            
-            .subtask-list {
-                padding-left: 18px;
-            }
-        }
-
-        /*   СКРОЛЛБАР   */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary-purple-light);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-purple);
-        }
-
-        /* Стили для модалки */
-        .modal-content {
-            border-radius: 20px;
-            border: none;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            border-radius: 20px 20px 0 0;
-            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
-        }
-
-        .modal-header .btn-close {
-            filter: brightness(0) invert(1);
-        }
-
-        .modal-footer {
-            border-top: none;
-            border-radius: 0 0 20px 20px;
-        }
-    </style>
+{% block javascripts_body %}
+    {{ parent() }}
+    
+    {# Передаем переменные в JavaScript #}
+    <script>
+        window.projectId = {{ project.id }};
+        window.userRole = '{{ userRole }}';
+        window.currentUserId = {{ app.user.id }};
+        window.currentUserEmail = '{{ app.user.email }}';
+        window.projectOwnerId = {{ project.owner.id }};
+        
+        {# Передаем общую статистику по задачам #}
+        window.projectStats = {
+            totalTasks: {{ project.areas|reduce((carry, area) => carry + area.tasks|length, 0) }},
+            totalDone: {{ project.areas|reduce((carry, area) => carry + area.tasks|filter(t => t.status == 'done')|length, 0) }},
+            totalProgress: {{ project.areas|reduce((carry, area) => carry + area.tasks|filter(t => t.status == 'progress')|length, 0) }}
+        };
+        
+        {# Статистика по областям #}
+        window.areaStats = {};
+        {% for area in project.areas %}
+            window.areaStats[{{ area.id }}] = {
+                totalTasks: {{ area.tasks|length }},
+                totalDone: {{ area.tasks|filter(t => t.status == 'done')|length }},
+                totalProgress: {{ area.tasks|filter(t => t.status == 'progress')|length }}
+            };
+        {% endfor %}
+    </script>
+    
+    {# Подключаем скрипты #}
+    <script src="{{ asset('js/components/utils.js') }}"></script>
+    <script src="{{ asset('js/project/progress.js') }}"></script>
+    <script src="{{ asset('js/project/tasks.js') }}"></script>
+    <script src="{{ asset('js/project/comments.js') }}"></script>
+    <script src="{{ asset('js/project/members.js') }}"></script>
+    <script src="{{ asset('js/project/main.js') }}"></script>
 {% endblock %}
 
 {% block body %}
-    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+    <div id="toastContainer"></div>
     
     <div class="container-fluid mt-3">
         <div class="row">
-            {# Основной контент - 75% ширины #}
             <div class="col-md-9">
+                {{ include('components/project/_header.html.twig') }}
+                {{ include('components/project/_progress.html.twig') }}
 
-                {#   ВЕРХНЯЯ ЧАСТЬ СТРАНИЦЫ   #}
-                <div class="project-header mb-4">
-                    <div class="d-flex align-items-center gap-3">
-                        {# Кнопка назад с иконкой #}
-                        <a href="{{ path('app_dashboard') }}" class="btn-back" title="К списку проектов">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M19 12H5M12 19l-7-7 7-7"/>
-                            </svg>
-                        </a>
-                        
-                        {# Информация о проекте #}
-                        <div class="project-info">
-                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                                <h1 class="project-title">
-                                    📁 {{ project.title }}
-                                </h1>
-                                <span class="role-badge role-{{ userRole }}">
-                                    {{ userRole|upper }}
-                                </span>
-                                <span class="project-status">
-                                    <span class="status-dot"></span>
-                                    Активен
-                                </span>
-                            </div>
-                            <div class="project-meta">
-                                <span class="meta-item">
-                                    <span class="meta-icon">⛳</span>
-                                    {{ project.areas|length }} областей
-                                </span>
-                                <span class="meta-item">
-                                    <span class="meta-icon">📋</span>
-                                    {% set totalTasks = 0 %}
-                                    {% for area in project.areas %}
-                                        {% set totalTasks = totalTasks + area.tasks|length %}
-                                    {% endfor %}
-                                    {{ totalTasks }} задач
-                                </span>
-                                <span class="meta-item">
-                                    <span class="meta-icon">👥</span>
-                                    {{ project_members|length + 1 }} участников
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {# Прогресс-бар проекта #}
-                {% set totalProjectPoints = 0 %}{% set earnedProjectPoints = 0 %}
-                {% for area in project.areas %}
-                    {% for task in area.tasks %}
-                        {% set totalProjectPoints = totalProjectPoints + 100 %}
-                        {% if task.status == 'done' %}{% set earnedProjectPoints = earnedProjectPoints + 100 %}
-                        {% elseif task.status == 'progress' %}{% set earnedProjectPoints = earnedProjectPoints + 50 %}{% endif %}
-                    {% endfor %}
-                {% endfor %}
-                {% set projectPercent = totalProjectPoints > 0 ? (earnedProjectPoints / totalProjectPoints * 100)|round : 0 %}
-                {#   ПРОГРЕСС-БАР ПРОЕКТА   #}
-                <div class="project-progress-card mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="progress-label">Общий прогресс</span>
-                        <span class="progress-value">{{ projectPercent }}%</span>
-                    </div>
-                    <div class="progress-track">
-                        <div class="progress-fill" style="width: {{ projectPercent }}%"></div>
-                    </div>
-                    <div class="progress-steps">
-                        <span class="step {% if projectPercent >= 0 %}active{% endif %}">Начато</span>
-                        <span class="step {% if projectPercent >= 33 %}active{% endif %}">В работе</span>
-                        <span class="step {% if projectPercent >= 66 %}active{% endif %}">Почти готово</span>
-                        <span class="step {% if projectPercent >= 100 %}active{% endif %}">Завершено ✅</span>
-                    </div>
-                </div>
-
-                
-
-                {# Добавление области #}
                 {% if userRole == 'admin' %}
                     <div class="bg-white p-3 rounded mb-4 border shadow-sm" style="border: 2px dashed var(--primary-purple-border); border-radius: 16px;">
                         <h5>Добавить область (Спринт / Категорию)</h5>
@@ -849,1737 +603,19 @@
                     </div>
                 {% endif %}
 
-                {# Области проекта #}
                 <div class="mt-3">
                     {% for area in project.areas %}
                         {% set hasAreaAccess = (userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) or (userRole == 'executor' and area.id in allowedAreas) or (userRole == 'viewer')) %}
-                        
                         {% if hasAreaAccess %}
-                        {% set totalAreaPoints = area.tasks|length * 100 %}{% set earnedAreaPoints = 0 %}
-                        {% for task in area.tasks %}{% if task.status == 'done' %}{% set earnedAreaPoints = earnedAreaPoints + 100 %}{% elseif task.status == 'progress' %}{% set earnedAreaPoints = earnedAreaPoints + 50 %}{% endif %}{% endfor %}
-                        {% set areaPercent = totalAreaPoints > 0 ? (earnedAreaPoints / totalAreaPoints * 100)|round : 0 %}
-
-                        <div class="area-card" id="area-{{ area.id }}">
-                            <div class="area-header" onclick="toggleArea({{ area.id }})">
-                                <div class="area-header-left">
-                                    <div class="area-icon">
-                                        {% if areaPercent == 100 %}✅{% else %}⛳{% endif %}
-                                    </div>
-                                    <div>
-                                        <div class="area-title">{{ area.title }}</div>
-                                        {% if area.description %}
-                                            <div class="area-description">{{ area.description }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="area-stats">
-                                    <div class="area-progress">
-                                        <div class="area-progress-bar" style="width: {{ areaPercent }}%"></div>
-                                    </div>
-                                    <span class="area-progress-text">{{ areaPercent }}%</span>
-                                    <span class="area-toggle" id="area-toggle-{{ area.id }}">▼</span>
-                                    {% if userRole == 'admin' %}
-                                        <button class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: 12px; border-radius: 8px;" onclick="event.stopPropagation(); deleteElement('area', {{ area.id }}, 'Удалить эту область и все её задачи?')">🗑</button>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="area-body" id="area-body-{{ area.id }}">
-                                {# Добавление задачи #}
-                                {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                                    <div class="bg-white p-3 rounded mb-3" style="border: 2px dashed var(--primary-purple-border);">
-                                        <div class="row g-2">
-                                            <div class="col-md-5">
-                                                <input type="text" id="taskTitle-{{ area.id }}" class="form-control form-control-sm" placeholder="Название задачи..." style="border-radius: 10px;">
-                                            </div>
-                                            <div class="col-md-4">
-                                                <input type="date" id="taskDeadline-{{ area.id }}" class="form-control form-control-sm" style="border-radius: 10px;">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <button class="btn btn-purple btn-sm w-100" onclick="createTask({{ area.id }})">+ Добавить задачу</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endif %}
-
-                                {# Список задач #}
-                                <div id="tasksList-{{ area.id }}">
-                                    {% for task in area.tasks %}
-                                        {% set hasTaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and task.id in allowedTasks)) %}
-                                        
-                                        {% if hasTaskAccess %}
-                                        {% set totalSubs = task.subtasks|length %}{% set doneSubs = 0 %}{% for sub in task.subtasks %}{% if sub.status == 'done' %}{% set doneSubs = doneSubs + 1 %}{% endif %}{% endfor %}
-                                        {% set taskPercent = totalSubs > 0 ? (doneSubs / totalSubs * 100)|round : 0 %}
-
-                                        <div class="task-item" id="task-node-{{ task.id }}">
-                                            <div class="task-main" onclick="toggleTask({{ task.id }})">
-                                                <span class="task-status-indicator {{ task.status }}"></span>
-                                                <span class="task-title {% if task.status == 'done' %}done{% endif %}">{{ task.title }}</span>
-                                                
-                                                <div class="task-meta">
-                                                    <span class="task-priority {{ task.priority }}">{{ task.priority }}</span>
-                                                    
-                                                    {% if task.deadline %}
-                                                        {% set daysUntil = (task.deadline|date('U') - 'now'|date('U')) / 86400 %}
-                                                        <span class="task-deadline {% if daysUntil < 0 %}overdue{% elseif daysUntil < 1 %}today{% endif %}">
-                                                            📅 {{ task.deadline|date('d.m.Y') }}
-                                                            {% if daysUntil < 0 %} (просрочено){% elseif daysUntil < 1 %} (сегодня){% endif %}
-                                                        </span>
-                                                    {% endif %}
-                                                    
-                                                    {% if totalSubs > 0 %}
-                                                        <span class="text-muted" style="font-size: 11px;">Сделано Подзадач {{ taskPercent }}%</span>
-                                                    {% endif %}
-                                                </div>
-
-                                                <div class="task-actions" onclick="event.stopPropagation();">
-                                                    {% if userRole != 'viewer' %}
-                                                        <select class="form-select form-select-sm" style="width: 120px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam({{ task.id }}, 'status', this.value)">
-                                                            <option value="todo" {% if task.status == 'todo' %}selected{% endif %}>⭕ Не выполнено</option>
-                                                            <option value="progress" {% if task.status == 'progress' %}selected{% endif %}>🔄 В работе</option>
-                                                            <option value="done" {% if task.status == 'done' %}selected{% endif %}>✅ Выполнено</option>
-                                                        </select>
-                                                    {% endif %}
-                                                    
-                                                    {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                                                        <select class="form-select form-select-sm" style="width: 100px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam({{ task.id }}, 'priority', this.value)">
-                                                            <option value="low" {% if task.priority == 'low' %}selected{% endif %}>🟢 Низкий</option>
-                                                            <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>🟡 Средний</option>
-                                                            <option value="high" {% if task.priority == 'high' %}selected{% endif %}>🔴 Высокий</option>
-                                                        </select>
-                                                        <button class="btn-icon danger" onclick="deleteElement('task', {{ task.id }})">🗑</button>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-
-                                            {# Подзадачи и комментарии #}
-                                            <div class="subtask-list" id="task-body-{{ task.id }}" style="display: none;">
-                                                {# Подзадачи #}
-                                                {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                                                    <div class="d-flex gap-2 mb-2">
-                                                        <input type="text" id="subtaskTitle-{{ task.id }}" class="form-control form-control-sm" placeholder="+ Подзадача..." style="border-radius: 10px; max-width: 300px;">
-                                                        <button class="btn btn-purple-outline btn-sm" onclick="createSubtask({{ task.id }})">Добавить</button>
-                                                    </div>
-                                                {% endif %}
-
-                                                {% for subtask in task.subtasks %}
-                                                    {% set hasSubtaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and task.id in allowedTasks)) %}
-                                                    {% if hasSubtaskAccess %}
-                                                        <div class="subtask-item">
-                                                            <input class="subtask-checkbox" type="checkbox" {% if subtask.status == 'done' %}checked{% endif %} {% if userRole == 'viewer' %}disabled{% endif %} onchange="updateSubtaskStatus({{ subtask.id }}, this.checked)">
-                                                            <span class="subtask-label {% if subtask.status == 'done' %}done{% endif %}">{{ subtask.title }}</span>
-                                                            {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
-                                                                <button class="btn btn-sm text-muted" style="border: none; background: none; font-size: 12px;" onclick="deleteElement('subtask', {{ subtask.id }})">✕</button>
-                                                            {% endif %}
-                                                        </div>
-                                                    {% endif %}
-                                                {% endfor %}
-
-                                                {# Комментарии #}
-                                                <div class="mt-3 pt-3" style="border-top: 1px solid #f0f0f0;">
-                                                    <div class="comments-container" id="comments-container-{{ task.id }}">
-                                                        {% for comment in task.comments|default([]) %}
-                                                            <div class="comment-item" id="comment-{{ comment.id }}">
-                                                                <div class="d-flex justify-content-between align-items-center">
-                                                                    <span class="comment-author">👤 {{ comment.author.email|default(comment.author.userIdentifier) }}</span>
-                                                                    <div>
-                                                                        <span class="comment-time">{{ comment.createdAt|date('d.m.Y H:i') }}</span>
-                                                                        {% if comment.author == currentUser or userRole == 'admin' %}
-                                                                            <button class="btn btn-sm text-danger ms-2" style="border: none; background: none; font-size: 12px;" onclick="deleteComment({{ comment.id }})">✕</button>
-                                                                        {% endif %}
-                                                                    </div>
-                                                                </div>
-                                                                <p class="comment-text">{{ comment.text }}</p>
-                                                                {% if comment.filePath %}
-                                                                    <a href="{{ comment.filePath }}" target="_blank" class="text-purple" style="font-size: 12px;">📎 {{ comment.fileName }}</a>
-                                                                {% endif %}
-                                                            </div>
-                                                        {% else %}
-                                                            <div class="comments-empty">Нет комментариев</div>
-                                                        {% endfor %}
-                                                    </div>
-
-                                                    <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true" data-task-id="{{ task.id }}">
-                                                        <input type="hidden" name="task_id" value="{{ task.id }}">
-                                                        <div class="d-flex gap-2">
-                                                            <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">
-                                                            <button type="submit" class="btn btn-purple btn-sm">Отправить</button>
-                                                        </div>
-                                                        <div class="mt-1">
-                                                            <input type="file" name="file" class="form-control form-control-sm" style="border-radius: 10px; max-width: 250px;">
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    {% else %}
-                                        <div class="text-muted small text-center py-3">Нет задач</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
+                            {{ include('components/project/_area_card.html.twig', { area: area }) }}
                         {% endif %}
                     {% endfor %}
                 </div>
             </div>
 
-            {# Правая панель с участниками - 25% ширины #}
-           <div class="col-md-3">
-                <div class="card shadow-sm sticky-top" style="top: 20px; border-radius: 16px; border: none; overflow: hidden;">
-                    <div class="card-header" style="background: linear-gradient(135deg, #4c1d95, #5b21b6); border: none; padding: 14px 18px;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 text-white">👥 Участники <span class="badge bg-white text-dark ms-2" id="membersCount">{{ project_members|length + 1 }}</span></h6>
-                            {# Кнопка "Управление" видна только админам #}
-                            {% if userRole == 'admin' %}
-                                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#membersModal" onclick="openMembersModal()" style="border-radius: 10px;">Управление</button>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="card-body p-2" id="membersPanelBody" style="max-height: calc(100vh - 200px); overflow-y: auto; background: #fafafa;">
-                        <!-- Контент генерируется через JavaScript -->
-                    </div>
-                </div>
-            </div>
+            {{ include('components/project/_members_panel.html.twig') }}
         </div>
     </div>
 
-    {# Модалка управления участниками #}
-    {% if userRole == 'admin' %}
-    <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title">👥 Управление участниками и добавление в проект</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-5 border-end">
-                            <h6>Выберите пользователя:</h6>
-                            <div class="mb-2">
-                                <input type="text" id="userSearchInput" class="form-control form-control-sm" placeholder="🔍 Введите email для поиска...">
-                            </div>
-                            <div style="max-height: 250px; overflow-y: auto; overflow-x: hidden; padding-right: 5px;" class="border rounded p-2 bg-light mb-3">
-                                <div id="usersModalList"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-7 d-none" id="memberSettingsZone">
-                            <h6 id="selectedUserEmail" class="text-primary fw-bold mb-3"></h6>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Правовая роль:</label>
-                                <select id="memberRoleSelect" class="form-select" onchange="toggleRoleInterface(this.value)">
-                                    <option value="viewer">Зритель (без взаимодействия)</option>
-                                    <option value="executor">Исполнитель (работа с задачами)</option>
-                                    <option value="manager">Руководитель (управление своими областями)</option>
-                                    <option value="admin">Админ (полный доступ)</option>
-                                </select>
-                            </div>
-                            <div id="projectAccessTree" class="border p-3 rounded bg-light" style="max-height: 250px; overflow-y: auto;">
-                                <label class="fw-bold mb-2 d-block">Зоны ответственности в проекте:</label>
-                                {% for area in project.areas %}
-                                    <div class="mb-2 ms-2 area-node">
-                                        <div class="form-check">
-                                            <input class="form-check-input area-cb" type="checkbox" value="{{ area.id }}" id="cb-area-{{ area.id }}" onchange="handleAreaCbChange({{ area.id }}, this.checked)">
-                                            <label class="form-check-label fw-bold text-success" for="cb-area-{{ area.id }}">📍 {{ area.title }}</label>
-                                        </div>
-                                        {% for task in area.tasks %}
-                                            <div class="ms-4 task-node">
-                                                <div class="form-check">
-                                                    <input class="form-check-input task-cb" type="checkbox" value="{{ task.id }}" id="cb-task-{{ task.id }}" data-area="{{ area.id }}" onchange="handleTaskCbChange({{ task.id }}, this.checked)">
-                                                    <label class="form-check-label text-dark" for="cb-task-{{ task.id }}">🔹 {{ task.title }}</label>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                            <button class="btn btn-primary w-100 mt-3 fw-bold" onclick="saveMemberData()">Сохранить настройки участника</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <script>
-        const projectId = {{ project.id }};
-        const userRole = '{{ userRole }}';
-        let currentSelectedUserId = null;
-
-        //   УПРАВЛЕНИЕ МОДАЛКОЙ  
-        function openMembersModal() {
-            document.getElementById('memberSettingsZone').classList.add('d-none');
-            const searchInput = document.getElementById('userSearchInput');
-            if (searchInput) searchInput.value = '';
-            
-            const list = document.getElementById('usersModalList');
-            list.innerHTML = '<div class="text-muted small p-2">⏳ Загрузка...</div>';
-            
-            const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
-            
-            fetch('{{ path("api_project_members", {"id": project.id}) }}')
-                .then(res => {
-                    if (!res.ok) throw new Error('HTTP error! status: ' + res.status);
-                    return res.json();
-                })
-                .then(users => {
-                    renderUsersList(users, isOwner);
-                })
-                .catch(err => {
-                    console.error('Error loading users:', err);
-                    list.innerHTML = '<div class="text-muted small p-2 text-danger">❌ Ошибка загрузки: ' + err.message + '</div>';
-                });
-        }
-
-        function renderUsersList(users, isOwner) {
-            const list = document.getElementById('usersModalList');
-            list.innerHTML = '';
-            
-            if (!users || users.length === 0) {
-                list.innerHTML = '<div class="text-muted small p-2">Нет зарегистрированных пользователей.</div>';
-                return;
-            }
-            
-            const currentEmail = '{{ currentUser.email }}';
-            const filteredUsers = users.filter(u => u.email !== currentEmail);
-
-            if (filteredUsers.length === 0) {
-                list.innerHTML = '<div class="text-muted small p-2">Нет других зарегистрированных пользователей.</div>';
-                return;
-            }
-            
-            filteredUsers.forEach(user => {
-                const btn = document.createElement('div');
-                const isMember = user.isMember;
-                const isAdmin = user.role === 'admin';
-                
-                let statusText = isMember ? user.role : 'не в проекте';
-                let statusClass = isMember ? 'bg-success' : 'bg-secondary';
-                
-                if (isAdmin && !isOwner) {
-                    statusText = '🔒 Админ (только владелец)';
-                    statusClass = 'bg-danger';
-                }
-                
-                btn.className = `user-search-item p-2 mb-1 rounded border d-flex justify-content-between align-items-center` + 
-                                ` ${isMember ? 'bg-success-subtle border-success' : 'bg-white border-secondary'}`;
-                btn.setAttribute('data-email', user.email.toLowerCase());
-                btn.setAttribute('data-user-id', user.id);
-                btn.style.fontSize = '13px';
-                btn.style.cursor = 'pointer';
-                btn.style.transition = 'all 0.2s';
-                
-                if (isAdmin && !isOwner) {
-                    btn.style.opacity = '0.7';
-                    btn.style.cursor = 'not-allowed';
-                }
-                
-                btn.innerHTML = `
-                    <span>${user.email}</span>
-                    <span class="badge ${statusClass}">${statusText}</span>
-                `;
-                
-                btn.onclick = () => {
-                    if (isAdmin && !isOwner) {
-                        showToast('Только владелец может редактировать админа', 'warning');
-                        return;
-                    }
-                    
-                    document.querySelectorAll('.user-search-item').forEach(b => {
-                        b.style.borderColor = '';
-                        b.style.boxShadow = '';
-                        b.style.backgroundColor = '';
-                    });
-                    btn.style.borderColor = '#0d6efd';
-                    btn.style.boxShadow = '0 0 0 0.25rem rgba(13, 110, 253, 0.25)';
-                    btn.style.backgroundColor = '#e7f1ff';
-                    selectUserForEdition(user);
-                };
-                list.appendChild(btn);
-            });
-        }
-
-        function selectUserForEdition(user) {
-            currentSelectedUserId = user.id;
-            document.getElementById('selectedUserEmail').innerText = `Настройка: ${user.email}`;
-            document.getElementById('memberRoleSelect').value = user.role;
-            document.getElementById('memberSettingsZone').classList.remove('d-none');
-
-            const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
-            const roleSelect = document.getElementById('memberRoleSelect');
-            const saveButton = document.querySelector('#memberSettingsZone .btn-primary');
-            
-            // Удаляем старое предупреждение
-            const existingWarning = document.getElementById('adminWarning');
-            if (existingWarning) existingWarning.remove();
-            
-            if (user.role === 'admin' && !isOwner) {
-                roleSelect.disabled = true;
-                saveButton.disabled = true;
-                saveButton.textContent = '⛔ Только владелец может изменять админа';
-                saveButton.classList.add('btn-secondary');
-                saveButton.classList.remove('btn-primary');
-                
-                const warning = document.createElement('div');
-                warning.id = 'adminWarning';
-                warning.className = 'alert alert-warning mt-2';
-                warning.role = 'alert';
-                warning.innerHTML = '⚠️ <strong>Внимание!</strong> Только владелец проекта может изменять права администратора.';
-                roleSelect.parentElement.appendChild(warning);
-            } else {
-                roleSelect.disabled = false;
-                saveButton.disabled = false;
-                saveButton.textContent = 'Сохранить настройки участника';
-                saveButton.classList.remove('btn-secondary');
-                saveButton.classList.add('btn-primary');
-            }
-
-            // Снимаем все галочки
-            document.querySelectorAll('.form-check-input').forEach(cb => cb.checked = false);
-            
-            // Устанавливаем галочки для областей
-            user.areas.forEach(id => { 
-                const c = document.getElementById(`cb-area-${id}`); 
-                if(c) c.checked = true; 
-            });
-            
-            // Устанавливаем галочки для задач
-            user.tasks.forEach(id => { 
-                const c = document.getElementById(`cb-task-${id}`); 
-                if(c) c.checked = true; 
-            });
-            
-            // Подзадачи больше не используем
-            // user.subtasks.forEach(id => { ... });
-
-            toggleRoleInterface(user.role);
-        }
-
-        function toggleRoleInterface(role) {
-            const tree = document.getElementById('projectAccessTree');
-            const areaCheckboxes = document.querySelectorAll('.area-cb');
-            const taskCheckboxes = document.querySelectorAll('.task-cb');
-            const subtaskCheckboxes = document.querySelectorAll('.subtask-cb');
-            
-            if (role === 'admin' || role === 'viewer') {
-                tree.classList.add('d-none');
-                return;
-            }
-            
-            tree.classList.remove('d-none');
-            
-            if (role === 'manager') {
-                // Для менеджера показываем только области
-                document.querySelectorAll('.task-node').forEach(node => {
-                    node.style.display = 'none';
-                });
-                // Делаем области активными
-                areaCheckboxes.forEach(cb => {
-                    cb.disabled = false;
-                    cb.closest('.area-node').style.opacity = '1';
-                });
-                // Скрываем подзадачи
-                document.querySelectorAll('.subtask-cb').forEach(cb => {
-                    cb.closest('.subtask-item')?.style.setProperty('display', 'none', 'important');
-                });
-            } else if (role === 'executor') {
-                // Для исполнителя показываем все
-                document.querySelectorAll('.task-node').forEach(node => {
-                    node.style.display = 'block';
-                });
-                // Области и задачи активны
-                areaCheckboxes.forEach(cb => {
-                    cb.disabled = false;
-                    cb.closest('.area-node').style.opacity = '1';
-                });
-                taskCheckboxes.forEach(cb => {
-                    cb.disabled = false;
-                });
-                // Скрываем подзадачи (они не нужны)
-                document.querySelectorAll('.subtask-cb').forEach(cb => {
-                    cb.closest('.subtask-item')?.style.setProperty('display', 'none', 'important');
-                });
-            }
-        }
-
-        function handleAreaCbChange(areaId, isChecked) {
-            const role = document.getElementById('memberRoleSelect').value;
-            
-            if (role === 'manager') {
-                // Для менеджера ничего не делаем дополнительно
-                return;
-            }
-            
-            if (role === 'executor') {
-                // Для исполнителя: при выборе области - выбираем все задачи
-                document.querySelectorAll(`.task-cb[data-area="${areaId}"]`).forEach(taskCb => {
-                    taskCb.checked = isChecked;
-                });
-            }
-        }
-
-        function handleTaskCbChange(taskId, isChecked) {
-            const role = document.getElementById('memberRoleSelect').value;
-            
-            if (role !== 'executor') return;
-            
-            // При изменении задачи проверяем, все ли задачи в области выбраны
-            const taskCb = document.querySelector(`.task-cb[value="${taskId}"]`);
-            if (!taskCb) return;
-            
-            const areaId = taskCb.dataset.area;
-            const areaCb = document.getElementById(`cb-area-${areaId}`);
-            if (!areaCb) return;
-            
-            // Проверяем, все ли задачи в области выбраны
-            const tasksInArea = document.querySelectorAll(`.task-cb[data-area="${areaId}"]`);
-            const allChecked = Array.from(tasksInArea).every(cb => cb.checked);
-            
-            // Если все задачи выбраны - выбираем область
-            areaCb.checked = allChecked;
-        }
-
-        //   СОХРАНЕНИЕ УЧАСТНИКА  
-        function saveMemberData() {
-            const role = document.getElementById('memberRoleSelect').value;
-            const isOwner = {{ project.owner.id == app.user.id ? 'true' : 'false' }};
-            
-            const selectedUser = currentSelectedUserId;
-            const userItem = document.querySelector(`.user-search-item[data-user-id="${selectedUser}"]`);
-            if (userItem) {
-                const isAdmin = userItem.innerHTML.includes('Админ') || userItem.innerHTML.includes('🔒');
-                if (isAdmin && !isOwner) {
-                    showToast('Только владелец может изменять права админа', 'warning');
-                    return;
-                }
-            }
-            
-            if (role === 'admin' && !isOwner) {
-                showToast('Только владелец может назначать админов', 'warning');
-                return;
-            }
-            
-            if (role === 'admin' && !confirm('Внимание! Вы собираетесь назначить Администратора. Продолжить?')) return;
-
-            const areas = Array.from(document.querySelectorAll('.area-cb:checked')).map(cb => parseInt(cb.value));
-            const tasks = Array.from(document.querySelectorAll('.task-cb:checked')).map(cb => parseInt(cb.value));
-            // Подзадачи больше не отправляем
-            // const subtasks = Array.from(document.querySelectorAll('.subtask-cb:checked')).map(cb => parseInt(cb.value));
-
-            const saveBtn = document.querySelector('#memberSettingsZone .btn-primary');
-            const originalText = saveBtn.textContent;
-            saveBtn.textContent = '⏳ Сохранение...';
-            saveBtn.disabled = true;
-
-            fetch('{{ path("api_project_member_save", {"id": project.id}) }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    user_id: currentSelectedUserId, 
-                    role: role, 
-                    areas: areas, 
-                    tasks: tasks
-                    // subtasks: subtasks — больше не отправляем
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                saveBtn.textContent = originalText;
-                saveBtn.disabled = false;
-                
-                if(data.success) { 
-                    document.getElementById('memberSettingsZone').classList.add('d-none');
-                    refreshMembersPanel();
-                    
-                    fetch('{{ path("api_project_members", {"id": project.id}) }}')
-                        .then(res => res.json())
-                        .then(users => {
-                            renderUsersList(users, isOwner);
-                            document.querySelectorAll('.user-search-item').forEach(b => {
-                                b.style.borderColor = '';
-                                b.style.boxShadow = '';
-                                b.style.backgroundColor = '';
-                            });
-                        });
-                    
-                    showToast('Права успешно обновлены!', 'success');
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                }
-            })
-            .catch(err => {
-                saveBtn.textContent = originalText;
-                saveBtn.disabled = false;
-                console.error('Error:', err);
-                showToast('Ошибка при сохранении', 'error');
-            });
-        }
-
-        //   УДАЛЕНИЕ УЧАСТНИКА  
-        function removeMember(userId) {
-            if (!confirm('Удалить участника?')) return;
-            
-            const buttons = document.querySelectorAll(`button[onclick*="removeMember(${userId})"]`);
-            buttons.forEach(btn => {
-                btn.textContent = '⏳';
-                btn.disabled = true;
-            });
-            
-            fetch(`/dashboard/project/${projectId}/member/remove/${userId}`, {
-                method: 'POST'
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    refreshMembersPanel();
-                    fetch('{{ path("api_project_members", {"id": project.id}) }}')
-                        .then(res => res.json())
-                        .then(users => {
-                            renderUsersList(users);
-                            document.getElementById('memberSettingsZone').classList.add('d-none');
-                        });
-                    showToast('Участник удален!', 'success');
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                    buttons.forEach(btn => {
-                        btn.textContent = '×';
-                        btn.disabled = false;
-                    });
-                }
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                showToast('Ошибка при удалении участника', 'error');
-                buttons.forEach(btn => {
-                    btn.textContent = '×';
-                    btn.disabled = false;
-                });
-            });
-        }
-
-        //   ПАНЕЛЬ УЧАСТНИКОВ  
-        function refreshMembersPanel() {
-            console.log('refreshMembersPanel called');
-            fetch(`/dashboard/project/${projectId}/members-panel`)
-                .then(res => res.json())
-                .then(data => {
-                    console.log('Members data:', data);
-                    if (data.success) {
-                        updateMembersPanel(data.members, data.total);
-                    }
-                })
-                .catch(err => console.error('Error refreshing members:', err));
-        }
-
-        function updateMembersPanel(members, total) {
-            console.log('updateMembersPanel called with members:', members, 'total:', total); 
-
-            const panelBody = document.getElementById('membersPanelBody');
-            const currentUserRole = '{{ userRole }}';
-
-            if (!panelBody) {
-                return;
-                console.error('Panel body not found!'); 
-            }
-            
-            const badge = document.querySelector('.card-header .badge');
-            if (badge) {
-                badge.textContent = total || 0;
-            }
-            
-            panelBody.innerHTML = '';
-
-            // Проверяем, есть ли участники
-            if (!members || members.length === 0) {
-                panelBody.innerHTML = '<div class="text-center text-muted small p-3">Нет участников</div>';
-                return;
-            }
-            
-            members.forEach(member => {
-                const isOwner = member.isOwner;
-                const firstLetter = member.email.charAt(0).toUpperCase();
-                const bgColor = isOwner ? 'bg-primary' : 
-                            (member.role === 'admin' ? 'bg-danger' : 
-                            (member.role === 'manager' ? 'bg-primary' : 
-                            (member.role === 'executor' ? 'bg-success' : 'bg-secondary')));
-                
-                const roleBadge = isOwner ? 
-                    '<span class="badge bg-warning text-dark">👑 Владелец</span>' :
-                    `<span class="badge bg-${member.role === 'admin' ? 'danger' : member.role === 'manager' ? 'primary' : member.role === 'executor' ? 'success' : 'secondary'}">${member.roleLabel}</span>`;
-                
-                const extraInfo = !isOwner && member.role === 'manager' ?
-                    `<span class="badge bg-secondary small">Областей: ${member.areasCount}</span>` :
-                    (!isOwner && member.role === 'executor' ?
-                    `<span class="badge bg-secondary small">Задач: ${member.tasksCount}</span>` : '');
-                
-                let showDeleteButton = false;
-                if (!isOwner && currentUserRole === 'admin') {
-                    if ({{ project.owner.id == app.user.id ? 'true' : 'false' }}) {
-                        showDeleteButton = true;
-                    } else {
-                        if (member.role !== 'admin') {
-                            showDeleteButton = true;
-                        }
-                    }
-                }
-                
-                const deleteButton = showDeleteButton ?
-                    `<button class="btn btn-sm btn-outline-danger ms-1" 
-                            onclick="removeMember(${member.userId})" 
-                            title="Удалить участника"
-                            style="padding: 2px 6px; font-size: 12px;">
-                        ×
-                    </button>` : '';
-                
-                const memberHtml = `
-                    <div class="d-flex align-items-center p-2 mb-1 rounded hover-bg-light">
-                        <div class="position-relative">
-                            <div class="rounded-circle ${bgColor} text-white d-flex align-items-center justify-content-center" 
-                                style="width: 40px; height: 40px; font-size: 18px; font-weight: bold;">
-                                ${firstLetter}
-                            </div>
-                            <span class="position-absolute bottom-0 end-0" 
-                                style="width: 12px; height: 12px; background: #23a55a; border: 2px solid white; border-radius: 50%;"></span>
-                        </div>
-                        <div class="ms-2 flex-grow-1">
-                            <div class="fw-bold small text-truncate" style="max-width: 120px;">${member.email}</div>
-                            <div class="text-muted small">
-                                ${roleBadge}
-                                ${extraInfo}
-                            </div>
-                        </div>
-                        ${deleteButton}
-                    </div>
-                `;
-                
-                panelBody.innerHTML += memberHtml;
-            });
-            
-            if (members.length === 0) {
-                panelBody.innerHTML = '<div class="text-center text-muted small p-3">Нет участников</div>';
-            }
-        }
-
-        //   TOAST УВЕДОМЛЕНИЯ  
-        function showToast(message, type = 'success') {
-            let container = document.getElementById('toastContainer');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'toastContainer';
-                container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
-                document.body.appendChild(container);
-            }
-            
-            const colors = {
-                success: 'bg-success text-white',
-                error: 'bg-danger text-white',
-                warning: 'bg-warning text-dark',
-                info: 'bg-info text-dark'
-            };
-            
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center ${colors[type] || colors.info} border-0 show`;
-            toast.role = 'alert';
-            toast.style.minWidth = '250px';
-            toast.style.marginBottom = '10px';
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
-                </div>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.remove(), 300);
-                }
-            }, 3000);
-        }
-
-        //   АНИМАЦИИ ИНТЕРФЕЙСА  
-        function toggleArea(areaId) {
-            const body = document.getElementById(`area-body-${areaId}`);
-            const toggle = document.getElementById(`area-toggle-${areaId}`);
-            
-            if (!body) return;
-            
-            if (body.classList.contains('open')) {
-                body.classList.remove('open');
-                if (toggle) toggle.classList.add('collapsed');
-            } else {
-                body.classList.add('open');
-                if (toggle) toggle.classList.remove('collapsed');
-            }
-        }
-
-        function toggleTask(taskId) {
-            const body = document.getElementById(`task-body-${taskId}`);
-            if (body) {
-                if (body.style.display === 'none' || body.style.display === '') {
-                    body.style.display = 'block';
-                    // Прокручиваем к комментариям после открытия
-                    setTimeout(() => {
-                        const commentsContainer = document.getElementById(`comments-container-${taskId}`);
-                        if (commentsContainer && commentsContainer.children.length > 0) {
-                            commentsContainer.scrollTop = commentsContainer.scrollHeight;
-                        }
-                    }, 100);
-                } else {
-                    body.style.display = 'none';
-                }
-            }
-        }
-
-        //   Для обновления UI  =
-        // Обновление списка задач в области
-        function refreshTasksList(areaId) {
-            fetch(`/dashboard/area/${areaId}/tasks`)
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById(`tasksList-${areaId}`);
-                    if (container && data.tasks) {
-                        // Рендерим задачи заново
-                        container.innerHTML = renderTasksHTML(data.tasks);
-                    }
-                })
-                .catch(err => console.error('Error refreshing tasks:', err));
-        }
-
-        // Обновление списка подзадач
-        function refreshSubtasksList(taskId) {
-            fetch(`/dashboard/task/${taskId}/subtasks`)
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById(`subtasksList-${taskId}`);
-                    if (container && data.subtasks) {
-                        container.innerHTML = renderSubtasksHTML(data.subtasks);
-                    }
-                })
-                .catch(err => console.error('Error refreshing subtasks:', err));
-        }
-
-        // Обновление визуального состояния задачи
-        function updateTaskVisual(taskId, paramName, paramValue) {
-            const taskItem = document.getElementById(`task-node-${taskId}`);
-            if (!taskItem) return;
-            
-            if (paramName === 'status') {
-                const indicator = taskItem.querySelector('.task-status-indicator');
-                const title = taskItem.querySelector('.task-title');
-                
-                // Обновляем индикатор
-                indicator.className = `task-status-indicator ${paramValue}`;
-                
-                // Обновляем заголовок
-                if (paramValue === 'done') {
-                    title.classList.add('done');
-                } else {
-                    title.classList.remove('done');
-                }
-                
-                // Обновляем селект
-                const select = taskItem.querySelector('select[onchange*="status"]');
-                if (select) select.value = paramValue;
-            }
-            
-            if (paramName === 'priority') {
-                const priorityBadge = taskItem.querySelector('.task-priority');
-                if (priorityBadge) {
-                    priorityBadge.className = `task-priority ${paramValue}`;
-                    priorityBadge.textContent = paramValue;
-                }
-                
-                const select = taskItem.querySelector('select[onchange*="priority"]');
-                if (select) select.value = paramValue;
-            }
-        }
-
-        // Обновление прогресса задачи
-        function updateTaskProgress(taskItem) {
-            const subtasks = taskItem.querySelectorAll('.subtask-item');
-            const total = subtasks.length;
-            const done = taskItem.querySelectorAll('.subtask-checkbox:checked').length;
-            
-            if (total === 0) return;
-            
-            const percent = Math.round((done / total) * 100);
-            const progressBar = taskItem.querySelector('.progress-bar');
-            const progressText = taskItem.querySelector('.text-muted[style*="font-size: 11px;"]');
-            
-            if (progressBar) {
-                progressBar.style.width = percent + '%';
-            }
-            
-            if (progressText) {
-                progressText.textContent = `Выполнено подзадач ${percent}%`;
-            }
-        }
-
-        // Сохраняем состояние раскрытых областей
-        function saveAreaState() {
-            const states = {};
-            document.querySelectorAll('.area-body').forEach(body => {
-                const areaId = body.id.replace('area-body-', '');
-                states[areaId] = body.classList.contains('open');
-            });
-            localStorage.setItem(`areaStates_${projectId}`, JSON.stringify(states));
-        }
-
-        // Восстанавливаем состояние
-        function restoreAreaState() {
-            const saved = localStorage.getItem(`areaStates_${projectId}`);
-            if (!saved) return;
-            
-            const states = JSON.parse(saved);
-            Object.keys(states).forEach(areaId => {
-                const body = document.getElementById(`area-body-${areaId}`);
-                const toggle = document.getElementById(`area-toggle-${areaId}`);
-                if (body && states[areaId]) {
-                    body.classList.add('open');
-                    if (toggle) toggle.classList.remove('collapsed');
-                }
-            });
-        }
-
-        // Сохраняем состояние при клике
-        function toggleArea(areaId) {
-            const body = document.getElementById(`area-body-${areaId}`);
-            const toggle = document.getElementById(`area-toggle-${areaId}`);
-            
-            if (!body) return;
-            
-            if (body.classList.contains('open')) {
-                body.classList.remove('open');
-                if (toggle) toggle.classList.add('collapsed');
-            } else {
-                body.classList.add('open');
-                if (toggle) toggle.classList.remove('collapsed');
-            }
-            
-            saveAreaState();
-        }
-
-        //   CRUD ОПЕРАЦИИ  
-        function createArea(projectId) {
-            const titleInput = document.getElementById(`areaTitle-${projectId}`);
-            const descInput = document.getElementById(`areaDesc-${projectId}`);
-            if (!titleInput.value.trim()) {
-                showToast('Введите название области', 'warning');
-                return;
-            }
-            fetch('{{ path("api_area_create") }}', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    project_id: projectId, 
-                    title: titleInput.value, 
-                    description: descInput.value 
-                }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('Область создана!', 'success');
-                    location.reload();
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                }
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                showToast('Ошибка при создании области', 'error');
-            });
-        }
-
-        function createTask(areaId) {
-            const titleInput = document.getElementById(`taskTitle-${areaId}`);
-            const deadlineInput = document.getElementById(`taskDeadline-${areaId}`);
-            if (!titleInput.value.trim()) {
-                showToast('Введите название задачи', 'warning');
-                return;
-            }
-            
-            const btn = titleInput.closest('.row').querySelector('.btn');
-            const originalText = btn.textContent;
-            btn.textContent = '⏳';
-            btn.disabled = true;
-            
-            const title = titleInput.value.trim();
-            const deadline = deadlineInput.value || null;
-            
-            fetch('{{ path("app_task_create") }}', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    area_id: areaId, 
-                    title: title, 
-                    deadline: deadline
-                }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                btn.textContent = originalText;
-                btn.disabled = false;
-                
-                if (data.success && data.id) {
-                    showToast('Задача создана!', 'success');
-                    
-                    // === НОВОЕ: Добавляем задачу в DOM сразу ===
-                    const tasksContainer = document.getElementById(`tasksList-${areaId}`);
-                    if (tasksContainer) {
-                        const emptyMsg = tasksContainer.querySelector('.text-muted');
-                        if (emptyMsg) emptyMsg.remove();
-                        
-                        // Создаем HTML для новой задачи
-                        const taskHtml = `
-                            <div class="task-item" id="task-node-${data.id}">
-                                <div class="task-main" onclick="toggleTask(${data.id})">
-                                    <span class="task-status-indicator todo"></span>
-                                    <span class="task-title">${title}</span>
-                                    <div class="task-meta">
-                                        <span class="task-priority medium">medium</span>
-                                        ${deadline ? `<span class="task-deadline">📅 ${deadline}</span>` : ''}
-                                    </div>
-                                    <div class="task-actions" onclick="event.stopPropagation();">
-                                        <select class="form-select form-select-sm" style="width: 120px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam(${data.id}, 'status', this.value)">
-                                            <option value="todo" selected>⭕ Не выполнено</option>
-                                            <option value="progress">🔄 В работе</option>
-                                            <option value="done">✅ Выполнено</option>
-                                        </select>
-                                        <select class="form-select form-select-sm" style="width: 100px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam(${data.id}, 'priority', this.value)">
-                                            <option value="low">🟢 Низкий</option>
-                                            <option value="medium" selected>🟡 Средний</option>
-                                            <option value="high">🔴 Высокий</option>
-                                        </select>
-                                        <button class="btn-icon danger" onclick="deleteElement('task', ${data.id})">🗑</button>
-                                    </div>
-                                </div>
-                                <div class="subtask-list" id="task-body-${data.id}" style="display: none;">
-                                    <div class="d-flex gap-2 mb-2">
-                                        <input type="text" id="subtaskTitle-${data.id}" class="form-control form-control-sm" placeholder="+ Подзадача..." style="border-radius: 10px; max-width: 300px;">
-                                        <button class="btn btn-purple-outline btn-sm" onclick="createSubtask(${data.id})">Добавить</button>
-                                    </div>
-                                    <div id="subtasksList-${data.id}"></div>
-                                    <div class="mt-3 pt-3" style="border-top: 1px solid #f0f0f0;">
-                                        <div class="comments-container" id="comments-container-${data.id}">
-                                            <div class="comments-empty">Нет комментариев</div>
-                                        </div>
-                                        <form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true" data-task-id="${data.id}">
-                                            <input type="hidden" name="task_id" value="${data.id}">
-                                            <div class="d-flex gap-2">
-                                                <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">
-                                                <button type="submit" class="btn btn-purple btn-sm">Отправить</button>
-                                            </div>
-                                            <div class="mt-1">
-                                                <input type="file" name="file" class="form-control form-control-sm" style="border-radius: 10px; max-width: 250px;">
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        tasksContainer.insertAdjacentHTML('beforeend', taskHtml);
-                        
-                        // Обновляем прогресс области
-                        const areaCard = tasksContainer.closest('.area-card');
-                        if (areaCard) {
-                            updateAreaProgress(areaCard);
-                        }
-                        updateProjectProgress();
-                    }
-                    
-                    titleInput.value = '';
-                    deadlineInput.value = '';
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                }
-            })
-            .catch(err => {
-                btn.textContent = originalText;
-                btn.disabled = false;
-                console.error('Error:', err);
-                showToast('Ошибка при создании задачи', 'error');
-            });
-        }
-
-        function createSubtask(taskId) {
-            const titleInput = document.getElementById(`subtaskTitle-${taskId}`);
-            if (!titleInput) {
-                showToast('Ошибка: поле ввода не найдено', 'error');
-                return;
-            }
-            if (!titleInput.value.trim()) {
-                showToast('Введите название подзадачи', 'warning');
-                return;
-            }
-            
-            const btn = titleInput.nextElementSibling;
-            const originalText = btn.textContent;
-            btn.textContent = '⏳';
-            btn.disabled = true;
-            
-            const title = titleInput.value.trim();
-            
-            fetch('{{ path("api_subtask_create") }}', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    task_id: taskId, 
-                    title: title
-                }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                btn.textContent = originalText;
-                btn.disabled = false;
-                
-                if (data.success && data.id) {
-                    showToast('Подзадача создана!', 'success');
-                    
-                    // Ищем контейнер для подзадач
-                    let subtasksContainer = document.getElementById(`subtasksList-${taskId}`);
-                    
-                    // Если контейнера нет, создаем его
-                    if (!subtasksContainer) {
-                        const taskBody = document.getElementById(`task-body-${taskId}`);
-                        if (taskBody) {
-                            // Ищем место для вставки подзадач
-                            const subtaskInput = taskBody.querySelector('.d-flex.gap-2.mb-2');
-                            if (subtaskInput) {
-                                // Создаем контейнер после поля ввода
-                                const container = document.createElement('div');
-                                container.id = `subtasksList-${taskId}`;
-                                subtaskInput.after(container);
-                                subtasksContainer = container;
-                            }
-                        }
-                    }
-                    
-                    if (subtasksContainer) {
-                        const emptyMsg = subtasksContainer.querySelector('.text-muted');
-                        if (emptyMsg) emptyMsg.remove();
-                        
-                        const subtaskItem = document.createElement('div');
-                        subtaskItem.className = 'subtask-item';
-                        subtaskItem.innerHTML = `
-                            <input class="subtask-checkbox" type="checkbox" onchange="updateSubtaskStatus(${data.id}, this.checked)">
-                            <span class="subtask-label">${title}</span>
-                            <button class="btn btn-sm text-muted" style="border: none; background: none; font-size: 12px;" onclick="deleteElement('subtask', ${data.id})">✕</button>
-                        `;
-                        subtasksContainer.appendChild(subtaskItem);
-                        
-                        const taskItem = subtasksContainer.closest('.task-item');
-                        if (taskItem) {
-                            updateTaskProgress(taskItem);
-                            const areaCard = taskItem.closest('.area-card');
-                            if (areaCard) {
-                                updateAreaProgress(areaCard);
-                                updateProjectProgress();
-                            }
-                        }
-                    }
-                    
-                    titleInput.value = '';
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                }
-            })
-            .catch(err => {
-                btn.textContent = originalText;
-                btn.disabled = false;
-                console.error('Error:', err);
-                showToast('Ошибка при создании подзадачи', 'error');
-            });
-        }
-
-        function updateTaskParam(taskId, paramName, paramValue) {
-            const select = event.target;
-            const originalBg = select.style.backgroundColor;
-            select.style.backgroundColor = '#fef3c7';
-            select.disabled = true;
-            
-            fetch('{{ path("app_task_update") }}', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    task_id: taskId, 
-                    field: paramName, 
-                    value: paramValue 
-                }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                select.style.backgroundColor = originalBg;
-                select.disabled = false;
-                
-                if (data.success) {
-                    showToast('Параметр обновлен!', 'success');
-                    
-                    // Обновляем визуальное состояние задачи
-                    updateTaskVisual(taskId, paramName, paramValue);
-                    
-                    // Если изменился статус, обновляем прогресс
-                    if (paramName === 'status') {
-                        const taskItem = document.getElementById(`task-node-${taskId}`);
-                        if (taskItem) {
-                            const areaCard = taskItem.closest('.area-card');
-                            if (areaCard) {
-                                updateAreaProgress(areaCard);
-                            }
-                            updateProjectProgress();
-                        }
-                    }
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                    // Возвращаем старое значение
-                    const taskItem = document.getElementById(`task-node-${taskId}`);
-                    if (taskItem && paramName === 'status') {
-                        const indicator = taskItem.querySelector('.task-status-indicator');
-                        const currentStatus = indicator ? indicator.className.replace('task-status-indicator ', '') : 'todo';
-                        select.value = currentStatus;
-                    }
-                }
-            })
-            .catch(err => {
-                select.style.backgroundColor = originalBg;
-                select.disabled = false;
-                console.error('Error:', err);
-                showToast('Ошибка при обновлении', 'error');
-            });
-        }
-
-        function updateSubtaskStatus(subtaskId, isChecked) {
-            const checkbox = event.target;
-            const label = checkbox.closest('.subtask-item').querySelector('.subtask-label');
-            
-            checkbox.disabled = true;
-            
-            fetch('{{ path("api_subtask_update") }}', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    subtask_id: subtaskId, 
-                    status: isChecked ? 'done' : 'todo' 
-                }) 
-            })
-            .then(res => res.json())
-            .then(data => {
-                checkbox.disabled = false;
-                
-                if (data.success) {
-                    if (isChecked) {
-                        label.classList.add('done');
-                        checkbox.checked = true;
-                    } else {
-                        label.classList.remove('done');
-                        checkbox.checked = false;
-                    }
-                    
-                    const taskItem = checkbox.closest('.task-item');
-                    if (taskItem) {
-                        // Обновляем прогресс задачи
-                        updateTaskProgress(taskItem);
-                        
-                        // Обновляем прогресс области
-                        const areaCard = taskItem.closest('.area-card');
-                        if (areaCard) {
-                            updateAreaProgress(areaCard);
-                        }
-                        
-                        // Обновляем общий прогресс проекта
-                        updateProjectProgress();
-                    }
-                    
-                    showToast('Статус обновлен!', 'success');
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                    // Возвращаем чекбокс в исходное состояние
-                    checkbox.checked = !isChecked;
-                }
-            })
-            .catch(err => {
-                checkbox.disabled = false;
-                console.error('Error:', err);
-                showToast('Ошибка при обновлении', 'error');
-                checkbox.checked = !isChecked;
-            });
-        }
-
-        function deleteElement(type, id, confirmMessage = null) {
-            if (confirmMessage && !confirm(confirmMessage)) return;
-            
-            // === НОВОЕ: Специальная обработка для подзадач ===
-            if (type === 'subtask') {
-                const subtaskItem = document.querySelector(`.subtask-item:has(button[onclick*="deleteElement('subtask', ${id})"])`);
-                if (subtaskItem) {
-                    subtaskItem.style.opacity = '0.5';
-                    subtaskItem.style.pointerEvents = 'none';
-                }
-                
-                fetch(`/dashboard/delete/${type}/${id}`, { 
-                    method: 'POST' 
-                })
-                .then(res => res.json())
-                .then(data => { 
-                    if (data.success) {
-                        showToast('Подзадача удалена!', 'success');
-                        if (subtaskItem) {
-                            subtaskItem.style.transition = 'all 0.3s ease';
-                            subtaskItem.style.transform = 'translateX(20px)';
-                            subtaskItem.style.opacity = '0';
-                            setTimeout(() => {
-                                subtaskItem.remove();
-                                // Обновляем прогресс задачи
-                                const taskItem = subtaskItem.closest('.task-item');
-                                if (taskItem) updateTaskProgress(taskItem);
-                                updateAllCounters();
-                            }, 300);
-                        }
-                    } else {
-                        showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                        if (subtaskItem) {
-                            subtaskItem.style.opacity = '1';
-                            subtaskItem.style.pointerEvents = 'auto';
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error('Error:', err);
-                    showToast('Ошибка при удалении', 'error');
-                    if (subtaskItem) {
-                        subtaskItem.style.opacity = '1';
-                        subtaskItem.style.pointerEvents = 'auto';
-                    }
-                });
-                return;
-            }
-            
-            // === Специальная обработка для задач ===
-            if (type === 'task') {
-                const taskItem = document.getElementById(`task-node-${id}`);
-                console.log('Deleting task with ID:', id, 'Element found:', taskItem); // Для отладки
-                if (taskItem) {
-                    taskItem.style.opacity = '0.5';
-                    taskItem.style.pointerEvents = 'none';
-                }
-                
-                fetch(`/dashboard/delete/${type}/${id}`, { 
-                    method: 'POST' 
-                })
-                .then(res => res.json())
-                .then(data => { 
-                    if (data.success) {
-                        showToast('Задача удалена!', 'success');
-                        if (taskItem) {
-                            taskItem.style.transition = 'all 0.3s ease';
-                            taskItem.style.transform = 'scale(0.9)';
-                            taskItem.style.opacity = '0';
-                            setTimeout(() => {
-                                taskItem.remove();
-                                // Обновляем прогресс области
-                                const areaCard = taskItem.closest('.area-card');
-                                if (areaCard) {
-                                    updateAreaProgress(areaCard);
-                                }
-                                updateAllCounters();
-                            }, 300);
-                        }
-                    } else {
-                        showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                        if (taskItem) {
-                            taskItem.style.opacity = '1';
-                            taskItem.style.pointerEvents = 'auto';
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error('Error:', err);
-                    showToast('Ошибка при удалении', 'error');
-                    if (taskItem) {
-                        taskItem.style.opacity = '1';
-                        taskItem.style.pointerEvents = 'auto';
-                    }
-                });
-                return;
-            }
-            
-            // === Остальные типы (области, проекты) ===
-            const element = document.getElementById(`area-${id}`) || 
-                        document.getElementById(`task-node-${id}`);
-            
-            if (element) {
-                element.style.opacity = '0.5';
-                element.style.pointerEvents = 'none';
-            }
-            
-            fetch(`/dashboard/delete/${type}/${id}`, { 
-                method: 'POST' 
-            })
-            .then(res => res.json())
-            .then(data => { 
-                if (data.success) {
-                    showToast('Элемент удален!', 'success');
-                    if (element) {
-                        element.style.transition = 'all 0.3s ease';
-                        element.style.transform = 'scale(0.9)';
-                        element.style.opacity = '0';
-                        setTimeout(() => {
-                            element.remove();
-                            updateAllCounters();
-                        }, 300);
-                    } else {
-                        location.reload();
-                    }
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                    if (element) {
-                        element.style.opacity = '1';
-                        element.style.pointerEvents = 'auto';
-                    }
-                }
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                showToast('Ошибка при удалении', 'error');
-                if (element) {
-                    element.style.opacity = '1';
-                    element.style.pointerEvents = 'auto';
-                }
-            });
-        }
-
-        function deleteComment(commentId) {
-            if (!confirm('Вы действительно хотите удалить этот комментарий?')) return;
-            
-            const commentItem = document.getElementById(`comment-${commentId}`);
-            if (commentItem) {
-                commentItem.style.opacity = '0.5';
-                commentItem.style.pointerEvents = 'none';
-            }
-            
-            fetch(`/dashboard/comment/delete/${commentId}`, { 
-                method: 'POST' 
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('Комментарий удален!', 'success');
-                    if (commentItem) {
-                        commentItem.style.transition = 'all 0.3s ease';
-                        commentItem.style.transform = 'translateX(20px)';
-                        commentItem.style.opacity = '0';
-                        setTimeout(() => {
-                            commentItem.remove();
-                            // Проверяем, остались ли комментарии в контейнере
-                            const container = commentItem.closest('.comments-container');
-                            if (container && container.children.length === 0) {
-                                const emptyMsg = document.createElement('div');
-                                emptyMsg.className = 'comments-empty';
-                                emptyMsg.textContent = 'Нет комментариев';
-                                container.appendChild(emptyMsg);
-                            }
-                        }, 300);
-                    }
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Не удалось удалить комментарий'), 'error');
-                    if (commentItem) {
-                        commentItem.style.opacity = '1';
-                        commentItem.style.pointerEvents = 'auto';
-                    }
-                }
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                showToast('Ошибка при удалении комментария', 'error');
-                if (commentItem) {
-                    commentItem.style.opacity = '1';
-                    commentItem.style.pointerEvents = 'auto';
-                }
-            });
-        }
-
-        //   ПОИСК В МОДАЛКЕ  
-        const userSearchInput = document.getElementById('userSearchInput');
-        if (userSearchInput) {
-            userSearchInput.addEventListener('input', function(e) {
-                const searchText = e.target.value.toLowerCase();
-                document.querySelectorAll('.user-search-item').forEach(function(item) {
-                    const email = item.getAttribute('data-email');
-                    if (email && email.includes(searchText)) {
-                        item.classList.remove('d-none');
-                    } else {
-                        item.classList.add('d-none');
-                    }
-                });
-            });
-        }
-
-        //   ИНИЦИАЛИЗАЦИЯ  
-        document.addEventListener("DOMContentLoaded", function() {
-            // Открываем первую область по умолчанию
-            const firstAreaBody = document.querySelector('.area-body');
-            if (firstAreaBody && !localStorage.getItem(`areaStates_${projectId}`)) {
-                firstAreaBody.classList.add('open');
-                const firstToggle = document.querySelector('.area-toggle');
-                if (firstToggle) firstToggle.classList.remove('collapsed');
-            }
-
-            // Восстанавливаем сохраненное состояние
-            restoreAreaState();
-            
-            // Загружаем участников
-            refreshMembersPanel();
-            
-            // Обработка ссылок в комментариях
-            const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-            document.querySelectorAll(".comment-text").forEach(el => {
-                let rawText = el.innerHTML;
-                let processedText = rawText.replace(urlPattern, '<a href="$1" target="_blank" class="text-primary text-decoration-underline">$1</a>');
-                el.innerHTML = processedText;
-            });
-
-            // Находим формы комментариев
-            const commentForms = document.querySelectorAll('form[action*="api_comment_create"]');
-            console.log('Found comment forms:', commentForms.length);
-            
-            commentForms.forEach(form => {
-                form.removeEventListener('submit', handleCommentSubmit);
-                form.addEventListener('submit', handleCommentSubmit);
-            });
-            
-            // Поиск в модалке (только для админов) 
-            const userSearchInput = document.getElementById('userSearchInput');
-            if (userSearchInput) {
-                userSearchInput.addEventListener('input', function(e) {
-                    const searchText = e.target.value.toLowerCase();
-                    document.querySelectorAll('.user-search-item').forEach(function(item) {
-                        const email = item.getAttribute('data-email');
-                        if (email && email.includes(searchText)) {
-                            item.classList.remove('d-none');
-                        } else {
-                            item.classList.add('d-none');
-                        }
-                    });
-                });
-            }
-        });
-
-        function handleCommentSubmit(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const form = this;
-            const formData = new FormData(form);
-            const text = formData.get('text');
-            const file = formData.get('file');
-            
-            if (!text.trim() && (!file || file.size === 0)) {
-                showToast('Напишите комментарий или прикрепите файл', 'warning');
-                return;
-            }
-            
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = '⏳';
-            submitBtn.disabled = true;
-            
-            fetch('{{ path("api_comment_create") }}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(res => {
-                if (!res.ok) {
-                    return res.text().then(text => {
-                        throw new Error('Server error: ' + res.status + ' - ' + text);
-                    });
-                }
-                return res.json();
-            })
-            .then(data => {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-                
-                if (data.success) {
-                    showToast('Комментарий отправлен!', 'success');
-                    
-                    const taskItem = form.closest('.task-item');
-                    if (!taskItem) return;
-                    
-                    let commentsContainer = taskItem.querySelector('.comments-container');
-                    if (!commentsContainer) {
-                        const containerDiv = document.createElement('div');
-                        containerDiv.className = 'comments-container';
-                        const parent = form.parentElement;
-                        parent.insertBefore(containerDiv, form);
-                        commentsContainer = containerDiv;
-                    }
-                    
-                    const emptyMsg = commentsContainer.querySelector('.text-muted');
-                    if (emptyMsg) emptyMsg.remove();
-                    
-                    const newComment = document.createElement('div');
-                    newComment.className = 'comment-item';
-                    newComment.id = `comment-${data.id}`;
-                    
-                    const now = new Date();
-                    const timeStr = now.toLocaleString('ru-RU', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    let fileHtml = '';
-                    if (data.filePath) {
-                        fileHtml = `<a href="${data.filePath}" target="_blank" class="text-purple" style="font-size: 12px;">📎 ${data.fileName}</a>`;
-                    }
-                    
-                    const isAdmin = '{{ userRole }}' === 'admin';
-                    const deleteBtn = isAdmin ? 
-                        `<button class="btn btn-sm text-danger ms-2" style="border: none; background: none; font-size: 12px;" onclick="deleteComment(${data.id})">✕</button>` : '';
-                    
-                    // Экранируем текст для безопасности
-                    const safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    
-                    newComment.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="comment-author">👤 ${data.author}</span>
-                            <div>
-                                <span class="comment-time">${timeStr}</span>
-                                ${deleteBtn}
-                            </div>
-                        </div>
-                        <p class="comment-text">${safeText}</p>
-                        ${fileHtml}
-                    `;
-                    commentsContainer.appendChild(newComment);
-            
-                    // Прокручиваем к последнему комментарию
-                    commentsContainer.scrollTop = commentsContainer.scrollHeight;
-                    
-                    // Убираем подсветку нового комментария через 3 секунды
-                    setTimeout(() => {
-                        newComment.classList.remove('new-comment');
-                    }, 3000);
-                    
-                    // Очищаем форму
-                    form.querySelector('input[name="text"]').value = '';
-                    const fileInput = form.querySelector('input[type="file"]');
-                    if (fileInput) fileInput.value = '';
-                    
-                    // Фокусируем поле ввода для следующего комментария
-                    form.querySelector('input[name="text"]').focus();
-                } else {
-                    showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-                }
-            })
-            .catch(err => {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-                console.error('Error:', err);
-                showToast('Ошибка при отправке комментария', 'error');
-            });
-        }
-
-        // Обновление прогресса области
-        function updateAreaProgress(areaCard) {
-            const tasks = areaCard.querySelectorAll('.task-item');
-            let total = 0;
-            let done = 0;
-            
-            tasks.forEach(task => {
-                const status = task.querySelector('.task-status-indicator');
-                if (status) {
-                    total++;
-                    if (status.classList.contains('done')) {
-                        done++;
-                    } else if (status.classList.contains('progress')) {
-                        // Прогресс считается как половинчатый
-                        done += 0.5;
-                    }
-                }
-            });
-            
-            if (total === 0) {
-                // Если нет задач, показываем 0%
-                const progressBar = areaCard.querySelector('.area-progress-bar');
-                const progressText = areaCard.querySelector('.area-progress-text');
-                const areaIcon = areaCard.querySelector('.area-icon');
-                if (progressBar) progressBar.style.width = '0%';
-                if (progressText) progressText.textContent = '0%';
-                if (areaIcon) areaIcon.textContent = '📋';
-                return;
-            }
-            
-            const percent = Math.round((done / total) * 100);
-            const progressBar = areaCard.querySelector('.area-progress-bar');
-            const progressText = areaCard.querySelector('.area-progress-text');
-            const areaIcon = areaCard.querySelector('.area-icon');
-            
-            if (progressBar) progressBar.style.width = percent + '%';
-            if (progressText) progressText.textContent = percent + '%';
-            if (areaIcon) areaIcon.textContent = percent === 100 ? '✅' : '📋';
-        }
-
-        // Обновление всех счетчиков
-        function updateAllCounters() {
-            // Обновляем счетчик участников
-            const membersCount = document.querySelectorAll('#membersPanelBody .d-flex').length;
-            const badge = document.querySelector('.card-header .badge');
-            if (badge) badge.textContent = membersCount;
-            
-            // Обновляем прогресс проекта
-            updateProjectProgress();
-        }
-
-        // Обновление прогресса проекта
-        function updateProjectProgress() {
-            const tasks = document.querySelectorAll('.task-item');
-            let total = 0;
-            let done = 0;
-            
-            tasks.forEach(task => {
-                const status = task.querySelector('.task-status-indicator');
-                if (status) {
-                    total++;
-                    if (status.classList.contains('done')) {
-                        done++;
-                    } else if (status.classList.contains('progress')) {
-                        done += 0.5;
-                    }
-                }
-            });
-            
-            if (total === 0) {
-                const progressBar = document.querySelector('.progress-bar');
-                const progressText = document.querySelector('.fw-bold.text-secondary');
-                if (progressBar) progressBar.style.width = '0%';
-                if (progressText) progressText.textContent = 'Общая готовность проекта: 0%';
-                return;
-            }
-            
-            const percent = Math.round((done / total) * 100);
-            const progressBar = document.querySelector('.progress-bar');
-            const progressText = document.querySelector('.fw-bold.text-secondary');
-            
-            if (progressBar) {
-                progressBar.style.width = percent + '%';
-                progressBar.setAttribute('aria-valuenow', percent);
-            }
-            if (progressText) {
-                progressText.textContent = `Общая готовность проекта: ${percent}%`;
-            }
-        }
-    </script>
+    {{ include('components/project/_members_modal.html.twig') }}
 {% endblock %}

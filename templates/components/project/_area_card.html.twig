@@ -1,0 +1,65 @@
+{# templates/components/project/_area_card.html.twig #}
+{% set totalAreaPoints = area.tasks|length * 100 %}
+{% set earnedAreaPoints = 0 %}
+{% for task in area.tasks %}
+    {% if task.status == 'done' %}
+        {% set earnedAreaPoints = earnedAreaPoints + 100 %}
+    {% elseif task.status == 'progress' %}
+        {% set earnedAreaPoints = earnedAreaPoints + 50 %}
+    {% endif %}
+{% endfor %}
+{% set areaPercent = totalAreaPoints > 0 ? (earnedAreaPoints / totalAreaPoints * 100)|round : 0 %}
+
+<div class="area-card" id="area-{{ area.id }}">
+    <div class="area-header" onclick="toggleArea({{ area.id }})">
+        <div class="area-header-left">
+            <div class="area-icon">
+                {% if areaPercent == 100 %}✅{% else %}⛳{% endif %}
+            </div>
+            <div>
+                <div class="area-title">{{ area.title }}</div>
+                {% if area.description %}
+                    <div class="area-description">{{ area.description }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="area-stats">
+            <div class="area-progress">
+                <div class="area-progress-bar" style="width: {{ areaPercent }}%"></div>
+            </div>
+            <span class="area-progress-text">{{ areaPercent }}%</span>
+            <span class="area-toggle" id="area-toggle-{{ area.id }}">▼</span>
+            {% if userRole == 'admin' %}
+                <button class="btn btn-sm btn-danger" style="padding: 2px 8px; font-size: 12px; border-radius: 8px;" onclick="event.stopPropagation(); deleteElement('area', {{ area.id }}, 'Удалить эту область и все её задачи?')">🗑</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="area-body" id="area-body-{{ area.id }}">
+        {# Добавление задачи #}
+        {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
+            <div class="bg-white p-3 rounded mb-3" style="border: 2px dashed var(--primary-purple-border);">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" id="taskTitle-{{ area.id }}" class="form-control form-control-sm" placeholder="Название задачи..." style="border-radius: 10px;">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="date" id="taskDeadline-{{ area.id }}" class="form-control form-control-sm" style="border-radius: 10px;">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-purple btn-sm w-100" onclick="createTask({{ area.id }})">+ Добавить задачу</button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Список задач #}
+        <div id="tasksList-{{ area.id }}">
+            {% for task in area.tasks %}
+                {{ include('components/project/_task_item.html.twig', { task: task, area: area }) }}
+            {% else %}
+                <div class="text-muted small text-center py-3">Нет задач</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

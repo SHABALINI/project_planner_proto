@@ -1,0 +1,41 @@
+{# templates/components/project/_header.html.twig #}
+<div class="project-header mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ path('app_dashboard') }}" class="btn-back" title="К списку проектов">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        
+        <div class="project-info">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <h1 class="project-title">📁 {{ project.title }}</h1>
+                <span class="role-badge role-{{ userRole }}">
+                    {{ userRole|upper }}
+                </span>
+                <span class="project-status">
+                    <span class="status-dot"></span>
+                    Активен
+                </span>
+            </div>
+            <div class="project-meta">
+                <span class="meta-item">
+                    <span class="meta-icon">⛳</span>
+                    {{ project.areas|length }} областей
+                </span>
+                <span class="meta-item">
+                    <span class="meta-icon">📋</span>
+                    {% set totalTasks = 0 %}
+                    {% for area in project.areas %}
+                        {% set totalTasks = totalTasks + area.tasks|length %}
+                    {% endfor %}
+                    {{ totalTasks }} задач
+                </span>
+                <span class="meta-item">
+                    <span class="meta-icon">👥</span>
+                    {{ project_members|length + 1 }} участников
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

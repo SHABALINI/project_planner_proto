@@ -1,0 +1,83 @@
+{# templates/components/project/_task_item.html.twig #}
+{% set hasTaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and task.id in allowedTasks)) %}
+
+{% if hasTaskAccess %}
+{% set totalSubs = task.subtasks|length %}
+{% set doneSubs = 0 %}
+{% for sub in task.subtasks %}
+    {% if sub.status == 'done' %}
+        {% set doneSubs = doneSubs + 1 %}
+    {% endif %}
+{% endfor %}
+{% set taskPercent = totalSubs > 0 ? (doneSubs / totalSubs * 100)|round : 0 %}
+
+<div class="task-item" id="task-node-{{ task.id }}">
+    <div class="task-main" onclick="toggleTask({{ task.id }})">
+        <span class="task-status-indicator {{ task.status }}"></span>
+        <span class="task-title {% if task.status == 'done' %}done{% endif %}">{{ task.title }}</span>
+        
+        <div class="task-meta">
+            <span class="task-priority {{ task.priority }}">{{ task.priority }}</span>
+            
+            {% if task.deadline %}
+                {% set daysUntil = (task.deadline|date('U') - 'now'|date('U')) / 86400 %}
+                <span class="task-deadline {% if daysUntil < 0 %}overdue{% elseif daysUntil < 1 %}today{% endif %}">
+                    📅 {{ task.deadline|date('d.m.Y') }}
+                    {% if daysUntil < 0 %} (просрочено){% elseif daysUntil < 1 %} (сегодня){% endif %}
+                </span>
+            {% endif %}
+            
+            {% if totalSubs > 0 %}
+                <span class="text-muted" style="font-size: 11px;">✅ Подзадач {{ taskPercent }}%</span>
+            {% endif %}
+        </div>
+
+        <div class="task-actions" onclick="event.stopPropagation();">
+            {% if userRole != 'viewer' %}
+                <select class="form-select form-select-sm" style="width: 120px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam({{ task.id }}, 'status', this.value)">
+                    <option value="todo" {% if task.status == 'todo' %}selected{% endif %}>⭕ Не выполнено</option>
+                    <option value="progress" {% if task.status == 'progress' %}selected{% endif %}>🔄 В работе</option>
+                    <option value="done" {% if task.status == 'done' %}selected{% endif %}>✅ Выполнено</option>
+                </select>
+            {% endif %}
+            
+            {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
+                <select class="form-select form-select-sm" style="width: 100px; border-radius: 8px; font-size: 12px;" onchange="updateTaskParam({{ task.id }}, 'priority', this.value)">
+                    <option value="low" {% if task.priority == 'low' %}selected{% endif %}>🟢 Низкий</option>
+                    <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>🟡 Средний</option>
+                    <option value="high" {% if task.priority == 'high' %}selected{% endif %}>🔴 Высокий</option>
+                </select>
+                <button class="btn-icon danger" onclick="deleteElement('task', {{ task.id }})">🗑</button>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Подзадачи и комментарии #}
+    <div class="subtask-list" id="task-body-{{ task.id }}" style="display: none;">
+        {# Подзадачи #}
+        {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
+            <div class="d-flex gap-2 mb-2">
+                <input type="text" id="subtaskTitle-{{ task.id }}" class="form-control form-control-sm" placeholder="+ Подзадача..." style="border-radius: 10px; max-width: 300px;">
+                <button class="btn btn-purple-outline btn-sm" onclick="createSubtask({{ task.id }})">Добавить</button>
+            </div>
+        {% endif %}
+
+        {% for subtask in task.subtasks %}
+            {{ include('components/project/_subtask_item.html.twig', { subtask: subtask, task: task, area: area }) }}
+        {% endfor %}
+
+        {# Комментарии #}
+        <div class="mt-3 pt-3" style="border-top: 1px solid #f0f0f0;">
+            <div class="comments-container" id="comments-container-{{ task.id }}">
+                {% for comment in task.comments|default([]) %}
+                    {{ include('components/project/_comment_item.html.twig', { comment: comment }) }}
+                {% else %}
+                    <div class="comments-empty">Нет комментариев</div>
+                {% endfor %}
+            </div>
+
+            {{ include('components/project/_comment_form.html.twig', { task: task }) }}
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,5 +1,15 @@
 twig:
     file_name_pattern: '*.twig'
+    # Добавляем настройки для фильтров
+    # Путь к шаблонам
+    default_path: '%kernel.project_dir%/templates'
+    # Форматы даты
+    date:
+        format: 'd.m.Y'
+        interval_format: '%%d days'
+    # Глобальные переменные (если нужны)
+    # globals:
+    #     app_name: 'PlanFlow'
 
 when@test:
     twig:

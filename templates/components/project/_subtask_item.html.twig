@@ -1,0 +1,15 @@
+{# templates/components/project/_subtask_item.html.twig #}
+{% set hasSubtaskAccess = (userRole == 'admin' or userRole == 'manager' or (userRole == 'executor' and task.id in allowedTasks)) %}
+
+{% if hasSubtaskAccess %}
+<div class="subtask-item">
+    <input class="subtask-checkbox" type="checkbox" 
+           {% if subtask.status == 'done' %}checked{% endif %} 
+           {% if userRole == 'viewer' %}disabled{% endif %} 
+           onchange="updateSubtaskStatus({{ subtask.id }}, this.checked)">
+    <span class="subtask-label {% if subtask.status == 'done' %}done{% endif %}">{{ subtask.title }}</span>
+    {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
+        <button class="btn btn-sm text-muted" style="border: none; background: none; font-size: 12px;" onclick="deleteElement('subtask', {{ subtask.id }})">✕</button>
+    {% endif %}
+</div>
+{% endif %}

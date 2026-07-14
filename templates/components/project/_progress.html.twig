@@ -1,0 +1,30 @@
+{# templates/components/project/_progress.html.twig #}
+{% set totalProjectPoints = 0 %}
+{% set earnedProjectPoints = 0 %}
+{% for area in project.areas %}
+    {% for task in area.tasks %}
+        {% set totalProjectPoints = totalProjectPoints + 100 %}
+        {% if task.status == 'done' %}
+            {% set earnedProjectPoints = earnedProjectPoints + 100 %}
+        {% elseif task.status == 'progress' %}
+            {% set earnedProjectPoints = earnedProjectPoints + 50 %}
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+{% set projectPercent = totalProjectPoints > 0 ? (earnedProjectPoints / totalProjectPoints * 100)|round : 0 %}
+
+<div class="project-progress-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="progress-label">Общий прогресс</span>
+        <span class="progress-value">{{ projectPercent }}%</span>
+    </div>
+    <div class="progress-track">
+        <div class="progress-fill" style="width: {{ projectPercent }}%"></div>
+    </div>
+    <div class="progress-steps">
+        <span class="step {% if projectPercent >= 0 %}active{% endif %}">Начато</span>
+        <span class="step {% if projectPercent >= 33 %}active{% endif %}">В работе</span>
+        <span class="step {% if projectPercent >= 66 %}active{% endif %}">Почти готово</span>
+        <span class="step {% if projectPercent >= 100 %}active{% endif %}">Завершено ✅</span>
+    </div>
+</div>

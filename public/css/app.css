@@ -1,6 +1,6 @@
 /* public/css/app.css */
 
-/* ===== ПЕРЕМЕННЫЕ ===== */
+/*  ПЕРЕМЕННЫЕ  */
 :root {
     --primary-purple: #7c3aed;
     --primary-purple-dark: #6d28d9;
@@ -14,7 +14,7 @@
     --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* ===== БАЗОВЫЕ СТИЛИ ===== */
+/*  БАЗОВЫЕ СТИЛИ  */
 * {
     box-sizing: border-box;
 }
@@ -23,7 +23,7 @@ body {
     background: var(--bg-light);
 }
 
-/* ===== СКРОЛЛБАР ===== */
+/*  СКРОЛЛБАР  */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -39,7 +39,7 @@ body {
     background: var(--primary-purple);
 }
 
-/* ===== КНОПКИ ===== */
+/*  КНОПКИ  */
 .btn-purple {
     background: var(--primary-purple);
     color: white;
@@ -75,7 +75,7 @@ body {
     color: white;
 }
 
-/* ===== TOAST ===== */
+/*  TOAST  */
 #toastContainer {
     position: fixed;
     top: 20px;
@@ -126,7 +126,7 @@ body {
     to { opacity: 0; transform: translateX(40px); }
 }
 
-/* ===== КАРТОЧКИ ===== */
+/*  КАРТОЧКИ  */
 .card-modern {
     border-radius: 16px;
     border: none;
@@ -137,7 +137,7 @@ body {
     box-shadow: var(--card-shadow-hover);
 }
 
-/* ===== АНИМАЦИИ ===== */
+/*  АНИМАЦИИ  */
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }

@@ -1,6 +1,6 @@
 // public/js/app.js
 
-// ===== TOAST =====
+//  TOAST 
 function showToast(message, type = 'success') {
     let container = document.getElementById('toastContainer');
     if (!container) {
@@ -29,7 +29,7 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-// ===== САЙДБАР =====
+//  САЙДБАР 
 function toggleSidebar() {
     const body = document.body;
     if (window.innerWidth >= 768) {
@@ -42,7 +42,7 @@ function toggleSidebar() {
     }
 }
 
-// ===== УВЕДОМЛЕНИЯ =====
+//  УВЕДОМЛЕНИЯ 
 function refreshNotificationCounter() {
     const badgeId = 'sidebar-badge';
     const burgerBadgeId = 'burger-badge';
@@ -75,12 +75,12 @@ function refreshNotificationCounter() {
         .catch(() => {});
 }
 
-// ===== COMING SOON =====
+//  COMING SOON 
 function showComingSoon(section) {
     showToast('Раздел «' + section + '» находится в разработке 🚀', 'info');
 }
 
-// ===== ОБРАБОТКА ССЫЛОК В ТЕКСТЕ =====
+//  ОБРАБОТКА ССЫЛОК В ТЕКСТЕ 
 function processLinksInText(selector = '.comment-text') {
     const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
     document.querySelectorAll(selector).forEach(el => {
@@ -92,7 +92,7 @@ function processLinksInText(selector = '.comment-text') {
     });
 }
 
-// ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
+//  ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ 
 document.addEventListener('DOMContentLoaded', () => {
     // Синхронизация состояния сайдбара
     const cookieMatch = document.cookie.match(/sidebarCollapsed=(true|false)/);
