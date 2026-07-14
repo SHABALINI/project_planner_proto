@@ -3,7 +3,9 @@
 
 // Экранирование HTML
 function escapeHtml(text) {
-    return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Получение элемента по ID с проверкой

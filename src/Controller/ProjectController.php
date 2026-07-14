@@ -250,7 +250,6 @@ class ProjectController extends AbstractController
 
         $project = $area->getProject();
         
-        // ПРОВЕРКА ПРАВ: Админ ИЛИ Руководитель этой области
         if ($project->getOwner() !== $user) {
             $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
             if (!$member || ($member->getRole() !== 'admin' && ($member->getRole() !== 'manager' || !$member->getAreas()->contains($area)))) {
@@ -260,6 +259,7 @@ class ProjectController extends AbstractController
 
         $task = new Task();
         $task->setTitle($data['title']);
+        $task->setDescription($data['description'] ?? null);
         $task->setArea($area);
         $task->setStatus('todo');
         $task->setPriority('medium');
@@ -280,6 +280,7 @@ class ProjectController extends AbstractController
 
         return new JsonResponse(['success' => true, 'id' => $task->getId()]);
     }
+
     #[Route('/subtask/create', name: 'api_subtask_create', methods: ['POST'])]
     public function createSubtask(Request $request): JsonResponse
     {
@@ -299,13 +300,13 @@ class ProjectController extends AbstractController
 
         $subtask = new Subtask();
         $subtask->setTitle($data['title']);
+        $subtask->setDescription($data['description'] ?? null);
         $subtask->setStatus('todo');
         $subtask->setTask($task);
 
         $this->entityManager->persist($subtask);
         $this->entityManager->flush();
 
-        // === ИСПРАВЛЕНО: Возвращаем ID созданной подзадачи ===
         try {
             $this->notificationService->notifyNewSubtask($subtask, $user);
             $this->entityManager->flush();
@@ -331,12 +332,11 @@ class ProjectController extends AbstractController
         $field = $data['field'];
         $value = $data['value'];
 
-        // Защита изменения параметров
         if ($role === 'viewer') {
             return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
         }
-        if ($role === 'executor' && $field !== 'status') {
-            return new JsonResponse(['success' => false, 'error' => 'Executors can only change status'], 403);
+        if ($role === 'executor' && $field !== 'status' && $field !== 'description') { // ← Разрешаем executor менять описание
+            return new JsonResponse(['success' => false, 'error' => 'Executors can only change status and description'], 403);
         }
         if ($role === 'manager' && !$member->getAreas()->contains($task->getArea())) {
             return new JsonResponse(['success' => false, 'error' => 'Not your area'], 403);
@@ -359,11 +359,13 @@ class ProjectController extends AbstractController
                 $task->setDeadline(null);
                 $changeText = "удалил(а) дедлайн у задачи «" . $task->getTitle() . "»";
             }
+        } elseif ($field === 'description') {
+            $task->setDescription($value ?: null);
+            $changeText = "→ обновил(а) описание у задачи «" . $task->getTitle() . "»";
         }
 
         $this->entityManager->flush();
 
-        // === НОВЫЙ КОД: Отправляем уведомления ===
         if ($changeText !== null) {
             try {
                 $this->notificationService->notifyTaskChange($task, $user, $changeText);
@@ -392,24 +394,38 @@ class ProjectController extends AbstractController
         if ($role === 'viewer') return new JsonResponse(['success' => false], 403);
         if ($role === 'manager' && !$member->getAreas()->contains($subtask->getTask()->getArea())) return new JsonResponse(['success' => false], 403);
 
-        $oldStatus = $subtask->getStatus();
-        $newStatus = $data['status'];
-        $subtask->setStatus($newStatus);
-        $this->entityManager->flush();
+        $field = $data['field'] ?? 'status';
+        $value = $data['value'] ?? 'todo';
 
-        // === НОВЫЙ КОД: Отправляем уведомления ===
-        if ($oldStatus !== $newStatus) {
-            try {
-                $statusRu = ($newStatus === 'done' ? 'Выполнено' : 'Не выполнено');
-                $changeText = "→ статус «" . $statusRu . "» у подзадачи «" . $subtask->getTitle() . "»";
-                $this->notificationService->notifySubtaskChange($subtask, $user, $changeText);
-                $this->entityManager->flush();
-            } catch (\Exception $e) {
-                error_log('Notification error: ' . $e->getMessage());
-            }
+        // === ДОБАВЛЯЕМ ОБРАБОТКУ DESCRIPTION ===
+        if ($field === 'description') {
+            $subtask->setDescription($value ?: null);
+            $this->entityManager->flush();
+            return new JsonResponse(['success' => true]);
         }
 
-        return new JsonResponse(['success' => true]);
+        // === ОСТАЛЬНЫЕ ПОЛЯ ===
+        if ($field === 'status') {
+            $oldStatus = $subtask->getStatus();
+            $newStatus = $value;
+            $subtask->setStatus($newStatus);
+            $this->entityManager->flush();
+
+            if ($oldStatus !== $newStatus) {
+                try {
+                    $statusRu = ($newStatus === 'done' ? 'Выполнено' : 'Не выполнено');
+                    $changeText = "→ статус «" . $statusRu . "» у подзадачи «" . $subtask->getTitle() . "»";
+                    $this->notificationService->notifySubtaskChange($subtask, $user, $changeText);
+                    $this->entityManager->flush();
+                } catch (\Exception $e) {
+                    error_log('Notification error: ' . $e->getMessage());
+                }
+            }
+
+            return new JsonResponse(['success' => true]);
+        }
+
+        return new JsonResponse(['success' => false, 'error' => 'Unknown field']);
     }
 
     #[Route('/delete/{type}/{id}', name: 'api_element_delete', methods: ['POST'])]

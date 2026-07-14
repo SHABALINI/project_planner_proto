@@ -30,6 +30,11 @@
             {% if totalSubs > 0 %}
                 <span class="text-muted" style="font-size: 11px;">✅ Подзадач {{ taskPercent }}%</span>
             {% endif %}
+            
+            {# Индикатор наличия описания #}
+            {% if task.description %}
+                <span class="text-muted" style="font-size: 11px;" title="Есть описание">📝</span>
+            {% endif %}
         </div>
 
         <div class="task-actions" onclick="event.stopPropagation();">
@@ -54,6 +59,30 @@
 
     {# Подзадачи и комментарии #}
     <div class="subtask-list" id="task-body-{{ task.id }}" style="display: none;">
+        {# Описание задачи #}
+        {% if task.description %}
+            <div class="task-description mb-3 p-2 bg-white rounded border" style="font-size: 13px; color: var(--text-gray);">
+                <strong class="text-dark">📝 Описание:</strong>
+                <span>{{ task.description|nl2br }}</span>
+            </div>
+        {% endif %}
+        
+        {# Редактирование описания (для всех, кроме viewer) #}
+        {% if userRole != 'viewer' and userRole != 'executor'%}
+            <div class="mb-3">
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="text" id="taskDescription-{{ task.id }}" 
+                        class="form-control form-control-sm" 
+                        placeholder="Добавить описание..." 
+                        value="{{ task.description|default('') }}"
+                        style="border-radius: 10px;"
+                        onblur="updateTaskParam({{ task.id }}, 'description', this.value)"
+                        onkeydown="if(event.key==='Enter') { this.blur(); }">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('taskDescription-{{ task.id }}').focus()">✏️</button>
+                </div>
+            </div>
+        {% endif %}
+
         {# Подзадачи #}
         {% if userRole == 'admin' or (userRole == 'manager' and area.id in allowedAreas) %}
             <div class="d-flex gap-2 mb-2">

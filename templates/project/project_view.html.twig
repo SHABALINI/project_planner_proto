@@ -542,7 +542,6 @@
 {% block javascripts_body %}
     {{ parent() }}
     
-    {# Передаем переменные в JavaScript #}
     <script>
         window.projectId = {{ project.id }};
         window.userRole = '{{ userRole }}';
@@ -550,14 +549,22 @@
         window.currentUserEmail = '{{ app.user.email }}';
         window.projectOwnerId = {{ project.owner.id }};
         
-        {# Передаем общую статистику по задачам #}
+        {# Статистика #}
+        {% set totalTasks = 0 %}
+        {% set totalDone = 0 %}
+        {% set totalProgress = 0 %}
+        {% for area in project.areas %}
+            {% set totalTasks = totalTasks + area.tasks|length %}
+            {% set totalDone = totalDone + area.tasks|filter(t => t.status == 'done')|length %}
+            {% set totalProgress = totalProgress + area.tasks|filter(t => t.status == 'progress')|length %}
+        {% endfor %}
+        
         window.projectStats = {
-            totalTasks: {{ project.areas|reduce((carry, area) => carry + area.tasks|length, 0) }},
-            totalDone: {{ project.areas|reduce((carry, area) => carry + area.tasks|filter(t => t.status == 'done')|length, 0) }},
-            totalProgress: {{ project.areas|reduce((carry, area) => carry + area.tasks|filter(t => t.status == 'progress')|length, 0) }}
+            totalTasks: {{ totalTasks }},
+            totalDone: {{ totalDone }},
+            totalProgress: {{ totalProgress }}
         };
         
-        {# Статистика по областям #}
         window.areaStats = {};
         {% for area in project.areas %}
             window.areaStats[{{ area.id }}] = {
@@ -568,7 +575,6 @@
         {% endfor %}
     </script>
     
-    {# Подключаем скрипты #}
     <script src="{{ asset('js/components/utils.js') }}"></script>
     <script src="{{ asset('js/project/progress.js') }}"></script>
     <script src="{{ asset('js/project/tasks.js') }}"></script>

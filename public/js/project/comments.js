@@ -1,5 +1,4 @@
 // public/js/project/comments.js
-//  КОММЕНТАРИИ 
 
 function deleteComment(commentId) {
     if (!confirm('Вы действительно хотите удалить этот комментарий?')) return;
@@ -56,6 +55,7 @@ function handleCommentSubmit(e) {
     const formData = new FormData(form);
     const text = formData.get('text');
     const file = formData.get('file');
+    const taskId = form.querySelector('input[name="task_id"]').value;
     
     if (!text.trim() && (!file || file.size === 0)) {
         showToast('Напишите комментарий или прикрепите файл', 'warning');
@@ -75,7 +75,7 @@ function handleCommentSubmit(e) {
     .then(res => {
         if (!res.ok) {
             return res.text().then(text => {
-                throw new Error('Server error: ' + res.status + ' - ' + text);
+                throw new Error('Server error: ' + res.status + ' - ' + text.substring(0, 100));
             });
         }
         return res.json();
@@ -90,16 +90,16 @@ function handleCommentSubmit(e) {
             const taskItem = form.closest('.task-item');
             if (!taskItem) return;
             
-            let commentsContainer = taskItem.querySelector('.comments-container');
+            let commentsContainer = document.getElementById(`comments-container-${taskId}`);
             if (!commentsContainer) {
-                const containerDiv = document.createElement('div');
-                containerDiv.className = 'comments-container';
+                commentsContainer = document.createElement('div');
+                commentsContainer.className = 'comments-container';
+                commentsContainer.id = `comments-container-${taskId}`;
                 const parent = form.parentElement;
-                parent.insertBefore(containerDiv, form);
-                commentsContainer = containerDiv;
+                parent.insertBefore(commentsContainer, form);
             }
             
-            const emptyMsg = commentsContainer.querySelector('.text-muted');
+            const emptyMsg = commentsContainer.querySelector('.comments-empty');
             if (emptyMsg) emptyMsg.remove();
             
             const newComment = document.createElement('div');
@@ -137,13 +137,10 @@ function handleCommentSubmit(e) {
             commentsContainer.appendChild(newComment);
             commentsContainer.scrollTop = commentsContainer.scrollHeight;
             
-            setTimeout(() => {
-                newComment.classList.remove('new-comment');
-            }, 3000);
-            
             form.querySelector('input[name="text"]').value = '';
             const fileInput = form.querySelector('input[type="file"]');
             if (fileInput) fileInput.value = '';
+            
             form.querySelector('input[name="text"]').focus();
         } else {
             showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
