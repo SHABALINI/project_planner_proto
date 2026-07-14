@@ -9,7 +9,7 @@
             {% endif %}
         </div>
     </div>
-    <p class="comment-text">{{ comment.text }}</p>
+    <p class="comment-text">{{ comment.text|e }}</p>
     
     {# Файл: если картинка — показываем превью #}
     {% if comment.filePath %}
