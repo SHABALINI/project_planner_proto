@@ -33,6 +33,9 @@ class Comment
     #[ORM\Column(type: 'datetime')]
     private ?\DateTimeInterface $createdAt = null;
 
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    private ?bool $isImage = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -49,5 +52,8 @@ class Comment
     public function setFilePath(?string $filePath): self { $this->filePath = $filePath; return $this; }
     public function getFileName(): ?string { return $this->fileName; }
     public function setFileName(?string $fileName): self { $this->fileName = $fileName; return $this; }
+
+    public function isImage(): ?bool { return $this->isImage; }
+    public function setIsImage(?bool $isImage): self { $this->isImage = $isImage; return $this; }
     public function getCreatedAt(): ?\DateTimeInterface { return $this->createdAt; }
 }

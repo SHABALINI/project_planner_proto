@@ -9,8 +9,20 @@
             {% endif %}
         </div>
     </div>
-    <p class="comment-text">{{ comment.text|e }}</p>
+    <p class="comment-text">{{ comment.text }}</p>
+    
+    {# Файл: если картинка — показываем превью #}
     {% if comment.filePath %}
-        <a href="{{ comment.filePath }}" target="_blank" class="text-purple" style="font-size: 12px;">📎 {{ comment.fileName }}</a>
+        {% if comment.isImage %}
+            <div class="comment-image-wrapper mt-2">
+                <img src="{{ comment.filePath }}" 
+                     alt="attachment" 
+                     class="comment-image-thumbnail"
+                     onclick="openImageModal('{{ comment.filePath }}')"
+                     loading="lazy">
+            </div>
+        {% else %}
+            <a href="{{ comment.filePath }}" target="_blank" class="text-purple" style="font-size: 12px;">📎 {{ comment.fileName }}</a>
+        {% endif %}
     {% endif %}
 </div>

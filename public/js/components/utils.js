@@ -1,6 +1,57 @@
 // public/js/components/utils.js
 //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ 
 
+//  МОДАЛЬНОЕ ОКНО ДЛЯ ИЗОБРАЖЕНИЙ 
+function openImageModal(imageUrl) {
+    // Создаем модальное окно если его нет
+    let modal = document.getElementById('imageModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'imageModal';
+        modal.className = 'image-modal';
+        modal.innerHTML = `
+            <button class="image-modal-close" onclick="closeImageModal()">×</button>
+            <img id="modalImage" src="" alt="Просмотр изображения">
+        `;
+        document.body.appendChild(modal);
+        
+        // Закрытие по клику на фон
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeImageModal();
+            }
+        });
+        
+        // Закрытие по ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    }
+    
+    const img = document.getElementById('modalImage');
+    if (img) {
+        img.src = imageUrl;
+        img.alt = 'Просмотр изображения';
+    }
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+// Добавляем в глобальный скоуп
+window.openImageModal = openImageModal;
+window.closeImageModal = closeImageModal;
+
 // Экранирование HTML
 function escapeHtml(text) {
     const div = document.createElement('div');

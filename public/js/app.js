@@ -120,10 +120,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Запуск счетчика уведомлений
     refreshNotificationCounter();
-    setInterval(refreshNotificationCounter, 30000);
+    setInterval(refreshNotificationCounter, 5000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            refreshNotificationCounter();
+        }
+    });
     
     // Обработка ссылок
     processLinksInText();
+    
 });
 
 document.addEventListener('visibilitychange', () => {

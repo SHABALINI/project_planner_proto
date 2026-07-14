@@ -801,6 +801,11 @@ class ProjectController extends AbstractController
         // Обработка загрузки файла
         $file = $request->files->get('file');
         if ($file) {
+            $mimeType = $file->getMimeType();
+            $isImage = strpos($mimeType, 'image/') === 0;
+            
+            // Сохраняем флаг isImage в комментарий
+            $comment->setIsImage($isImage);
             $uploadsDirectory = $this->getParameter('kernel.project_dir') . '/public/uploads/comments';
             $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $safeFilename = mb_strtolower($originalFilename);
@@ -831,7 +836,7 @@ class ProjectController extends AbstractController
             error_log('Notification error: ' . $e->getMessage());
         }
 
-        // === ИСПРАВЛЕНО: Возвращаем JSON вместо редиректа ===
+        // Возвращаем JSON
         if ($request->isXmlHttpRequest()) {
             return new JsonResponse([
                 'success' => true,
@@ -839,7 +844,8 @@ class ProjectController extends AbstractController
                 'text' => $comment->getText(),
                 'filePath' => $filePath,
                 'fileName' => $fileName,
-                'author' => $user->getEmail()
+                'author' => $user->getEmail(),
+                'isImage' => $comment->isImage() ?? false,
             ]);
         }
 

@@ -1,5 +1,5 @@
 // public/js/project/progress.js
-// ===== ОБНОВЛЕНИЕ ПРОГРЕССОВ =====
+// ОБНОВЛЕНИЕ ПРОГРЕССОВ
 
 // Обновление статистики после изменения статуса задачи
 function updateTaskStats(taskId, newStatus, oldStatus) {

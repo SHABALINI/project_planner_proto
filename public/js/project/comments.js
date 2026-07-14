@@ -144,9 +144,20 @@ function handleCommentSubmit(e) {
             
             let fileHtml = '';
             if (data.filePath) {
-                fileHtml = `<a href="${data.filePath}" target="_blank" class="text-purple" style="font-size: 12px;">📎 ${data.fileName}</a>`;
+                if (data.isImage) {
+                    fileHtml = `
+                        <div class="comment-image-wrapper mt-2">
+                            <img src="${data.filePath}" 
+                                alt="attachment" 
+                                class="comment-image-thumbnail"
+                                onclick="openImageModal('${data.filePath}')"
+                                loading="lazy">
+                        </div>
+                    `;
+                } else {
+                    fileHtml = `<a href="${data.filePath}" target="_blank" class="text-purple" style="font-size: 12px;">📎 ${data.fileName}</a>`;
+                }
             }
-            
             const isAdmin = window.userRole === 'admin';
             const currentUserEmail = window.currentUserEmail;
             const canDelete = isAdmin || data.author === currentUserEmail;
