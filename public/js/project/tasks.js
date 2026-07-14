@@ -64,6 +64,16 @@ function createTask(areaId) {
                     updateAreaProgress(areaCard);
                 }
                 updateProjectProgress();
+
+                // Инициализируем форму комментариев для новой задачи
+                const newTask = document.getElementById(`task-node-${data.id}`);
+                if (newTask) {
+                    const form = newTask.querySelector('form[data-ajax="true"]');
+                    if (form) {
+                        form.removeEventListener('submit', handleCommentSubmit);
+                        form.addEventListener('submit', handleCommentSubmit);
+                    }
+                }
             }
             
             titleInput.value = '';
@@ -132,7 +142,7 @@ function createTaskHTML(taskId, title, deadline, areaId) {
                     <div class="comments-container" id="comments-container-${taskId}">
                         <div class="comments-empty">Нет комментариев</div>
                     </div>
-                    <form action="/dashboard/comment/create" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true" data-task-id="${taskId}">
+                    <form action="/dashboard/comment/create" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true">
                         <input type="hidden" name="task_id" value="${taskId}">
                         <div class="d-flex gap-2">
                             <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">

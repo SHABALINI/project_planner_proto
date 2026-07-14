@@ -1,5 +1,5 @@
 {# templates/components/project/_comment_form.html.twig #}
-<form action="{{ path('api_comment_create') }}" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true" data-task-id="{{ task.id }}">
+<form action="/dashboard/comment/create" method="POST" enctype="multipart/form-data" class="mt-2" data-ajax="true">
     <input type="hidden" name="task_id" value="{{ task.id }}">
     <div class="d-flex gap-2">
         <input type="text" name="text" class="form-control form-control-sm" placeholder="Напишите комментарий..." style="border-radius: 10px;">

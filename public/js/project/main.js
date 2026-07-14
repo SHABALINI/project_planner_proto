@@ -84,6 +84,14 @@ function restoreAreaState() {
     });
 }
 
+function initCommentForms() {
+    document.querySelectorAll('form[data-ajax="true"]').forEach(form => {
+        // Удаляем старый обработчик, чтобы не было дублей
+        form.removeEventListener('submit', handleCommentSubmit);
+        form.addEventListener('submit', handleCommentSubmit);
+    });
+}
+
 //  ИНИЦИАЛИЗАЦИЯ 
 document.addEventListener('DOMContentLoaded', function() {
     // Открываем первую область
@@ -118,6 +126,29 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    initCommentForms();
+
+    // Наблюдаем за изменениями DOM для новых форм
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) { // Element
+                        const forms = node.querySelectorAll ? node.querySelectorAll('form[data-ajax="true"]') : [];
+                        if (forms.length) {
+                            initCommentForms();
+                        }
+                    }
+                });
+            }
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 });
 
 // Переопределяем toggleArea с сохранением
