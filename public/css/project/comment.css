@@ -1,0 +1,156 @@
+/* public/css/project/comment.css */
+
+.comments-container {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+    scroll-behavior: smooth;
+}
+
+.comments-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.comments-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.comments-container::-webkit-scrollbar-thumb {
+    background: var(--primary-purple-light);
+    border-radius: 10px;
+}
+
+.comments-container::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-purple);
+}
+
+.comment-item {
+    background: white;
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    animation: commentFadeIn 0.3s ease;
+}
+
+@keyframes commentFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.comment-item:hover {
+    border-color: var(--primary-purple-border);
+}
+
+.comment-item:last-child {
+    margin-bottom: 0;
+}
+
+.comment-item.new-comment {
+    border-left: 3px solid var(--primary-purple);
+    background: var(--primary-purple-bg);
+}
+
+.comments-empty {
+    text-align: center;
+    color: var(--text-gray);
+    font-size: 13px;
+    padding: 20px 0;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: var(--primary-purple);
+    font-size: 13px;
+}
+
+.comment-time {
+    color: var(--text-gray);
+    font-size: 11px;
+}
+
+.comment-text {
+    margin-top: 4px;
+    color: var(--text-dark);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Изображения в комментариях */
+.comment-image-wrapper {
+    display: inline-block;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+    max-width: 200px;
+}
+
+.comment-image-thumbnail {
+    width: 100%;
+    height: auto;
+    max-height: 150px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    display: block;
+}
+
+.comment-image-thumbnail:hover {
+    transform: scale(1.02);
+}
+
+/* Модалка для изображений */
+.image-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.image-modal.active {
+    display: flex;
+}
+
+.image-modal img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.image-modal-close {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    color: white;
+    font-size: 40px;
+    font-weight: 300;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: transform 0.2s ease;
+    z-index: 10001;
+}
+
+.image-modal-close:hover {
+    transform: scale(1.2);
+}

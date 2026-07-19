@@ -87,7 +87,6 @@ class Project
     public function removeArea(Area $area): static
     {
         if ($this->areas->removeElement($area)) {
-            // set the owning side to null (unless already changed)
             if ($area->getProject() === $this) {
                 $area->setProject(null);
             }

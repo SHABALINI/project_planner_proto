@@ -1,0 +1,91 @@
+/* public/css/project/progress.css */
+
+.project-progress-card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px 24px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.progress-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.progress-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-purple);
+}
+
+.progress-track {
+    height: 8px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--primary-purple), var(--primary-purple-light));
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+.progress-steps .step {
+    font-size: 11px;
+    color: #d1d5db;
+    transition: color 0.3s ease;
+    font-weight: 500;
+}
+
+.progress-steps .step.active {
+    color: var(--primary-purple);
+}
+
+@media (max-width: 768px) {
+    .project-progress-card {
+        padding: 14px 18px;
+    }
+    
+    .progress-steps .step {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .progress-steps .step {
+        font-size: 9px;
+    }
+    
+    .progress-steps .step:nth-child(2),
+    .progress-steps .step:nth-child(3) {
+        display: none;
+    }
+}

@@ -1,6 +1,3 @@
-// public/js/components/utils.js
-//  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ 
-
 //  МОДАЛЬНОЕ ОКНО ДЛЯ ИЗОБРАЖЕНИЙ 
 function openImageModal(imageUrl) {
     // Создаем модальное окно если его нет

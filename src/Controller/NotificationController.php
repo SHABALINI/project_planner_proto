@@ -1,5 +1,4 @@
 <?php
-// src/Controller/NotificationController.php
 namespace App\Controller;
 
 use App\Repository\NotificationRepository;
@@ -7,7 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route; // ИСПРАВЛЕНО ЗДЕСЬ
+use Symfony\Component\Routing\Attribute\Route; 
 
 #[Route('/dashboard/notifications')]
 class NotificationController extends AbstractController
@@ -17,21 +16,24 @@ class NotificationController extends AbstractController
     {
         $user = $this->getUser();
         
-        $allUnread = $repo->findBy(['user' => $user, 'isRead' => false], ['createdAt' => 'DESC']);
-        $totalUnreadCount = count($allUnread);
-
         $allNotifications = $repo->findBy(['user' => $user], ['createdAt' => 'DESC']);
 
+        $totalUnreadCount = 0;
         $grouped = [];
+
         foreach ($allNotifications as $n) {
-            $pId = $n->getProject()->getId();
+            if(!$n->isRead()) {
+                $totalUnreadCount++;
+            }
+
+            $project = $n->getProject();
+            if (!$project) {
+                continue; 
+            }
+
+            $pId = $project->getId();
             if (!isset($grouped[$pId])) {
-                $grouped[$pId] = [
-                    'project' => $n->getProject(),
-                    'items' => [],
-                    'unreadCount' => 0,
-                    'latestTimestamp' => $n->getCreatedAt()->getTimestamp()
-                ];
+                $grouped[$pId] = ['project' => $n->getProject(), 'items' => [], 'unreadCount' => 0, 'latestTimestamp' => $n->getCreatedAt()->getTimestamp()];
             }
             $grouped[$pId]['items'][] = $n;
             if (!$n->isRead()) {

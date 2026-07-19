@@ -1,0 +1,75 @@
+/* public/css/project/members.css */
+
+.members-panel .card-header {
+    background: linear-gradient(135deg, #4c1d95, #5b21b6);
+    border: none;
+    padding: 14px 18px;
+    border-radius: 16px 16px 0 0;
+}
+
+.members-panel .card-body {
+    background: #fafafa;
+}
+
+.members-panel .user-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.members-panel .user-item:hover {
+    background: #f8f9fa;
+}
+
+.members-panel .user-avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.members-panel .user-avatar-sm.bg-primary { background: var(--primary-purple); }
+.members-panel .user-avatar-sm.bg-danger { background: #dc2626; }
+.members-panel .user-avatar-sm.bg-success { background: #059669; }
+.members-panel .user-avatar-sm.bg-secondary { background: #6b7280; }
+
+.members-panel .user-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.members-panel .user-role {
+    font-size: 11px;
+    color: var(--text-gray);
+}
+
+/* Модалка управления участниками */
+#projectAccessTree .area-node {
+    margin-bottom: 8px;
+    margin-left: 8px;
+}
+
+#projectAccessTree .task-node {
+    margin-left: 24px;
+}
+
+#projectAccessTree .form-check-label {
+    font-size: 13px;
+}
+
+#projectAccessTree .subtask-item {
+    display: none !important;
+}
+
+#projectAccessTree.executor-mode .subtask-item {
+    display: flex !important;
+}

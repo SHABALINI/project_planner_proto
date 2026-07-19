@@ -1,5 +1,4 @@
 <?php
-// src/Entity/Notification.php
 namespace App\Entity;
 
 use App\Repository\NotificationRepository;
@@ -23,13 +22,13 @@ class Notification
     private ?Project $project = null;
 
     #[MySql\Column(length: 255)]
-    private ?string $title = null; // Название проекта или заголовок
+    private ?string $title = null; 
 
     #[MySql\Column(type: Types::TEXT)]
-    private ?string $message = null; // "Конкретное изменение, которое произошло"
+    private ?string $message = null; 
 
     #[MySql\Column(length: 255, nullable: true)]
-    private ?string $targetUrl = null; // Ссылка для перехода (например, /dashboard/project/1#task-5)
+    private ?string $targetUrl = null; 
 
     #[MySql\Column]
     private bool $isRead = false;
@@ -42,7 +41,6 @@ class Notification
         $this->createdAt = new \DateTime();
     }
 
-    // Геттеры и сеттеры
     public function getId(): ?int { return $this->id; }
     public function getUser(): ?User { return $this->user; }
     public function setUser(?User $user): self { $this->user = $user; return $this; }

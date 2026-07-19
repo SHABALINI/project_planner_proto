@@ -41,9 +41,6 @@ class NotificationService
         $this->entityManager->flush();
     }
 
-    /**
-     * Отправляет уведомление всем участникам, которых касается изменение
-     */
     public function sendNotification(
         Project $project,
         string $message,
@@ -54,104 +51,66 @@ class NotificationService
         ?string $subtaskId = null,
         string $type = 'general'
     ): void {
-        // Получаем всех участников проекта
-        $members = $this->entityManager->getRepository(ProjectMember::class)
-            ->findBy(['project' => $project]);
+        $members = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
 
         $usersToNotify = [];
 
-        // 1. Владелец проекта (всегда получает уведомления)
         $owner = $project->getOwner();
         if ($owner && $owner !== $excludeUser) {
             $usersToNotify[$owner->getId()] = $owner;
         }
 
-        // 2. Администраторы (всегда получают уведомления)
         foreach ($members as $member) {
-            if ($member->getRole() === 'admin') {
-                $user = $member->getUser();
-                if ($user && $user !== $excludeUser) {
-                    $usersToNotify[$user->getId()] = $user;
-                }
-            }
-        }
+            $user = $member->getUser();
 
-        // 3. Зрители (получают все уведомления)
-        foreach ($members as $member) {
-            if ($member->getRole() === 'viewer') {
-                $user = $member->getUser();
-                if ($user && $user !== $excludeUser) {
-                    $usersToNotify[$user->getId()] = $user;
-                }
+            if (!$user || $user === $excludeUser) {
+                continue;
             }
-        }
 
-        // 4. Руководители (получают уведомления только по своим областям)
-        if ($areaId) {
-            foreach ($members as $member) {
-                if ($member->getRole() === 'manager') {
-                    // Проверяем, привязан ли руководитель к этой области
-                    $isManagerOfArea = false;
-                    foreach ($member->getAreas() as $area) {
-                        if ($area->getId() == $areaId) {
-                            $isManagerOfArea = true;
+            $role = $member->getRole();
+
+            if ($role === 'admin' || $role === 'viewer') {
+                $usersToNotify[$user->getId()] = $user;
+                continue;
+            }
+
+            if ($role === 'manager && $areaId') {
+                foreach ($member->getAreas() as $area) {
+                    if ($area->getId() === $areaId) {
+                        $usersToNotify[$user->getId()] = $user;
+                        break; 
+                    }
+                }
+                continue;
+            }
+
+            if ($role === 'executor' && ($taskId || $subtaskId)) {
+                $isAffected = false;
+
+                if ($taskId) {
+                    foreach ($member->getTasks() as $task) {
+                        if ($task->getId() === $taskId) {
+                            $isAffected = true;
                             break;
                         }
                     }
-                    
-                    if ($isManagerOfArea) {
-                        $user = $member->getUser();
-                        if ($user && $user !== $excludeUser) {
-                            $usersToNotify[$user->getId()] = $user;
+                }
+
+                if ($subtaskId && !$isAffected) {
+                    foreach ($member->getSubtasks() as $subtask) {
+                        if ($subtask->getId() === $subtaskId) {
+                            $isAffected = true;
+                            break;
                         }
                     }
+                }
+
+                if ($isAffected) {
+                    $usersToNotify[$user->getId()] = $user;
                 }
             }
         }
 
-        // 5. Исполнители (получают уведомления только по своим задачам/подзадачам)
-        if ($taskId || $subtaskId) {
-            foreach ($members as $member) {
-                if ($member->getRole() === 'executor') {
-                    $isAffected = false;
-                    
-                    // Проверяем задачи
-                    if ($taskId) {
-                        foreach ($member->getTasks() as $task) {
-                            if ($task->getId() == $taskId) {
-                                $isAffected = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Проверяем подзадачи
-                    if ($subtaskId && !$isAffected) {
-                        foreach ($member->getSubtasks() as $subtask) {
-                            if ($subtask->getId() == $subtaskId) {
-                                $isAffected = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if ($isAffected) {
-                        $user = $member->getUser();
-                        if ($user && $user !== $excludeUser) {
-                            $usersToNotify[$user->getId()] = $user;
-                        }
-                    }
-                }
-            }
-        }
-
-        error_log(sprintf(
-            'Sending notification to %d users for project "%s"',
-            count($usersToNotify),
-            $project->getTitle()
-        ));
-
-        // Отправляем уведомления
         foreach ($usersToNotify as $user) {
             $this->createNotification(
                 $user,
@@ -162,9 +121,6 @@ class NotificationService
         }
     }
 
-    /**
-     * Создает одно уведомление для пользователя
-     */
     private function createNotification(
         User $user,
         Project $project,
@@ -182,9 +138,6 @@ class NotificationService
         $this->entityManager->persist($notification);
     }
 
-    /**
-     * Вспомогательный метод для отправки уведомлений о изменении задачи
-     */
     public function notifyTaskChange(
         $task,
         User $currentUser,
@@ -210,9 +163,6 @@ class NotificationService
         );
     }
 
-    /**
-     * Вспомогательный метод для отправки уведомлений о изменении подзадачи
-     */
     public function notifySubtaskChange(
         $subtask,
         User $currentUser,
@@ -240,9 +190,6 @@ class NotificationService
         );
     }
 
-    /**
-     * Вспомогательный метод для отправки уведомлений о новом комментарии
-     */
     public function notifyNewComment(
         $comment,
         User $currentUser
@@ -269,9 +216,6 @@ class NotificationService
         );
     }
 
-    /**
-     * Вспомогательный метод для отправки уведомлений о добавлении новой задачи
-     */
     public function notifyNewTask(
         $task,
         User $currentUser
@@ -296,9 +240,6 @@ class NotificationService
         );
     }
 
-    /**
-     * Вспомогательный метод для отправки уведомлений о добавлении новой подзадачи
-     */
     public function notifyNewSubtask(
         $subtask,
         User $currentUser

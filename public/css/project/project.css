@@ -1,0 +1,155 @@
+/* public/css/project/project.css */
+
+/* Верхняя часть */
+.project-header {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid #f0f0f0;
+}
+
+.btn-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    color: var(--text-gray);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    text-decoration: none;
+    background: #f8f7fc;
+    border: 1px solid #f0f0f0;
+}
+
+.btn-back:hover {
+    background: var(--primary-purple-bg);
+    color: var(--primary-purple);
+    border-color: var(--primary-purple-border);
+    transform: translateX(-2px);
+}
+
+.project-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    letter-spacing: -0.3px;
+    word-break: break-word;
+}
+
+.role-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.role-badge.role-admin {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.role-badge.role-manager {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.role-badge.role-executor {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.role-badge.role-viewer {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.project-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-gray);
+    white-space: nowrap;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.project-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.meta-item {
+    font-size: 13px;
+    color: var(--text-gray);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.meta-icon {
+    font-size: 14px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .project-header {
+        padding: 16px 18px;
+    }
+    
+    .project-title {
+        font-size: 20px;
+    }
+    
+    .project-meta {
+        gap: 12px;
+    }
+    
+    .meta-item {
+        font-size: 12px;
+    }
+    
+    .project-status {
+        font-size: 12px;
+    }
+    
+    .role-badge {
+        font-size: 10px;
+        padding: 2px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .project-header .d-flex {
+        flex-wrap: wrap;
+    }
+    
+    .project-title {
+        font-size: 18px;
+    }
+    
+    .project-meta {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}

@@ -49,19 +49,16 @@ class ProjectController extends AbstractController
                 $joinedProjects[] = $project;
             }
         }
-        // Объединяем все проекты
-            $allProjects = array_merge($ownedProjects, $joinedProjects);
 
-            // Сортируем: сначала закрепленные, потом по дате создания
+        $allProjects = array_merge($ownedProjects, $joinedProjects);
+
         usort($allProjects, function($a, $b) {
-            // Сначала закрепленные
             if ($a->isPinned() && !$b->isPinned()) {
                 return -1;
             }
             if (!$a->isPinned() && $b->isPinned()) {
                 return 1;
             }
-            // Если оба закреплены или оба нет - по дате создания (новые сверху)
             return $b->getId() <=> $a->getId();
         });
 
@@ -82,16 +79,12 @@ class ProjectController extends AbstractController
         }
 
         $isOwner = ($project->getOwner() === $user);
-        $memberInfo = $this->entityManager->getRepository(ProjectMember::class)->findOneBy([
-            'project' => $project,
-            'user' => $user
-        ]);
+        $memberInfo = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
 
         if (!$isOwner && !$memberInfo) {
             throw $this->createNotFoundException('У вас нет доступа к этому проекту.');
         }
 
-        // Определяем текстовую роль для Twig
         $role = 'viewer';
         if ($isOwner) {
             $role = 'admin';
@@ -99,18 +92,14 @@ class ProjectController extends AbstractController
             $role = $memberInfo->getRole();
         }
 
-        // Собираем массивы разрешенных ID для Руководителей и Исполнителей
         $allowedAreas = $memberInfo ? array_map(fn($a) => $a->getId(), $memberInfo->getAreas()->toArray()) : [];
         $allowedTasks = $memberInfo ? array_map(fn($t) => $t->getId(), $memberInfo->getTasks()->toArray()) : [];
-        $allowedSubtasks = $memberInfo ? array_map(fn($s) => $s->getId(), $memberInfo->getSubtasks()->toArray()) : [];
 
         $allMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
         $projectMembers = array_filter($allMembers, function($member) use ($project) {
-            // Исключаем владельца проекта
             return $member->getUser()->getId() !== $project->getOwner()->getId();
         });;
 
-        // Сортируем по приоритету ролей
         $rolePriority = [
             'admin' => 1,
             'manager' => 2,
@@ -127,7 +116,6 @@ class ProjectController extends AbstractController
             'userRole' => $role,
             'allowedAreas' => $allowedAreas,
             'allowedTasks' => $allowedTasks,
-            'allowedSubtasks' => $allowedSubtasks,
             'currentUser' => $user,
             'allUsers' => $allUsers,
             'project_members' => $projectMembers,
@@ -475,8 +463,7 @@ class ProjectController extends AbstractController
 
             // Проверяем права
             $isOwner = ($project->getOwner() === $user);
-            $member = $this->entityManager->getRepository(ProjectMember::class)
-                ->findOneBy(['project' => $project, 'user' => $user]);
+            $member = $this->entityManager->getRepository(ProjectMember::class)          ->findOneBy(['project' => $project, 'user' => $user]);
             $role = $isOwner ? 'admin' : ($member ? $member->getRole() : 'viewer');
 
             if ($role === 'viewer' || $role === 'executor') {
@@ -866,8 +853,7 @@ class ProjectController extends AbstractController
         $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
         $role = $project->getOwner() === $user ? 'admin' : ($member ? $member->getRole() : 'viewer');
 
-        // ПРОВЕРКА ПРАВ ИЗ ТЗ: 
-        // Удалить может: Автор комментария ИЛИ Админ ИЛИ Руководитель области, внутри которой задача
+        // проверка прав
         $isAuthor = ($comment->getAuthor() === $user);
         $isAdmin = ($role === 'admin');
         $isAreaManager = ($role === 'manager' && $member && $member->getAreas()->contains($area));

@@ -38,16 +38,35 @@ class Task
     #[ORM\OneToMany(targetEntity: Subtask::class, mappedBy: 'task', orphanRemoval: true)]
     private Collection $subtasks;
 
-    #[ORM\OneToMany(mappedBy: 'task', targetEntity: Comment::class, cascade: ['remove'])]
-    private $comments;
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'task', orphanRemoval: true)]
+    private Collection $comments;
 
     public function __construct()
     {
         $this->subtasks = new ArrayCollection();
-        $this->comments = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->comments = new ArrayCollection();
     }
 
-    public function getComments() { return $this->comments; }
+    public function getComments() : Collection { return $this->comments; }
+
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setTask($this); 
+        }
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): static
+    {
+        if ($this->comments->removeElement($comment)) {
+            if ($comment->getTask() === $this) {
+                $comment->setTask(null);
+            }
+        }
+        return $this;
+    }
 
     public function getId(): ?int
     {
