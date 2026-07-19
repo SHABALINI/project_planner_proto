@@ -32,14 +32,13 @@ class ProjectMemberRepository extends ServiceEntityRepository
     /**
      * Получить всех участников проекта (кроме владельца)
      */
-    public function findMembersExceptOwner(Project $project): array
+    public function findMembersWithoutOwner(Project $project): array
     {
-        return $this->createQueryBuilder('pm')
-            ->where('pm.project = :project')
-            ->andWhere('pm.user != :owner')
+        return $this->createQueryBuilder('m')
+            ->andWhere('m.project = :project')
+            ->andWhere('m.user != :owner')
             ->setParameter('project', $project)
             ->setParameter('owner', $project->getOwner())
-            ->orderBy('pm.role', 'ASC')
             ->getQuery()
             ->getResult();
     }

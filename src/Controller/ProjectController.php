@@ -18,18 +18,18 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Psr\Log\LoggerInterface;
 
 
 #[Route('/dashboard')]
 class ProjectController extends AbstractController
 {
-    private EntityManagerInterface $entityManager;
-    private NotificationService $notificationService;
 
-    public function __construct(EntityManagerInterface $entityManager,NotificationService $notificationService){
-        $this->entityManager = $entityManager;
-        $this->notificationService = $notificationService;
-    }
+    public function __construct(
+        private EntityManagerInterface $entityManager, 
+        private NotificationService $notificationService,
+        private LoggerInterface $logger
+    ){}
 
     #[Route('', name: 'app_dashboard')]
     public function index(): Response
@@ -95,21 +95,9 @@ class ProjectController extends AbstractController
         $allowedAreas = $memberInfo ? array_map(fn($a) => $a->getId(), $memberInfo->getAreas()->toArray()) : [];
         $allowedTasks = $memberInfo ? array_map(fn($t) => $t->getId(), $memberInfo->getTasks()->toArray()) : [];
 
-        $allMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
-        $projectMembers = array_filter($allMembers, function($member) use ($project) {
-            return $member->getUser()->getId() !== $project->getOwner()->getId();
-        });;
+        $projectMembers = $this->entityManager->getRepository(ProjectMember::class)->findMembersWithoutOwner($project);
 
-        $rolePriority = [
-            'admin' => 1,
-            'manager' => 2,
-            'executor' => 3,
-            'viewer' => 4
-        ];
-
-        usort($projectMembers, function($a, $b) use ($rolePriority) {
-            return $rolePriority[$a->getRole()] <=> $rolePriority[$b->getRole()];
-        });
+        usort($projectMembers, [ProjectMember::class, 'compareByRole']);
 
         return $this->render('project/project_view.html.twig', [
             'project' => $project,
@@ -141,27 +129,13 @@ class ProjectController extends AbstractController
             $project->setOwner($user);
 
             $this->entityManager->persist($project);
-            $this->entityManager->flush(); // Сначала сохраняем чистый проект
-
-            // Создаем запись админа только ЕСЛИ класс ProjectMember полностью готов принимать данные
-            if (class_exists(ProjectMember::class)) {
-                $member = new ProjectMember();
-                $member->setProject($project);
-                $member->setUser($user);
-                $member->setRole('admin');
-                
-                $this->entityManager->persist($member);
-                $this->entityManager->flush();
-            }
+            $this->entityManager->flush(); 
 
             return new JsonResponse(['success' => true]);
             
         } catch (\Exception $e) {
-            // Если что-то пойдет не так, бэкенд не промолчит, а вернет точный текст ошибки базы данных
-            return new JsonResponse([
-                'success' => false, 
-                'error' => 'Database error: ' . $e->getMessage()
-            ], 500);
+            $this->logger->error('Project creation failed: ' . $e->getMessage());
+            return new JsonResponse(['success' => false, 'error' => 'Database error'], 500);
         }
     }
 
@@ -178,18 +152,13 @@ class ProjectController extends AbstractController
             return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
         }
 
-        // Проверяем, есть ли у пользователя доступ к проекту
         $isOwner = ($project->getOwner() === $user);
-        $memberInfo = $this->entityManager->getRepository(ProjectMember::class)->findOneBy([
-            'project' => $project,
-            'user' => $user
-        ]);
+        $memberInfo = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
 
         if (!$isOwner && !$memberInfo) {
             return new JsonResponse(['success' => false, 'error' => 'Access denied'], 403);
         }
 
-        // Переключаем статус закрепления
         $project->setIsPinned(!$project->isPinned());
         $this->entityManager->flush();
 
@@ -205,11 +174,16 @@ class ProjectController extends AbstractController
     {
         $user = $this->getUser();
         $data = json_decode($request->getContent(), true);
-        $project = $this->entityManager->getRepository(Project::class)->find($data['project_id'] ?? 0);
+        if (empty($data['title']) || empty($data['project_id'])) {
+            return new JsonResponse(['success' => false, 'error' => 'Missing required fields: project_id and title are mandatory.'], 400);
+        }
 
-        if (!$project) return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
+        $project = $this->entityManager->getRepository(Project::class)->find($data['project_id']);
 
-        // ПРОВЕРКА ПРАВ: Только Админ может создавать области
+        if (!$project){
+            return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
+        }
+    
         if ($project->getOwner() !== $user) {
             $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
             if (!$member || $member->getRole() !== 'admin') {
@@ -228,13 +202,19 @@ class ProjectController extends AbstractController
         return new JsonResponse(['success' => true]);
     }
 
-    #[Route('/task/create', name: 'app_task_create', methods: ['POST'])]
+    #[Route('/task/create', name: 'api_task_create', methods: ['POST'])]
     public function createTask(Request $request): JsonResponse
     {
         $user = $this->getUser();
         $data = json_decode($request->getContent(), true);
-        $area = $this->entityManager->getRepository(Area::class)->find($data['area_id'] ?? 0);
-        if (!$area) return new JsonResponse(['success' => false, 'error' => 'Area not found'], 404);
+        if (empty($data['title']) || empty($data['area_id'])) {
+            return new JsonResponse(['success' => false, 'error' => 'Missing required fields: area_id and title are mandatory.'], 400);
+        }
+        $area = $this->entityManager->getRepository(Area::class)->find($data['area_id']);
+
+        if (!$area) {
+            return new JsonResponse(['success' => false, 'error' => 'Area not found'], 404);
+        }
 
         $project = $area->getProject();
         
@@ -263,7 +243,7 @@ class ProjectController extends AbstractController
             $this->notificationService->notifyNewTask($task, $user);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            error_log('Notification error: ' . $e->getMessage());
+            $this->logger->error('Notification error: ' . $e->getMessage());
         }
 
         return new JsonResponse(['success' => true, 'id' => $task->getId()]);
@@ -274,8 +254,14 @@ class ProjectController extends AbstractController
     {
         $user = $this->getUser();
         $data = json_decode($request->getContent(), true);
-        $task = $this->entityManager->getRepository(Task::class)->find($data['task_id'] ?? 0);
-        if (!$task) return new JsonResponse(['success' => false, 'error' => 'Task not found'], 404);
+        if(empty($data['title']) || empty($data['task_id'])){
+            return new JsonResponse(['success'=> false,'message'=> 'Missing required fields: task_id and title are mandatory.']);
+        }
+        $task = $this->entityManager->getRepository(Task::class)->find($data['task_id']);
+
+        if (!$task){
+            return new JsonResponse(['success' => false, 'error' => 'Task not found'], 404);
+        }
 
         $project = $task->getArea()->getProject();
 
@@ -299,18 +285,21 @@ class ProjectController extends AbstractController
             $this->notificationService->notifyNewSubtask($subtask, $user);
             $this->entityManager->flush();
         } catch (\Exception $e) {
-            error_log('Notification error: ' . $e->getMessage());
+            $this->logger->error('Notification error: ' . $e->getMessage());
         }
 
         return new JsonResponse(['success' => true, 'id' => $subtask->getId()]);
     }
 
-    #[Route('/task/update', name: 'app_task_update', methods: ['POST'])]
+    #[Route('/task/update', name: 'api_task_update', methods: ['POST'])]
     public function updateTask(Request $request): JsonResponse
     {
         $user = $this->getUser();
         $data = json_decode($request->getContent(), true);
-        $task = $this->entityManager->getRepository(Task::class)->find($data['task_id'] ?? 0);
+        if (empty($data) || !isset($data['field'])) {
+            return new JsonResponse(['success' => false, 'error' => 'Missing required parameter: field'], 400); 
+        }
+        $task = $this->entityManager->getRepository(Task::class)->find($data['task_id']);
         if (!$task) return new JsonResponse(['success' => false], 404);
 
         $project = $task->getArea()->getProject();
@@ -323,7 +312,7 @@ class ProjectController extends AbstractController
         if ($role === 'viewer') {
             return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
         }
-        if ($role === 'executor' && $field !== 'status' && $field !== 'description') { // ← Разрешаем executor менять описание
+        if ($role === 'executor' && $field !== 'status' && $field !== 'description') {
             return new JsonResponse(['success' => false, 'error' => 'Executors can only change status and description'], 403);
         }
         if ($role === 'manager' && !$member->getAreas()->contains($task->getArea())) {
@@ -352,17 +341,15 @@ class ProjectController extends AbstractController
             $changeText = "→ обновил(а) описание у задачи «" . $task->getTitle() . "»";
         }
 
-        $this->entityManager->flush();
-
         if ($changeText !== null) {
             try {
                 $this->notificationService->notifyTaskChange($task, $user, $changeText);
-                $this->entityManager->flush();
             } catch (\Exception $e) {
-                error_log('Notification error: ' . $e->getMessage());
+                $this->logger->error('Notification error: ' . $e->getMessage());
             }
         }
 
+        $this->entityManager->flush();
         return new JsonResponse(['success' => true]);
     }
 
@@ -372,7 +359,10 @@ class ProjectController extends AbstractController
     {
         $user = $this->getUser();
         $data = json_decode($request->getContent(), true);
-        $subtask = $this->entityManager->getRepository(Subtask::class)->find($data['subtask_id'] ?? 0);
+        if (empty($data) || !isset($data['subtask_id'])) {
+            return new JsonResponse(['success' => false, 'error' => 'Missing required parameter: subtask_id'], 400);
+        }
+        $subtask = $this->entityManager->getRepository(Subtask::class)->find($data['subtask_id']);
         if (!$subtask) return new JsonResponse(['success' => false], 404);
 
         $project = $subtask->getTask()->getArea()->getProject();
@@ -385,34 +375,27 @@ class ProjectController extends AbstractController
         $field = $data['field'] ?? 'status';
         $value = $data['value'] ?? 'todo';
 
-        // === ДОБАВЛЯЕМ ОБРАБОТКУ DESCRIPTION ===
         if ($field === 'description') {
             $subtask->setDescription($value ?: null);
-            $this->entityManager->flush();
-            return new JsonResponse(['success' => true]);
-        }
-
-        // === ОСТАЛЬНЫЕ ПОЛЯ ===
-        if ($field === 'status') {
+        }else if ($field === 'status') {
             $oldStatus = $subtask->getStatus();
             $newStatus = $value;
             $subtask->setStatus($newStatus);
-            $this->entityManager->flush();
 
             if ($oldStatus !== $newStatus) {
                 try {
                     $statusRu = ($newStatus === 'done' ? 'Выполнено' : 'Не выполнено');
                     $changeText = "→ статус «" . $statusRu . "» у подзадачи «" . $subtask->getTitle() . "»";
                     $this->notificationService->notifySubtaskChange($subtask, $user, $changeText);
-                    $this->entityManager->flush();
                 } catch (\Exception $e) {
-                    error_log('Notification error: ' . $e->getMessage());
+                    $this->logger->error('Notification error: ' . $e->getMessage());
                 }
             }
 
             return new JsonResponse(['success' => true]);
         }
 
+        $this->entityManager->flush();
         return new JsonResponse(['success' => false, 'error' => 'Unknown field']);
     }
 
@@ -448,7 +431,6 @@ class ProjectController extends AbstractController
                 return new JsonResponse(['success' => false, 'error' => 'Entity not found'], 404);
             }
 
-            // Находим проект для проверки прав
             if ($type === 'project') {
                 $project = $entity;
             } elseif ($type === 'area') {
@@ -461,33 +443,36 @@ class ProjectController extends AbstractController
                 return new JsonResponse(['success' => false, 'error' => 'Invalid type'], 400);
             }
 
-            // Проверяем права
             $isOwner = ($project->getOwner() === $user);
-            $member = $this->entityManager->getRepository(ProjectMember::class)          ->findOneBy(['project' => $project, 'user' => $user]);
+            $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
             $role = $isOwner ? 'admin' : ($member ? $member->getRole() : 'viewer');
 
             if ($role === 'viewer' || $role === 'executor') {
                 return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
             }
 
-            // Для менеджера проверяем, что он управляет своей областью
-            if ($role === 'manager' && $type === 'area' && !$member->getAreas()->contains($entity)) {
-                return new JsonResponse(['success' => false, 'error' => 'Not your area'], 403);
+            if ($role === 'manager') {
+                $targetArea = null;
+                if ($type === 'area') $targetArea = $entity;
+                if ($type === 'task') $targetArea = $entity->getArea();
+                if ($type === 'subtask') $targetArea = $entity->getTask()->getArea();
+
+                if ($type !== 'project' && $targetArea && !$member->getAreas()->contains($targetArea)) {
+                    return new JsonResponse(['success' => false, 'error' => 'Not your area'], 403);
+                }
+                if ($type === 'project') {
+                    return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
+                }
             }
 
-            // Удаляем
             $this->entityManager->remove($entity);
             $this->entityManager->flush();
 
             return new JsonResponse(['success' => true]);
             
         } catch (\Exception $e) {
-            // Логируем ошибку
-            error_log('Delete error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-            return new JsonResponse([
-                'success' => false, 
-                'error' => 'Server error: ' . $e->getMessage()
-            ], 500);
+            $this->logger->error('Delete error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            return new JsonResponse(['success' => false, 'error' => 'Server error: ' . $e->getMessage()], 500);
         }
     }
 
@@ -547,8 +532,7 @@ class ProjectController extends AbstractController
 
         $allUsers = $this->entityManager->getRepository(User::class)->findAll();
         $members = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
-        
-        // Создаем карту участников
+
         $membersMap = [];
         foreach ($members as $m) {
             $membersMap[$m->getUser()->getId()] = [
@@ -561,7 +545,6 @@ class ProjectController extends AbstractController
 
         $result = [];
         foreach ($allUsers as $u) {
-            // Пропускаем владельца проекта (он всегда в проекте)
             if ($project->getOwner() === $u) {
                 continue;
             }
@@ -577,9 +560,8 @@ class ProjectController extends AbstractController
                 'subtasks' => $hasMemberData ? $hasMemberData['subtasks'] : []
             ];
         }
-        
-        // Добавляем логирование
-        error_log('Returning ' . count($result) . ' users for members modal');
+
+        $this->logger->error('Returning ' . count($result) . ' users for members modal');
         
         return new JsonResponse($result);
     }
@@ -592,40 +574,35 @@ class ProjectController extends AbstractController
 
         $currentUser = $this->getUser();
         $data = json_decode($request->getContent(), true);
-        $user = $this->entityManager->getRepository(User::class)->find($data['user_id'] ?? 0);
+        if (empty($data) || !isset($data['user_id'])) {
+            return new JsonResponse(['success' => false, 'error' => 'Missing required parameter: user_id'], 400);
+        }
+        $user = $this->entityManager->getRepository(User::class)->find($data['user_id']);
         if (!$user) return new JsonResponse(['success' => false], 404);
 
-        // Проверка прав на изменение админов
-        $targetMember = $this->entityManager->getRepository(ProjectMember::class)
-            ->findOneBy(['project' => $project, 'user' => $user]);
+        $targetMember = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
         
         $isOwner = ($project->getOwner() === $currentUser);
         $isTargetAdmin = $targetMember && $targetMember->getRole() === 'admin';
         $newRole = $data['role'] ?? 'viewer';
         
         if ($isTargetAdmin && !$isOwner) {
-            return new JsonResponse(['success' => false, 'error' => 'Only the project owner can modify admin permissions'], 403);
+            return new JsonResponse(['success' => false, 'error' => 'Только владелец проекта может назначать админов'], 403);
         }
         if ($newRole === 'admin' && !$isOwner) {
-            return new JsonResponse(['success' => false, 'error' => 'Only the project owner can grant admin permissions'], 403);
+            return new JsonResponse(['success' => false, 'error' => 'Только владелец проекта может менять админов'], 403);
         }
         if ($isTargetAdmin && $newRole !== 'admin' && !$isOwner) {
-            return new JsonResponse(['success' => false, 'error' => 'Only the project owner can revoke admin permissions'], 403);
+            return new JsonResponse(['success' => false, 'error' => 'Только владелец проекта может удалять админов'], 403);
         }
 
-        // Проверяем, был ли участник уже добавлен
-        $existingMember = $this->entityManager->getRepository(ProjectMember::class)
-            ->findOneBy(['project' => $project, 'user' => $user]);
+        $isNewMember = ($targetMember === null);
 
-        $isNewMember = ($existingMember === null);
-
-        $member = $this->entityManager->getRepository(ProjectMember::class)
-            ->findOneBy(['project' => $project, 'user' => $user]) ?? new ProjectMember();
+        $member = $targetMember ?? new ProjectMember();
         $member->setProject($project);
         $member->setUser($user);
         $member->setRole($data['role'] ?? 'viewer');
 
-        // Очищаем все связи
         foreach ($member->getAreas() as $a) $member->removeArea($a);
         foreach ($member->getTasks() as $t) $member->removeTask($t);
         foreach ($member->getSubtasks() as $s) $member->removeSubtask($s);
@@ -633,40 +610,32 @@ class ProjectController extends AbstractController
         $selectedAreas = $data['areas'] ?? [];
         $selectedTasks = $data['tasks'] ?? [];
 
-        // === НОВАЯ ЛОГИКА ДЛЯ EXECUTOR ===
         if ($member->getRole() === 'executor') {
-            // Сначала обрабатываем области
             foreach ($project->getAreas() as $area) {
                 $isAreaChecked = in_array($area->getId(), $selectedAreas);
                 
                 if ($isAreaChecked) {
-                    // Если область выбрана - добавляем область и ВСЕ задачи в ней
                     $member->addArea($area);
                     foreach ($area->getTasks() as $task) {
                         $member->addTask($task);
                     }
                 } else {
-                    // Если область не выбрана - проверяем отдельные задачи
                     foreach ($area->getTasks() as $task) {
                         $isTaskChecked = in_array($task->getId(), $selectedTasks);
                         if ($isTaskChecked) {
                             $member->addTask($task);
-                            // Также добавляем область, чтобы задача была видна
                             $member->addArea($area);
                         }
                     }
                 }
             }
         } elseif ($member->getRole() === 'manager') {
-            // Для менеджера только области
             foreach ($project->getAreas() as $area) {
                 if (in_array($area->getId(), $selectedAreas)) {
                     $member->addArea($area);
                 }
             }
         }
-
-        $currentUser = $this->getUser();
 
         if ($isNewMember) {
             $message = $currentUser->getUserIdentifier() . " 👤 добавил(а) вас в проект «" . $project->getTitle() . "»";
@@ -694,51 +663,40 @@ class ProjectController extends AbstractController
         if (!$project) {
             return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
         }
-        
-        // Проверка прав: только админ или владелец может удалять
+
         $isOwner = ($project->getOwner() === $currentUser);
         $isAdmin = false;
         
         if (!$isOwner) {
-            $member = $this->entityManager->getRepository(ProjectMember::class)
-                ->findOneBy(['project' => $project, 'user' => $currentUser]);
+            $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $currentUser]);
             $isAdmin = ($member && $member->getRole() === 'admin');
         }
         
         if (!$isOwner && !$isAdmin) {
             return new JsonResponse(['success' => false, 'error' => 'Forbidden'], 403);
         }
-        
-        // Нельзя удалить владельца проекта
+
         if ($project->getOwner()->getId() === $userId) {
-            return new JsonResponse(['success' => false, 'error' => 'Cannot remove project owner'], 400);
-        }
-        
-        $userToRemove = $this->entityManager->getRepository(User::class)->find($userId);
-        if (!$userToRemove) {
-            return new JsonResponse(['success' => false, 'error' => 'User not found'], 404);
-        }
-        
-        // Находим запись ProjectMember
-        $memberToRemove = $this->entityManager->getRepository(ProjectMember::class)
-            ->findOneBy(['project' => $project, 'user' => $userToRemove]);
-        
-        if (!$memberToRemove) {
-            return new JsonResponse(['success' => false, 'error' => 'Member not found'], 404);
+            return new JsonResponse(['success' => false, 'error' => 'Нельзя удалить владельца'], 400);
         }
 
-        //Нельзя удалить админа (если только ты не владелец) ===
+        $memberToRemove = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $userId]);
+        
+        if (!$memberToRemove) {
+            return new JsonResponse(['success' => false, 'error' => 'Участник не найден'], 404);
+        }
+
         if ($memberToRemove->getRole() === 'admin' && !$isOwner) {
             return new JsonResponse([
                 'success' => false, 
-                'error' => 'Cannot remove another admin. Only the project owner can remove admins.'
+                'error' => 'Нельзя удалить другого админа. Админа может удалить только владелец'
             ], 403);
         }
-        
-        // Отправляем уведомление удаленному пользователю (если он не текущий)
+ 
+        $userToRemove = $memberToRemove->getUser();
         if ($userToRemove !== $currentUser) {
             $message = $currentUser->getUserIdentifier() . " ❌ удалил(а) вас из проекта «" . $project->getTitle() . "»";
-            $targetUrl = $this->generateUrl('app_dashboard'); // Ссылка на дашборд
+            $targetUrl = $this->generateUrl('app_dashboard'); 
             $notification = new Notification();
             $notification->setUser($userToRemove);
             $notification->setProject($project);
@@ -747,8 +705,7 @@ class ProjectController extends AbstractController
             $notification->setTargetUrl($targetUrl);
             $this->entityManager->persist($notification);
         }
-        
-        // Удаляем участника
+
         $this->entityManager->remove($memberToRemove);
         $this->entityManager->flush();
         
@@ -762,10 +719,10 @@ class ProjectController extends AbstractController
         if (!$user) return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
 
         $taskId = $request->request->get('task_id');
-        $text = $request->request->get('text');
+        $text = $request->request->get('text') ?? '';
         $task = $this->entityManager->getRepository(Task::class)->find($taskId ?? 0);
 
-        if (!$task) return new JsonResponse(['success' => false, 'error' => 'Task not found'], 404);
+        if (!$task) return new JsonResponse(['success' => false, 'error' => 'Задача не найдена'], 404);
 
         $project = $task->getArea()->getProject();
         $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
@@ -774,7 +731,7 @@ class ProjectController extends AbstractController
         }
 
         if (empty(trim($text)) && !$request->files->get('file')) {
-            return new JsonResponse(['success' => false, 'error' => 'Comment cannot be empty'], 400);
+            return new JsonResponse(['success' => false, 'error' => 'Комментарий не может быть пустым'], 400);
         }
 
         $comment = new Comment();
@@ -784,14 +741,12 @@ class ProjectController extends AbstractController
 
         $filePath = null;
         $fileName = null;
-        
-        // Обработка загрузки файла
+
         $file = $request->files->get('file');
         if ($file) {
             $mimeType = $file->getMimeType();
             $isImage = strpos($mimeType, 'image/') === 0;
-            
-            // Сохраняем флаг isImage в комментарий
+
             $comment->setIsImage($isImage);
             $uploadsDirectory = $this->getParameter('kernel.project_dir') . '/public/uploads/comments';
             $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -809,22 +764,19 @@ class ProjectController extends AbstractController
                 $comment->setFilePath($filePath);
                 $comment->setFileName($fileName);
             } catch (\Exception $e) {
-                return new JsonResponse(['success' => false, 'error' => 'File upload failed'], 500);
+                return new JsonResponse(['success' => false, 'error' => 'Ошибка загрузки файла'], 500);
             }
         }
 
-        $this->entityManager->persist($comment);
-        $this->entityManager->flush();
-
         try {
             $this->notificationService->notifyNewComment($comment, $user);
-            $this->entityManager->flush();
         } catch (\Exception $e) {
-            error_log('Notification error: ' . $e->getMessage());
+            $this->logger->error('Notification error: ' . $e->getMessage());
         }
 
-        // Возвращаем JSON
         if ($request->isXmlHttpRequest()) {
+            $this->entityManager->persist($comment);
+            $this->entityManager->flush();
             return new JsonResponse([
                 'success' => true,
                 'id' => $comment->getId(),
@@ -844,7 +796,7 @@ class ProjectController extends AbstractController
     {
         $user = $this->getUser();
         $comment = $this->entityManager->getRepository(Comment::class)->find($id);
-        if (!$comment) return new JsonResponse(['success' => false, 'error' => 'Comment not found'], 404);
+        if (!$comment) return new JsonResponse(['success' => false, 'error' => 'Комментарий не найден'], 404);
 
         $task = $comment->getTask();
         $area = $task->getArea();
@@ -853,13 +805,12 @@ class ProjectController extends AbstractController
         $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
         $role = $project->getOwner() === $user ? 'admin' : ($member ? $member->getRole() : 'viewer');
 
-        // проверка прав
         $isAuthor = ($comment->getAuthor() === $user);
         $isAdmin = ($role === 'admin');
         $isAreaManager = ($role === 'manager' && $member && $member->getAreas()->contains($area));
 
         if (!$isAuthor && !$isAdmin && !$isAreaManager) {
-            return new JsonResponse(['success' => false, 'error' => 'Forbidden. You cannot delete this comment.'], 403);
+            return new JsonResponse(['success' => false, 'error' => 'Forbidden. Вы не можете удалить этот комментарий'], 403);
         }
 
         $this->entityManager->remove($comment);
@@ -875,31 +826,11 @@ class ProjectController extends AbstractController
         if (!$project) {
             return new JsonResponse(['success' => false, 'error' => 'Project not found'], 404);
         }
+
+        $members = $this->entityManager->getRepository(ProjectMember::class)->findMembersWithoutOwner($project);;
         
-        // Убираем проверку прав на просмотр участников
-        // Любой, кто имеет доступ к проекту, может видеть участников
-        
-        // Получаем всех участников, исключая владельца
-        $allMembers = $this->entityManager->getRepository(ProjectMember::class)->findBy(['project' => $project]);
-        error_log('Members found: ' . count($allMembers));
-        
-        $members = array_filter($allMembers, function($member) use ($project) {
-            return $member->getUser()->getId() !== $project->getOwner()->getId();
-        });
-        
-        // Сортируем по ролям
-        $rolePriority = [
-            'admin' => 1,
-            'manager' => 2,
-            'executor' => 3,
-            'viewer' => 4
-        ];
-        
-        usort($members, function($a, $b) use ($rolePriority) {
-            return $rolePriority[$a->getRole()] <=> $rolePriority[$b->getRole()];
-        });
-        
-        // Формируем данные для ответа
+        usort($members, [ProjectMember::class, 'compareByRole']);
+
         $membersData = [];
         foreach ($members as $member) {
             $membersData[] = [
@@ -913,8 +844,7 @@ class ProjectController extends AbstractController
                 'isOwner' => false
             ];
         }
-        
-        // Добавляем владельца
+
         $ownerData = [
             'id' => null,
             'userId' => $project->getOwner()->getId(),
@@ -928,11 +858,7 @@ class ProjectController extends AbstractController
         
         array_unshift($membersData, $ownerData);
         
-        return new JsonResponse([
-            'success' => true,
-            'members' => $membersData,
-            'total' => count($membersData)
-        ]);
+        return new JsonResponse(['success' => true, 'members' => $membersData, 'total' => count($membersData)]);
     }
 
     private function getRoleLabel(string $role): string

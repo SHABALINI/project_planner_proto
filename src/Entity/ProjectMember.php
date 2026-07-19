@@ -64,4 +64,19 @@ class ProjectMember
     public function getSubtasks(): Collection { return $this->subtasks; }
     public function addSubtask(Subtask $subtask): static { if (!$this->subtasks->contains($subtask)) $this->subtasks->add($subtask); return $this; }
     public function removeSubtask(Subtask $subtask): static { $this->subtasks->removeElement($subtask); return $this; }
+
+    private const ROLE_PRIORITY = [
+        'admin' => 1,
+        'manager' => 2,
+        'executor' => 3,
+        'viewer' => 4,
+    ];
+
+    public static function compareByRole(self $a, self $b): int
+    {
+        $priorityA = self::ROLE_PRIORITY[$a->getRole()] ?? 99;
+        $priorityB = self::ROLE_PRIORITY[$b->getRole()] ?? 99;
+
+        return $priorityA <=> $priorityB;
+    }
 }

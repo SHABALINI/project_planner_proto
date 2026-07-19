@@ -1,4 +1,3 @@
-// src/Repository/CommentRepository.php
 <?php
 
 namespace App\Repository;

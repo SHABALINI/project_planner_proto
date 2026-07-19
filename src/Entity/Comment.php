@@ -20,7 +20,7 @@ class Comment
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $author = null;
 
-    #[ORM\ManyToOne(targetEntity: Task::class)]
+    #[ORM\ManyToOne(targetEntity: Task::class, inversedBy: 'comments')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Task $task = null;
 
