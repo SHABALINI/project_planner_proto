@@ -1,4 +1,3 @@
-{# templates/project/dashboard.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Панель проектов — Планировщик{% endblock %}
@@ -28,7 +27,6 @@
             </div>
         </div>
 
-        {# Создание проекта #}
         <div class="create-card">
             <h5>✨ Создать новый проект</h5>
             <div class="input-group">
@@ -37,8 +35,7 @@
             </div>
         </div>
 
-        {# Закрепленные проекты #}
-        {% set pinnedProjects = projects|filter(p => p.isPinned) %}
+        {% set pinnedProjects = projects|filter(p => app.user.isProjectPinned(p.id)) %}
         {% if pinnedProjects|length > 0 %}
             <div class="section-title">
                 📌 Закрепленные
@@ -51,8 +48,7 @@
             </div>
         {% endif %}
 
-        {# Остальные проекты #}
-        {% set unpinnedProjects = projects|filter(p => not p.isPinned) %}
+        {% set unpinnedProjects = projects|filter(p => not app.user.isProjectPinned(p.id)) %}
         {% if unpinnedProjects|length > 0 %}
             <div class="section-title">
                 📂 Все проекты
@@ -94,6 +90,7 @@
         
         {% set projectPercent = totalTasks > 0 ? (doneTasks / totalTasks * 100)|round : 0 %}
         {% set isOwner = project.owner.id == currentUser.id %}
+        {% set isPinned = currentUser.isProjectPinned(project.id) %}
 
         <div class="col" id="project-card-{{ project.id }}">
             <div class="project-card">
@@ -102,9 +99,9 @@
                         <a href="{{ path('app_project_view', {'id': project.id}) }}">{{ project.title }}</a>
                     </h5>
                     <div class="project-card-actions">
-                        <button class="pin-btn {% if project.isPinned %}pinned{% else %}unpinned{% endif %}" 
+                        <button class="pin-btn {% if isPinned %}pinned{% else %}unpinned{% endif %}" 
                                 onclick="togglePin({{ project.id }})" 
-                                title="{% if project.isPinned %}Открепить{% else %}Закрепить{% endif %}">
+                                title="{% if isPinned %}Открепить{% else %}Закрепить{% endif %}">
                             📌
                         </button>
                         {% if isOwner %}
@@ -132,7 +129,7 @@
                     </span>
                     <span class="stat">
                         <span class="icon">📋</span>
-                        <strong>{{ totalTasks }}</strong> задач :
+                        <strong>{{ totalTasks }}</strong> задач
                     </span>
                     <span class="stat">
                         <span class="icon">✅</span>
@@ -258,7 +255,6 @@
             });
         }
 
-        // Анимация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.project-card').forEach((card, i) => {
                 card.style.opacity = '0';

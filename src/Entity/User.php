@@ -39,9 +39,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Project::class, mappedBy: 'owner')]
     private Collection $projects;
 
+    #[ORM\Column(type: 'json')]
+    private array $pinnedProjectIds = [];
+
     public function __construct()
     {
         $this->projects = new ArrayCollection();
+        $this->pinnedProjectIds = [];
     }
 
     public function getId(): ?int
@@ -142,5 +146,53 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this;
+    }
+
+    public function getPinnedProjectIds(): array
+    {
+        if (!isset($this->pinnedProjectIds) || !is_array($this->pinnedProjectIds)) {
+            return [];
+        }
+
+        return array_map('intval', array_values(array_unique($this->pinnedProjectIds)));
+    }
+
+    public function setPinnedProjectIds(array $pinnedProjectIds): static
+    {
+        $this->pinnedProjectIds = array_map('intval', array_values(array_unique($pinnedProjectIds)));
+        return $this;
+    }
+
+    public function isProjectPinned(int $projectId): bool
+    {
+        return in_array($projectId, $this->getPinnedProjectIds(), true);
+    }
+
+    public function pinProject(int $projectId): static
+    {
+        if (!$this->isProjectPinned($projectId)) {
+            $pinned = $this->getPinnedProjectIds();
+            $pinned[] = $projectId;
+            $this->setPinnedProjectIds($pinned);
+        }
+        return $this;
+    }
+
+    public function unpinProject(int $projectId): static
+    {
+        $pinned = array_filter($this->getPinnedProjectIds(), fn($id) => $id !== $projectId);
+        $this->setPinnedProjectIds($pinned);
+        return $this;
+    }
+
+    public function togglePinProject(int $projectId): bool
+    {
+        if ($this->isProjectPinned($projectId)) {
+            $this->unpinProject($projectId);
+            return false;
+        } else {
+            $this->pinProject($projectId);
+            return true;
+        }
     }
 }

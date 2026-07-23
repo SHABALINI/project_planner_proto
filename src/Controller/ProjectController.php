@@ -52,19 +52,20 @@ class ProjectController extends AbstractController
 
         $allProjects = array_merge($ownedProjects, $joinedProjects);
 
-        usort($allProjects, function($a, $b) {
-            if ($a->isPinned() && !$b->isPinned()) {
+        usort($allProjects, function($a, $b) use ($user) {
+            $aPinned = $user->isProjectPinned($a->getId());
+            $bPinned = $user->isProjectPinned($b->getId());
+
+            if ($aPinned && !$bPinned) {
                 return -1;
             }
-            if (!$a->isPinned() && $b->isPinned()) {
+            if (!$aPinned && $bPinned) {
                 return 1;
             }
             return $b->getId() <=> $a->getId();
         });
 
-        return $this->render('project/dashboard.html.twig', [
-            'projects' => $allProjects,
-        ]);
+        return $this->render('project/dashboard.html.twig', ['projects' => $allProjects,]);
     }
 
     #[Route('/project/{id}', name: 'app_project_view')]
@@ -142,6 +143,7 @@ class ProjectController extends AbstractController
     #[Route('/project/{id}/toggle-pin', name: 'api_project_toggle_pin', methods: ['POST'])]
     public function togglePin(int $id): JsonResponse
     {
+        /** @var User|null $user */
         $user = $this->getUser();
         if (!$user) {
             return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
@@ -159,14 +161,16 @@ class ProjectController extends AbstractController
             return new JsonResponse(['success' => false, 'error' => 'Access denied'], 403);
         }
 
-        $project->setIsPinned(!$project->isPinned());
+        $isPinned = $user->togglePinProject($project->getId());
+        
+        $this->entityManager->persist($user);
         $this->entityManager->flush();
 
         return new JsonResponse([
             'success' => true,
-            'isPinned' => $project->isPinned()
+            'isPinned' => $isPinned
         ]);
-    }
+}
 
 
     #[Route('/area/create', name: 'api_area_create', methods: ['POST'])]
@@ -403,45 +407,30 @@ class ProjectController extends AbstractController
     public function deleteElement(string $type, int $id): JsonResponse
     {
         try {
+            /** @var User|null $user */
             $user = $this->getUser();
             if (!$user) {
                 return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
             }
 
-            $entity = null;
-            
-            switch ($type) {
-                case 'project':
-                    $entity = $this->entityManager->getRepository(Project::class)->find($id);
-                    break;
-                case 'area':
-                    $entity = $this->entityManager->getRepository(Area::class)->find($id);
-                    break;
-                case 'task':
-                    $entity = $this->entityManager->getRepository(Task::class)->find($id);
-                    break;
-                case 'subtask':
-                    $entity = $this->entityManager->getRepository(Subtask::class)->find($id);
-                    break;
-                default:
-                    return new JsonResponse(['success' => false, 'error' => 'Invalid type: ' . $type], 400);
-            }
+            $entity = match ($type) {
+                'project' => $this->entityManager->getRepository(Project::class)->find($id),
+                'area'    => $this->entityManager->getRepository(Area::class)->find($id),
+                'task'    => $this->entityManager->getRepository(Task::class)->find($id),
+                'subtask' => $this->entityManager->getRepository(Subtask::class)->find($id),
+                default   => null,
+            };
 
             if (!$entity) {
                 return new JsonResponse(['success' => false, 'error' => 'Entity not found'], 404);
             }
 
-            if ($type === 'project') {
-                $project = $entity;
-            } elseif ($type === 'area') {
-                $project = $entity->getProject();
-            } elseif ($type === 'task') {
-                $project = $entity->getArea()->getProject();
-            } elseif ($type === 'subtask') {
-                $project = $entity->getTask()->getArea()->getProject();
-            } else {
-                return new JsonResponse(['success' => false, 'error' => 'Invalid type'], 400);
-            }
+            $project = match ($type) {
+                'project' => $entity,
+                'area'    => $entity->getProject(),
+                'task'    => $entity->getArea()->getProject(),
+                'subtask' => $entity->getTask()->getArea()->getProject(),
+            };
 
             $isOwner = ($project->getOwner() === $user);
             $member = $this->entityManager->getRepository(ProjectMember::class)->findOneBy(['project' => $project, 'user' => $user]);
@@ -452,10 +441,12 @@ class ProjectController extends AbstractController
             }
 
             if ($role === 'manager') {
-                $targetArea = null;
-                if ($type === 'area') $targetArea = $entity;
-                if ($type === 'task') $targetArea = $entity->getArea();
-                if ($type === 'subtask') $targetArea = $entity->getTask()->getArea();
+                $targetArea = match ($type) {
+                    'area'    => $entity,
+                    'task'    => $entity->getArea(),
+                    'subtask' => $entity->getTask()->getArea(),
+                    default   => null
+                };
 
                 if ($type !== 'project' && $targetArea && !$member->getAreas()->contains($targetArea)) {
                     return new JsonResponse(['success' => false, 'error' => 'Not your area'], 403);
@@ -465,13 +456,20 @@ class ProjectController extends AbstractController
                 }
             }
 
+            if ($type === 'project') {
+                if ($user->isProjectPinned($id)) {
+                    $user->unpinProject($id);
+                    $this->entityManager->persist($user);
+                }
+            }
+
             $this->entityManager->remove($entity);
             $this->entityManager->flush();
 
             return new JsonResponse(['success' => true]);
             
         } catch (\Exception $e) {
-            $this->logger->error('Delete error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            $this->logger->error('Delete error: ' . $e->getMessage());
             return new JsonResponse(['success' => false, 'error' => 'Server error: ' . $e->getMessage()], 500);
         }
     }
