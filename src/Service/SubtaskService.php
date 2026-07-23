@@ -53,7 +53,7 @@ class SubtaskService
         return $subtask;
     }
 
-    public function updateSubtask(User $user, int $subtaskId, string $field, string $value): bool
+    public function updateSubtask(User $user, int $subtaskId, string $field, mixed $value): bool
     {
         $subtask = $this->entityManager->getRepository(Subtask::class)->find($subtaskId);
         if (!$subtask) {
@@ -71,11 +71,23 @@ class SubtaskService
             throw new AccessDeniedHttpException('Forbidden');
         }
 
+        // Обработка всех полей
         if ($field === 'description') {
             $subtask->setDescription($value ?: null);
             $this->entityManager->flush();
+            
+            // Отправляем уведомление об изменении описания
+            try {
+                $changeText = "→ обновил(а) описание у подзадачи «" . $subtask->getTitle() . "»";
+                $this->notificationService->notifySubtaskChange($subtask, $user, $changeText);
+                $this->entityManager->flush();
+            } catch (\Exception $e) {
+                $this->logger->error('Notification error: ' . $e->getMessage());
+            }
+            
             return false; // Показываем, что обновления статуса не было
-        } elseif ($field === 'status') {
+        } 
+        elseif ($field === 'status') {
             $oldStatus = $subtask->getStatus();
             $newStatus = $value;
             $subtask->setStatus($newStatus);
@@ -93,7 +105,14 @@ class SubtaskService
             $this->entityManager->flush();
             return true;
         }
-
-        throw new \InvalidArgumentException('Unknown field');
+        elseif ($field === 'title') {
+            $subtask->setTitle($value);
+            $this->entityManager->flush();
+            return false;
+        }
+        else {
+            // Если поле неизвестно, выбрасываем исключение
+            throw new \InvalidArgumentException('Unknown field: ' . $field);
+        }
     }
 }

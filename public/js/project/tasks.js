@@ -427,43 +427,73 @@ function updateTaskParam(taskId, paramName, paramValue) {
     });
 }
 
-function updateTaskDescriptionDisplay(taskId, description) {
-    const taskItem = document.getElementById(`task-node-${taskId}`);
-    if (!taskItem) return;
+function updateSubtaskDescription(subtaskId, description) {
+    const input = document.getElementById(`subtaskDescription-${subtaskId}`);
+    const btn = input ? input.nextElementSibling : null;
     
-    // Находим блок с описанием
-    const descBlock = taskItem.querySelector('.task-description');
-    if (descBlock) {
-        const descSpan = descBlock.querySelector('span');
-        if (descSpan) {
-            if (description && description.trim()) {
-                descSpan.textContent = description;
-            } else {
-                descSpan.textContent = 'Нет описания';
-            }
-        }
+    if (btn) {
+        const originalText = btn.textContent;
+        btn.textContent = '⏳';
+        btn.disabled = true;
     }
     
-    // Обновляем индикатор в мета-данных задачи
-    const taskMain = taskItem.querySelector('.task-main');
-    if (taskMain) {
-        const metaDiv = taskMain.querySelector('.task-meta');
-        if (metaDiv) {
-            // Удаляем старый индикатор
-            const oldIndicator = metaDiv.querySelector('.text-muted[title="Есть описание"]');
-            if (oldIndicator) oldIndicator.remove();
+    fetch('/dashboard/subtask/update', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+            subtask_id: subtaskId, 
+            field: 'description', 
+            value: description || ''
+        }) 
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.json().then(data => {
+                throw new Error(data.error || 'Server error: ' + res.status);
+            });
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (btn) {
+            btn.textContent = '💾';
+            btn.disabled = false;
+        }
+        
+        if (data.success) {
+            showToast('Описание обновлено!', 'success');
             
-            // Добавляем новый если есть описание
-            if (description && description.trim()) {
-                const indicator = document.createElement('span');
-                indicator.className = 'text-muted';
-                indicator.style.cssText = 'font-size: 11px;';
-                indicator.title = 'Есть описание';
-                indicator.textContent = '📝';
-                metaDiv.appendChild(indicator);
+            // Добавляем/убираем индикатор 📝
+            const subtaskItem = document.getElementById(`subtask-${subtaskId}`);
+            if (subtaskItem) {
+                const label = subtaskItem.querySelector('.subtask-label');
+                const existingIcon = subtaskItem.querySelector('.text-muted[title="Есть описание"]');
+                
+                if (description && description.trim()) {
+                    if (!existingIcon) {
+                        const icon = document.createElement('span');
+                        icon.className = 'text-muted';
+                        icon.style.cssText = 'font-size: 10px; margin-left: 4px;';
+                        icon.title = 'Есть описание';
+                        icon.textContent = '📝';
+                        label.after(icon);
+                    }
+                } else {
+                    if (existingIcon) existingIcon.remove();
+                }
             }
+        } else {
+            showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
         }
-    }
+    })
+    .catch(err => {
+        if (btn) {
+            btn.textContent = '💾';
+            btn.disabled = false;
+        }
+        console.error('Error:', err);
+        showToast('❌ Ошибка при обновлении описания: ' + err.message, 'error');
+    });
 }
 
 function updateSubtaskStatus(subtaskId, isChecked) {
@@ -481,7 +511,14 @@ function updateSubtaskStatus(subtaskId, isChecked) {
             value: isChecked ? 'done' : 'todo' 
         })
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            return res.json().then(data => {
+                throw new Error(data.error || 'Server error: ' + res.status);
+            });
+        }
+        return res.json();
+    })
     .then(data => {
         checkbox.disabled = false;
         
@@ -501,14 +538,14 @@ function updateSubtaskStatus(subtaskId, isChecked) {
             
             showToast('Статус обновлен!', 'success');
         } else {
-            showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+            showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
             checkbox.checked = !isChecked;
         }
     })
     .catch(err => {
         checkbox.disabled = false;
         console.error('Error:', err);
-        showToast('Ошибка при обновлении', 'error');
+        showToast('❌ Ошибка при обновлении статуса: ' + err.message, 'error');
         checkbox.checked = !isChecked;
     });
 }

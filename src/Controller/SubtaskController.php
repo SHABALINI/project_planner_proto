@@ -32,6 +32,8 @@ class SubtaskController extends AbstractController
             return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 404);
         } catch (AccessDeniedHttpException $e) {
             return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 403);
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -47,20 +49,27 @@ class SubtaskController extends AbstractController
 
         try {
             $field = $data['field'] ?? 'status';
-            $value = $data['value'] ?? 'todo';
+            $value = $data['value'] ?? null;
+            
+            // Для поля description, значение может быть null или пустой строкой
+            if ($field === 'description' && $value === null) {
+                $value = '';
+            }
+            
             $isStatusChanged = $this->subtaskService->updateSubtask($user, (int)$data['subtask_id'], $field, $value);
 
-            if ($isStatusChanged) {
-                return new JsonResponse(['success' => true]);
-            }
-
-            return new JsonResponse(['success' => false, 'error' => 'Unknown field']);
+            return new JsonResponse([
+                'success' => true,
+                'isStatusChanged' => $isStatusChanged
+            ]);
         } catch (NotFoundHttpException $e) {
-            return new JsonResponse(['success' => false], 404);
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 404);
         } catch (AccessDeniedHttpException $e) {
-            return new JsonResponse(['success' => false], 403);
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 403);
         } catch (\InvalidArgumentException $e) {
-            return new JsonResponse(['success' => false, 'error' => $e->getMessage()]);
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 400);
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 }
