@@ -28,7 +28,7 @@
             {% endif %}
             
             {% if totalSubs > 0 %}
-                <span class="text-muted" style="font-size: 11px;">✅ Подзадач {{ taskPercent }}%</span>
+                <span class="text-muted" style="font-size: 11px;"><span style = 'color: #00fa08;'>{{ source('icons/done.svg')|raw }}</span> Подзадач {{ taskPercent }}%</span>
             {% endif %}
             
             {# Индикатор наличия описания #}
@@ -52,7 +52,7 @@
                     <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>🟡 Средний</option>
                     <option value="high" {% if task.priority == 'high' %}selected{% endif %}>🔴 Высокий</option>
                 </select>
-                <button class="btn-icon danger" onclick="deleteElement('task', {{ task.id }})">🗑</button>
+                <button class="btn-icon danger" onclick="deleteElement('task', {{ task.id }})"><span style = 'color: #fa0000;'>{{ source('icons/delete.svg')|raw }}</span></button>
             {% endif %}
         </div>
     </div>
@@ -62,7 +62,7 @@
         {# Описание задачи #}
         {% if task.description %}
             <div class="task-description mb-3 p-2 bg-white rounded border" style="font-size: 13px; color: var(--text-gray);">
-                <strong class="text-dark">📝 Описание:</strong>
+                <strong class="text-dark"><span style = 'color: #6400fa;'>{{ source('icons/describtion.svg')|raw }}</span> Описание:</strong>
                 <span>{{ task.description|nl2br }}</span>
             </div>
         {% endif %}

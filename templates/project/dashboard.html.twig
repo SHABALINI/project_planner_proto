@@ -18,24 +18,24 @@
         {# Шапка дашборда #}
         <div class="dashboard-header">
             <div>
-                <h1>📋 Мои проекты</h1>
+                <h1> Мои проекты</h1>
                 <p>Управляйте своими проектами, отслеживайте прогресс и достигайте целей</p>
             </div>
             <div class="dashboard-stats">
                 <div class="stat-item">
-                    📁 <strong>{{ projects|length }}</strong> проектов
+                    <span>{{ source('icons/project.svg')|raw }}</span> <strong>{{ projects|length }}</strong> проектов
                 </div>
                 <div class="stat-item">
-                    ⛳ <strong>{{ projects|reduce((carry, p) => carry + p.areas|length, 0) }}</strong> областей
+                    <span>{{ source('icons/area.svg')|raw }}</span> <strong>{{ projects|reduce((carry, p) => carry + p.areas|length, 0) }}</strong> областей
                 </div>
                 <div class="stat-item">
-                    📋 <strong>{{ projects|reduce((carry, p) => carry + p.areas|reduce((c, a) => c + a.tasks|length, 0), 0) }}</strong> задач
+                    <span>{{ source('icons/main-logo.svg')|raw }}</span> <strong>{{ projects|reduce((carry, p) => carry + p.areas|reduce((c, a) => c + a.tasks|length, 0), 0) }}</strong> задач
                 </div>
             </div>
         </div>
 
         <div class="create-card">
-            <h5>✨ Создать новый проект</h5>
+            <h5><span style ='color: #6400fa;'>{{ source('icons/project-plus.svg')|raw }}</span> Создать новый проект</h5>
             <div class="input-group">
                 <input type="text" id="projectTitle" class="form-control" placeholder="Введите название проекта..." onkeydown="if(event.key==='Enter') createProject()">
                 <button class="btn" onclick="createProject()">Создать проект</button>
@@ -45,7 +45,7 @@
         {% set pinnedProjects = projects|filter(p => app.user.isProjectPinned(p.id)) %}
         {% if pinnedProjects|length > 0 %}
             <div class="section-title">
-                📌 Закрепленные
+                <span style ='color: #6400fa;'>{{ source('icons/pinned.svg')|raw }}</span> Закрепленные
                 <span class="badge-count">{{ pinnedProjects|length }}</span>
             </div>
             <div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
@@ -58,7 +58,7 @@
         {% set unpinnedProjects = projects|filter(p => not app.user.isProjectPinned(p.id)) %}
         {% if unpinnedProjects|length > 0 %}
             <div class="section-title">
-                📂 Все проекты
+                <span style ='color: #6400fa;'>{{ source('icons/project.svg')|raw }}</span> Все проекты
                 <span class="badge-count">{{ unpinnedProjects|length }}</span>
             </div>
             <div class="row row-cols-1 row-cols-md-2 g-4">
@@ -71,7 +71,9 @@
         {# Если нет проектов #}
         {% if projects|length == 0 %}
             <div class="empty-state">
-                <span class="empty-icon">🚀</span>
+                <span class="empty-icon icon-xlarge">
+                    <span style="color: #8763f1;">{{ source('icons/plus-square.svg')|raw }}</span>
+                </span>
                 <h3>Начните с создания проекта</h3>
                 <p>Создайте свой первый проект, чтобы начать организовывать задачи и управлять командой</p>
             </div>
@@ -109,11 +111,16 @@
                         <button class="pin-btn {% if isPinned %}pinned{% else %}unpinned{% endif %}" 
                                 onclick="togglePin({{ project.id }})" 
                                 title="{% if isPinned %}Открепить{% else %}Закрепить{% endif %}">
-                            📌
+                            {% if isPinned %}
+                                    <span style = 'color: #7500fb;'>{{ source('icons/pin.svg')|raw }}</span>
+                                {% else %}
+                                    <span style = 'color: #947a7ab3;'>{{ source('icons/unpin.svg')|raw }}</span>
+                                {% endif %}
+                            </button>
                         </button>
                         {% if isOwner %}
                             <button class="btn-icon danger" onclick="deleteElement('project', {{ project.id }}, 'Удалить проект «{{ project.title }}» со всеми данными?')" title="Удалить проект">
-                                🗑
+                                <span style ='color: #ce0101;'>{{ source('icons/delete.svg')|raw }}</span>
                             </button>
                         {% endif %}
                     </div>
@@ -131,22 +138,24 @@
 
                 <div class="project-stats">
                     <span class="stat">
-                        <span class="icon">⛳</span>
+                        <span class="icon"><span style ='color: #6400fa;'>{{ source('icons/project.svg')|raw }}</span></span>
                         <strong>{{ totalAreas }}</strong> областей
                     </span>
                     <span class="stat">
-                        <span class="icon">📋</span>
+                        <span class="icon"><span style ='color: #6400fa;'>{{ source('icons/main-logo.svg')|raw }}</span></span>
                         <strong>{{ totalTasks }}</strong> задач
                     </span>
                     <span class="stat">
-                        <span class="icon">✅</span>
+                        <span class="icon"><span style ='color: #28ce07;'>{{ source('icons/done.svg')|raw }}</span></span>
                         <strong>{{ (doneTasks)|round }}</strong> выполнено
                     </span>
-                    <span class="stat ms-auto">
-                        <a href="{{ path('app_project_view', {'id': project.id}) }}" class="btn btn-sm" style="background: var(--primary-purple); color: white; border-radius: 8px; padding: 4px 16px; font-size: 13px; text-decoration: none; transition: all 0.2s ease;">
-                            Открыть →
-                        </a>
-                    </span>
+                </div>
+                <div class="project-open-btn" style="text-align: center; padding: 12px 0 0; border-top: 1px solid rgba(0,0,0,0.06); margin-top: 12px;">
+                    <a href="{{ path('app_project_view', {'id': project.id}) }}" 
+                    class="btn btn-sm" 
+                    style="background: var(--primary-purple); color: white; border-radius: 10px; padding: 8px 100px; font-size: 16px; text-decoration: none; display: inline-block; transition: all 0.2s ease;">
+                        Открыть →
+                    </a>
                 </div>
             </div>
         </div>

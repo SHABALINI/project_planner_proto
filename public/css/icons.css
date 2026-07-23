@@ -77,3 +77,22 @@ svg {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.6; transform: scale(0.95); }
 }
+
+/* Большая иконка */
+.icon-large svg {
+    width: 48px !important;
+    height: 48px !important;
+}
+
+/* Очень большая иконка */
+.icon-xlarge svg {
+    width: 64px !important;
+    height: 64px !important;
+}
+
+/* Для пустой области */
+.empty-icon svg {
+    width: 80px !important;
+    height: 80px !important;
+    opacity: 0.3;
+}

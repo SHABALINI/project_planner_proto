@@ -4,7 +4,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">👥 Управление участниками и добавление в проект</h5>
+                <h5 class="modal-title"><span style = 'color: #6400fa;'>{{ source('icons/users.svg')|raw }}</span> Управление участниками и добавление в проект</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -35,13 +35,13 @@
                                 <div class="mb-2 ms-2 area-node">
                                     <div class="form-check">
                                         <input class="form-check-input area-cb" type="checkbox" value="{{ area.id }}" id="cb-area-{{ area.id }}" onchange="handleAreaCbChange({{ area.id }}, this.checked)">
-                                        <label class="form-check-label fw-bold text-success" for="cb-area-{{ area.id }}">📍 {{ area.title }}</label>
+                                        <label class="form-check-label fw-bold text-success" for="cb-area-{{ area.id }}"><span style = 'color: #6400fa;'>{{ source('icons/area.svg')|raw }}</span> {{ area.title }}</label>
                                     </div>
                                     {% for task in area.tasks %}
                                         <div class="ms-4 task-node">
                                             <div class="form-check">
                                                 <input class="form-check-input task-cb" type="checkbox" value="{{ task.id }}" id="cb-task-{{ task.id }}" data-area="{{ area.id }}" onchange="handleTaskCbChange({{ task.id }}, this.checked)">
-                                                <label class="form-check-label text-dark" for="cb-task-{{ task.id }}">🔹 {{ task.title }}</label>
+                                                <label class="form-check-label text-dark" for="cb-task-{{ task.id }}"><span style = 'color: #6400fa;'>{{ source('icons/right.svg')|raw }}</span> {{ task.title }}</label>
                                             </div>
                                         </div>
                                     {% endfor %}

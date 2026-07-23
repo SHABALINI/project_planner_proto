@@ -33,30 +33,30 @@
                         </a>
                     </div>
                     <button class="collapse-btn" onclick="toggleSidebar()" title="Свернуть/Развернуть меню">
-                        ◀
+                        <span>{{ source('icons/left.svg')|raw }}</span>
                     </button>
                 </div>
 
                 <nav class="sidebar-nav">
                     <div class="nav-section-title">Основное</div>
                     <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' or app.request.attributes.get('_route') == 'app_project_view' %}active{% endif %}" data-tooltip="Проекты">
-                        <span>{{ source('icons/project.svg')|raw }}</span>
+                         <span class="nav-icon"><span>{{ source('icons/project.svg')|raw }}</span></span>
                         <span class="nav-text">Проекты</span>
                     </a>
                     <a href="{{ path('app_notifications_center') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_notifications_center' %}active{% endif %}" data-tooltip="Уведомления">
-                        <span class="nav-icon">🔔</span>
+                        <span class="nav-icon"><span>{{ source('icons/notification.svg')|raw }}</span></span>
                         <span class="nav-text">Уведомления</span>
                         <span class="nav-badge d-none" id="sidebar-badge">0</span>
                     </a>
 
                     <div class="nav-section-title">Команда</div>
                     <a href="#" class="nav-link opacity-75" onclick="showComingSoon('Приглашения')" data-tooltip="Приглашения">
-                        <span class="nav-icon">📩</span>
+                        <span class="nav-icon"><span>{{ source('icons/mail.svg')|raw }}</span></span>
                         <span class="nav-text">Приглашения</span>
                         <span class="nav-badge d-none" id="invite-badge">0</span>
                     </a>
                     <a href="#" class="nav-link opacity-75" onclick="showComingSoon('Профиль')" data-tooltip="Профиль">
-                        <span class="nav-icon">👤</span>
+                        <span class="nav-icon"><span>{{ source('icons/user.svg')|raw }}</span></span>
                         <span class="nav-text">Мой профиль</span>
                     </a>
                 </nav>
@@ -70,7 +70,7 @@
                         </div>
                     </div>
                     <a href="{{ path('app_logout') }}" class="logout-btn">
-                        🚪 <span class="logout-text">Выйти</span>
+                        <span>{{ source('icons/log-out.svg')|raw }}</span> <span class="logout-text">Выйти</span>
                     </a>
                 </div>
             </div>

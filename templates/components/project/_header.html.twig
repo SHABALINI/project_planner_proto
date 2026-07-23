@@ -9,7 +9,7 @@
         
         <div class="project-info">
             <div class="d-flex align-items-center gap-3 flex-wrap">
-                <h1 class="project-title">📁 {{ project.title }}</h1>
+                <h1 class="project-title"><span style = 'color: #bb00ff;'>{{ source('icons/project.svg')|raw }}</span> {{ project.title }}</h1>
                 <span class="role-badge role-{{ userRole }}">
                     {{ userRole|upper }}
                 </span>
@@ -20,11 +20,11 @@
             </div>
             <div class="project-meta">
                 <span class="meta-item">
-                    <span class="meta-icon">⛳</span>
+                    <span class="meta-icon"><span style = 'color: #6400fa;'>{{ source('icons/area.svg')|raw }}</span></span>
                     {{ project.areas|length }} областей
                 </span>
                 <span class="meta-item">
-                    <span class="meta-icon">📋</span>
+                    <span class="meta-icon"><span style = 'color: #6400fa;'>{{ source('icons/main-logo.svg')|raw }}</span></span>
                     {% set totalTasks = 0 %}
                     {% for area in project.areas %}
                         {% set totalTasks = totalTasks + area.tasks|length %}
@@ -32,7 +32,7 @@
                     {{ totalTasks }} задач
                 </span>
                 <span class="meta-item">
-                    <span class="meta-icon">👥</span>
+                    <span class="meta-icon"><span style = 'color: #6400fa;'>{{ source('icons/users.svg')|raw }}</span></span>
                     {{ project_members|length + 1 }} участников
                 </span>
             </div>

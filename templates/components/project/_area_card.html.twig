@@ -14,7 +14,7 @@
     <div class="area-header" onclick="toggleArea({{ area.id }})">
         <div class="area-header-left">
             <div class="area-icon">
-                {% if areaPercent == 100 %}✅{% else %}⛳{% endif %}
+                {% if areaPercent == 100 %}<span style = 'color: #06ff02;'>{{ source('icons/done.svg')|raw }}</span>{% else %}<span style = 'color: #fdfdfe;'>{{ source('icons/area.svg')|raw }}</span>{% endif %}
             </div>
             <div>
                 <div class="area-title">{{ area.title }}</div>

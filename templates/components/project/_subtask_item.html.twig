@@ -11,7 +11,7 @@
         <span class="subtask-label {% if subtask.status == 'done' %}done{% endif %}">{{ subtask.title }}</span>
         
         {% if subtask.description %}
-            <span class="text-muted" style="font-size: 10px;" title="Есть описание">📝</span>
+            <span class="text-muted" style="font-size: 10px;" title="Есть описание"><span style = 'color: #6400fa;'>{{ source('icons/describtion.svg')|raw }}</span></span>
         {% endif %}
     </div>
     
@@ -27,7 +27,7 @@
             <button class="btn btn-sm btn-outline-secondary" 
                     onclick="updateSubtaskDescription({{ subtask.id }}, document.getElementById('subtaskDescription-{{ subtask.id }}').value)"
                     style="padding: 2px 6px; font-size: 12px;">
-                💾
+                <span style = 'color: #000000;'>{{ source('icons/done.svg')|raw }}</span>
             </button>
         </div>
     {% endif %}

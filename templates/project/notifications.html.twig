@@ -12,18 +12,18 @@
     {# Шапка #}
     <div class="notifications-header">
         <div class="notifications-header-left">
-            <h1>🔔 Уведомления</h1>
+            <h1><span style ='color: #6400fa;'>{{ source('icons/notification.svg')|raw }}</span> Уведомления</h1>
             <span class="unread-badge" id="unreadCount">
                 {% if totalUnreadCount > 0 %}
                     {{ totalUnreadCount }} непрочитанных
                 {% else %}
-                    Все прочитано ✨
+                    Все прочитано
                 {% endif %}
             </span>
         </div>
         <div class="notifications-header-actions">
             <button class="btn-mark-all-read" id="markAllReadBtn" onclick="markAllAsRead()" {% if totalUnreadCount == 0 %}disabled{% endif %}>
-                ✅ Отметить все прочитанными
+                <span style ='color: #19fa00;'>{{ source('icons/check.svg')|raw }}</span> Отметить все прочитанными
             </button>
         </div>
     </div>
@@ -81,16 +81,9 @@
 
 {# Макрос для рендеринга уведомления #}
 {% macro renderNotification(n) %}
-    {% set iconMap = {
-        'project': '📁',
-        'task': '📋',
-        'comment': '💬',
-        'member': '👤',
-        'system': '⚙️'
-    } %}
+    {# ВЫБИРАЕМ ИКОНКУ ЧЕРЕЗ УСЛОВИЯ #}
     {% set iconType = n.type|default('system') %}
-    {% set icon = iconMap[iconType]|default('📌') %}
-
+    
     <div class="notification-item {% if not n.isRead %}unread{% endif %}" 
          id="notification-{{ n.id }}" 
          data-id="{{ n.id }}" 
@@ -98,7 +91,19 @@
          data-project="{{ n.project.id }}">
         
         <div class="notification-icon {{ iconType }}">
-            {{ icon }}
+            {% if iconType == 'project' %}
+                <span style = 'color: #6400fa;'>{{ source('icons/project.svg')|raw }}</span>
+            {% elseif iconType == 'task' %}
+                <span style = 'color: #6400fa;'>{{ source('icons/main-logo.svg')|raw }}</span>
+            {% elseif iconType == 'comment' %}
+                <span style = 'color: #6400fa;'>{{ source('icons/comment.svg')|raw }}</span>
+            {% elseif iconType == 'member' %}
+                <span style = 'color: #6400fa;'>{{ source('icons/user-plus.svg')|raw }}</span>
+            {% elseif iconType == 'system' %}
+                <span style = 'color: #6400fa;'>{{ source('icons/settings.svg')|raw }}</span>
+            {% else %}
+                <span style = 'color: #6400fa;'>{{ source('icons/bell.svg')|raw }}</span>
+            {% endif %}
         </div>
 
         <div class="notification-content">
@@ -107,8 +112,8 @@
             </div>
             <div class="notification-message">{{ n.message }}</div>
             <div class="notification-meta">
-                <span class="time">🕐 {{ n.createdAt|date('d.m.Y H:i') }}</span>
-                <span class="project-tag">📁 {{ n.project.title }}</span>
+                <span class="time"><span style = 'color: #000000;'>{{ source('icons/wait.svg')|raw }}</span> {{ n.createdAt|date('d.m.Y H:i') }}</span>
+                <span class="project-tag"><span style = 'color: #000000;'>{{ source('icons/project.svg')|raw }}</span> {{ n.project.title }}</span>
                 {% if not n.isRead %}
                     <span class="badge" style="background: var(--primary-purple); color: white; font-size: 10px; padding: 1px 8px; border-radius: 12px;">Новое</span>
                 {% endif %}
@@ -117,7 +122,7 @@
 
         <div class="notification-actions">
             {% if not n.isRead %}
-                <button class="btn-action mark-read" onclick="markAsRead({{ n.id }})">✔ Прочитать</button>
+                <button class="btn-action mark-read" onclick="markAsRead({{ n.id }})"><span style = 'color: #000000;'>{{ source('icons/check.svg')|raw }}</span> Прочитать</button>
             {% endif %}
             {% if n.targetUrl %}
                 <button class="btn-action go-to" onclick="goToNotification({{ n.id }}, '{{ n.targetUrl }}')">Перейти →</button>

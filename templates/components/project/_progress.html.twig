@@ -25,6 +25,6 @@
         <span class="step {% if projectPercent >= 0 %}active{% endif %}">Начато</span>
         <span class="step {% if projectPercent >= 33 %}active{% endif %}">В работе</span>
         <span class="step {% if projectPercent >= 66 %}active{% endif %}">Почти готово</span>
-        <span class="step {% if projectPercent >= 100 %}active{% endif %}">Завершено ✅</span>
+        <span class="step {% if projectPercent >= 100 %}active{% endif %}">Завершено <span style = 'color: #00fa15;'>{{ source('icons/check.svg')|raw }}</span></span>
     </div>
 </div>

@@ -3,7 +3,7 @@
     <div class="card shadow-sm sticky-top" style="top: 20px; border-radius: 16px; border: none; overflow: hidden;">
         <div class="card-header" style="background: linear-gradient(135deg, #4c1d95, #5b21b6); border: none; padding: 14px 18px;">
             <div class="d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 text-white">👥 Участники <span class="badge bg-white text-dark ms-2" id="membersCount">{{ project_members|length + 1 }}</span></h6>
+                <h6 class="mb-0 text-white"><span style = 'color: #f7f6f9;'>{{ source('icons/users.svg')|raw }}</span> Участники <span class="badge bg-white text-dark ms-2" id="membersCount">{{ project_members|length + 1 }}</span></h6>
                 {% if userRole == 'admin' %}
                     <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#membersModal" onclick="openMembersModal()" style="border-radius: 10px;">Управление</button>
                 {% endif %}
