@@ -10,6 +10,7 @@
         
         <link rel="stylesheet" href="{{ asset('css/app.css') }}">
         <link rel="stylesheet" href="{{ asset('css/components/sidebar.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/icons.css') }}">
 
         {% block stylesheets %}{% endblock %}
         
@@ -27,7 +28,7 @@
                 <div class="sidebar-brand">
                     <div class="brand-content">
                         <a href="{{ path('app_dashboard') }}" class="brand-logo">
-                            <div class="brand-icon">📋</div>
+                            <div class="brand-icon"><span style = 'color: #fafafa;'>{{ source('icons/main-logo.svg')|raw }}</span></div>
                             <span class="brand-name">Plan<span>Flow</span></span>
                         </a>
                     </div>
@@ -39,7 +40,7 @@
                 <nav class="sidebar-nav">
                     <div class="nav-section-title">Основное</div>
                     <a href="{{ path('app_dashboard') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' or app.request.attributes.get('_route') == 'app_project_view' %}active{% endif %}" data-tooltip="Проекты">
-                        <span class="nav-icon">📁</span>
+                        <span>{{ source('icons/project.svg')|raw }}</span>
                         <span class="nav-text">Проекты</span>
                     </a>
                     <a href="{{ path('app_notifications_center') }}" class="nav-link {% if app.request.attributes.get('_route') == 'app_notifications_center' %}active{% endif %}" data-tooltip="Уведомления">

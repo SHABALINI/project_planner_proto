@@ -1,0 +1,324 @@
+/* ============================================
+   AUTH PAGES — СУПЕР ПИЗДАТЫЙ ДИЗАЙН
+   ============================================ */
+
+/* ---------- ОБЩИЕ СТИЛИ ---------- */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Анимированный фон с частицами */
+.auth-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+    animation: authFloat 20s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes authFloat {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(30px, -20px) rotate(2deg); }
+    66% { transform: translate(-20px, 30px) rotate(-2deg); }
+}
+
+/* ---------- КАРТОЧКА ---------- */
+.auth-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 440px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 48px 40px 40px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    transition: all 0.4s ease;
+}
+
+.auth-card:hover {
+    box-shadow: 0 35px 80px rgba(0, 0, 0, 0.6);
+    transform: translateY(-2px);
+}
+
+/* ---------- ЛОГОТИП / ИКОНКА ---------- */
+.auth-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 20px;
+    font-size: 32px;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    transition: all 0.3s ease;
+}
+
+.auth-logo:hover {
+    transform: scale(1.05) rotate(-3deg);
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5);
+}
+
+/* ---------- ЗАГОЛОВКИ ---------- */
+.auth-title {
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 15px;
+    margin-bottom: 32px;
+    font-weight: 400;
+}
+
+.auth-subtitle a {
+    color: #818cf8;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.auth-subtitle a:hover {
+    color: #a5b4fc;
+    text-decoration: underline;
+}
+
+/* ---------- ФОРМА ---------- */
+.auth-form .form-group {
+    margin-bottom: 20px;
+}
+
+.auth-form label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+.auth-form .form-control {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.auth-form .form-control:focus {
+    border-color: #6366f1;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+
+.auth-form .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+/* ---------- ЧЕКБОКС (Agree Terms) ---------- */
+.auth-form .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0 24px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+.auth-form .checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #6366f1;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 4px;
+}
+
+.auth-form .checkbox-group label {
+    cursor: pointer;
+    margin-bottom: 0;
+}
+
+/* ---------- КНОПКА ---------- */
+.auth-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.3px;
+}
+
+.auth-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(99, 102, 241, 0.4);
+}
+
+.auth-btn:active {
+    transform: translateY(0);
+}
+
+/* Эффект "сияния" при наведении */
+.auth-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+}
+
+.auth-btn:hover::after {
+    opacity: 1;
+}
+
+/* ---------- ОШИБКИ ---------- */
+.auth-error {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #fca5a5;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.auth-form .form-error {
+    color: #f87171;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+/* ---------- ЛИНКИ ---------- */
+.auth-footer {
+    text-align: center;
+    margin-top: 24px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 14px;
+}
+
+.auth-footer a {
+    color: #818cf8;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.auth-footer a:hover {
+    color: #a5b4fc;
+    text-decoration: underline;
+}
+
+/* ---------- FLASH СООБЩЕНИЯ ---------- */
+.auth-flash {
+    background: rgba(52, 211, 153, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.25);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #6ee7b7;
+    font-size: 14px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* ---------- АДАПТИВ ---------- */
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 32px 20px 28px;
+        border-radius: 16px;
+    }
+
+    .auth-title {
+        font-size: 24px;
+    }
+
+    .auth-logo {
+        width: 60px;
+        height: 60px;
+        font-size: 26px;
+    }
+
+    .auth-form .form-control {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .auth-btn {
+        padding: 12px;
+        font-size: 15px;
+    }
+}
+
+/* ---------- ОТДЕЛЬНО ДЛЯ СТРАНИЦЫ ВХОДА ---------- */
+.login-page .auth-card {
+    max-width: 400px;
+}
+
+/* ---------- АНИМАЦИЯ ПОЯВЛЕНИЯ ---------- */
+.auth-card {
+    animation: authAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+@keyframes authAppear {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Задержка для логотипа */
+.auth-logo {
+    animation: authLogo 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+@keyframes authLogo {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) rotate(-10deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}

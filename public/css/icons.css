@@ -1,0 +1,79 @@
+/* ============================================
+   ICONS — Универсальная система иконок
+   ============================================ */
+
+/* ---------- БАЗОВЫЕ ПЕРЕМЕННЫЕ ---------- */
+:root {
+    --icon-size: 24px;
+    --icon-color: currentColor;
+    
+    /* Цвета */
+    --icon-primary: #6366f1;
+    --icon-success: #10b981;
+    --icon-danger: #ef4444;
+    --icon-warning: #f59e0b;
+    --icon-light: #ffffff;
+    --icon-dark: #1f2937;
+    --icon-muted: rgba(255, 255, 255, 0.5);
+}
+
+/* ---------- БАЗОВЫЙ СТИЛЬ ---------- */
+svg {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    color: var(--icon-color);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+/* ---------- РАЗМЕРЫ ---------- */
+.icon-sm svg { --icon-size: 16px; }
+.icon-md svg { --icon-size: 24px; }
+.icon-lg svg { --icon-size: 32px; }
+.icon-xl svg { --icon-size: 48px; }
+.icon-2xl svg { --icon-size: 64px; }
+.icon-3xl svg { --icon-size: 80px; }
+.icon-4xl svg { --icon-size: 96px; }
+
+/* ---------- ЦВЕТА (через переменные) ---------- */
+.icon-primary svg { color: var(--icon-primary); }
+.icon-success svg { color: var(--icon-success); }
+.icon-danger svg { color: var(--icon-danger); }
+.icon-warning svg { color: var(--icon-warning); }
+.icon-light svg { color: var(--icon-light); }
+.icon-dark svg { color: var(--icon-dark); }
+.icon-muted svg { color: var(--icon-muted); }
+
+/* ---------- ЦВЕТА ПРИ НАВЕДЕНИИ ---------- */
+.icon-hover-primary:hover svg { color: var(--icon-primary); }
+.icon-hover-danger:hover svg { color: var(--icon-danger); }
+.icon-hover-success:hover svg { color: var(--icon-success); }
+
+/* ---------- СТИЛИ ДЛЯ ПУСТЫХ СОСТОЯНИЙ ---------- */
+.empty-icon svg {
+    opacity: 0.3;
+    margin-bottom: 16px;
+}
+
+.empty-icon.icon-lg svg {
+    width: 64px;
+    height: 64px;
+}
+
+/* ---------- АНИМАЦИИ ---------- */
+.icon-spin svg {
+    animation: iconSpin 1s linear infinite;
+}
+
+@keyframes iconSpin {
+    to { transform: rotate(360deg); }
+}
+
+.icon-pulse svg {
+    animation: iconPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.95); }
+}
