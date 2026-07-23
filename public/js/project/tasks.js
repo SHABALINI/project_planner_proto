@@ -39,18 +39,14 @@ function createTask(areaId) {
         if (data.success && data.id) {
             showToast('Задача создана!', 'success');
             
-            // Находим контейнер задач
             const tasksContainer = document.getElementById(`tasksList-${areaId}`);
             if (tasksContainer) {
-                // Удаляем сообщение "Нет задач"
                 const emptyMsg = tasksContainer.querySelector('.text-muted');
                 if (emptyMsg) emptyMsg.remove();
                 
-                // Создаем HTML для новой задачи
                 const taskHtml = createTaskHTML(data.id, title, deadline, areaId);
                 tasksContainer.insertAdjacentHTML('beforeend', taskHtml);
                 
-                // Обновляем статистику
                 if (window.areaStats && window.areaStats[areaId]) {
                     window.areaStats[areaId].totalTasks++;
                 }
@@ -58,14 +54,12 @@ function createTask(areaId) {
                     window.projectStats.totalTasks++;
                 }
                 
-                // Обновляем прогресс
                 const areaCard = tasksContainer.closest('.area-card');
                 if (areaCard) {
                     updateAreaProgress(areaCard);
                 }
                 updateProjectProgress();
 
-                // Инициализируем форму комментариев для новой задачи
                 const newTask = document.getElementById(`task-node-${data.id}`);
                 if (newTask) {
                     const form = newTask.querySelector('form[data-ajax="true"]');
@@ -90,7 +84,6 @@ function createTask(areaId) {
     });
 }
 
-// Вспомогательная функция для создания HTML задачи
 function createTaskHTML(taskId, title, deadline, areaId) {
     const deadlineHtml = deadline ? `<span class="task-deadline">📅 ${deadline}</span>` : '';
     
@@ -194,15 +187,12 @@ function createSubtask(taskId) {
         if (data.success && data.id) {
             showToast('Подзадача создана!', 'success');
             
-            // Находим контейнер для подзадач
             let subtasksContainer = document.getElementById(`subtasksList-${taskId}`);
             if (!subtasksContainer) {
                 const taskBody = document.getElementById(`task-body-${taskId}`);
                 if (taskBody) {
-                    // Проверяем, есть ли блок комментариев после подзадач
                     const commentsBlock = taskBody.querySelector('.mt-3.pt-3');
                     if (commentsBlock) {
-                        // Создаем контейнер перед комментариями
                         subtasksContainer = document.createElement('div');
                         subtasksContainer.id = `subtasksList-${taskId}`;
                         commentsBlock.parentNode.insertBefore(subtasksContainer, commentsBlock);
@@ -211,16 +201,14 @@ function createSubtask(taskId) {
             }
             
             if (subtasksContainer) {
-                // Удаляем сообщение "Нет подзадач" если есть
                 const emptyMsg = subtasksContainer.querySelector('.text-muted');
                 if (emptyMsg) emptyMsg.remove();
                 
-                // Добавляем новую подзадачу
                 const subtaskHtml = `
                     <div class="subtask-item" id="subtask-${data.id}">
                         <div class="d-flex align-items-center gap-2 flex-grow-1">
                             <input class="subtask-checkbox" type="checkbox" onchange="updateSubtaskStatus(${data.id}, this.checked)">
-                            <span class="subtask-label">${title}</span>
+                            <span class="subtask-label">${escapeHtml(title)}</span>
                         </div>
                         <div class="d-flex align-items-center gap-1 flex-grow-1 ms-2" style="max-width: 200px;">
                             <input type="text" id="subtaskDescription-${data.id}" 
@@ -241,7 +229,6 @@ function createSubtask(taskId) {
                 `;
                 subtasksContainer.insertAdjacentHTML('beforeend', subtaskHtml);
                 
-                // Обновляем прогресс задачи
                 const taskItem = subtasksContainer.closest('.task-item');
                 if (taskItem) {
                     updateTaskProgress(taskItem);
@@ -267,24 +254,7 @@ function refreshTasksList(areaId) {
         .then(data => {
             const container = document.getElementById(`tasksList-${areaId}`);
             if (container && data.tasks) {
-                // Сохраняем состояние открытых задач
-                const openTasks = {};
-                container.querySelectorAll('.task-item').forEach(item => {
-                    const id = item.id.replace('task-node-', '');
-                    const body = document.getElementById(`task-body-${id}`);
-                    if (body && body.style.display !== 'none') {
-                        openTasks[id] = true;
-                    }
-                });
-                
-                // Перерисовываем задачи
-                container.innerHTML = '';
-                data.tasks.forEach(task => {
-                    // Здесь нужно рендерить задачу через Twig, но так как мы в JS,
-                    // проще перезагрузить страницу или использовать AJAX-рендеринг
-                    // Временное решение: перезагружаем страницу
-                    location.reload();
-                });
+                location.reload();
             }
         })
         .catch(err => console.error('Error refreshing tasks:', err));
@@ -324,7 +294,6 @@ function updateSubtaskDescription(subtaskId, description) {
         if (data.success) {
             showToast('Описание обновлено!', 'success');
             
-            // Добавляем/убираем индикатор 📝
             const subtaskItem = document.getElementById(`subtask-${subtaskId}`);
             if (subtaskItem) {
                 const label = subtaskItem.querySelector('.subtask-label');
@@ -366,7 +335,6 @@ function updateTaskParam(taskId, paramName, paramValue) {
         select.disabled = true;
     }
     
-    // Сохраняем старый статус
     let oldStatus = null;
     const taskItem = document.getElementById(`task-node-${taskId}`);
     if (taskItem && paramName === 'status') {
@@ -395,16 +363,12 @@ function updateTaskParam(taskId, paramName, paramValue) {
         
         if (data.success) {
             showToast('Параметр обновлен!', 'success');
-            
-            // Обновляем визуальное состояние
             updateTaskVisual(taskId, paramName, paramValue);
             
-            // Если это описание, обновляем отображение описания
             if (paramName === 'description') {
                 updateTaskDescriptionDisplay(taskId, paramValue);
             }
             
-            // Если изменился статус, обновляем прогресс
             if (paramName === 'status' && oldStatus !== null) {
                 updateTaskStats(taskId, paramValue, oldStatus);
             }
@@ -427,73 +391,44 @@ function updateTaskParam(taskId, paramName, paramValue) {
     });
 }
 
-function updateSubtaskDescription(subtaskId, description) {
-    const input = document.getElementById(`subtaskDescription-${subtaskId}`);
-    const btn = input ? input.nextElementSibling : null;
+// ⭐ НОВАЯ ФУНКЦИЯ - обновление отображения описания задачи
+function updateTaskDescriptionDisplay(taskId, description) {
+    const taskItem = document.getElementById(`task-node-${taskId}`);
+    if (!taskItem) return;
     
-    if (btn) {
-        const originalText = btn.textContent;
-        btn.textContent = '⏳';
-        btn.disabled = true;
+    // Находим блок с описанием
+    const descBlock = taskItem.querySelector('.task-description');
+    if (descBlock) {
+        const descSpan = descBlock.querySelector('span');
+        if (descSpan) {
+            if (description && description.trim()) {
+                descSpan.textContent = description;
+            } else {
+                descSpan.textContent = 'Нет описания';
+            }
+        }
     }
     
-    fetch('/dashboard/subtask/update', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ 
-            subtask_id: subtaskId, 
-            field: 'description', 
-            value: description || ''
-        }) 
-    })
-    .then(res => {
-        if (!res.ok) {
-            return res.json().then(data => {
-                throw new Error(data.error || 'Server error: ' + res.status);
-            });
-        }
-        return res.json();
-    })
-    .then(data => {
-        if (btn) {
-            btn.textContent = '💾';
-            btn.disabled = false;
-        }
-        
-        if (data.success) {
-            showToast('Описание обновлено!', 'success');
+    // Обновляем индикатор в мета-данных задачи
+    const taskMain = taskItem.querySelector('.task-main');
+    if (taskMain) {
+        const metaDiv = taskMain.querySelector('.task-meta');
+        if (metaDiv) {
+            // Удаляем старый индикатор
+            const oldIndicator = metaDiv.querySelector('.text-muted[title="Есть описание"]');
+            if (oldIndicator) oldIndicator.remove();
             
-            // Добавляем/убираем индикатор 📝
-            const subtaskItem = document.getElementById(`subtask-${subtaskId}`);
-            if (subtaskItem) {
-                const label = subtaskItem.querySelector('.subtask-label');
-                const existingIcon = subtaskItem.querySelector('.text-muted[title="Есть описание"]');
-                
-                if (description && description.trim()) {
-                    if (!existingIcon) {
-                        const icon = document.createElement('span');
-                        icon.className = 'text-muted';
-                        icon.style.cssText = 'font-size: 10px; margin-left: 4px;';
-                        icon.title = 'Есть описание';
-                        icon.textContent = '📝';
-                        label.after(icon);
-                    }
-                } else {
-                    if (existingIcon) existingIcon.remove();
-                }
+            // Добавляем новый если есть описание
+            if (description && description.trim()) {
+                const indicator = document.createElement('span');
+                indicator.className = 'text-muted';
+                indicator.style.cssText = 'font-size: 11px;';
+                indicator.title = 'Есть описание';
+                indicator.textContent = '📝';
+                metaDiv.appendChild(indicator);
             }
-        } else {
-            showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
         }
-    })
-    .catch(err => {
-        if (btn) {
-            btn.textContent = '💾';
-            btn.disabled = false;
-        }
-        console.error('Error:', err);
-        showToast('❌ Ошибка при обновлении описания: ' + err.message, 'error');
-    });
+    }
 }
 
 function updateSubtaskStatus(subtaskId, isChecked) {
@@ -511,14 +446,7 @@ function updateSubtaskStatus(subtaskId, isChecked) {
             value: isChecked ? 'done' : 'todo' 
         })
     })
-    .then(res => {
-        if (!res.ok) {
-            return res.json().then(data => {
-                throw new Error(data.error || 'Server error: ' + res.status);
-            });
-        }
-        return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
         checkbox.disabled = false;
         
@@ -538,14 +466,14 @@ function updateSubtaskStatus(subtaskId, isChecked) {
             
             showToast('Статус обновлен!', 'success');
         } else {
-            showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+            showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
             checkbox.checked = !isChecked;
         }
     })
     .catch(err => {
         checkbox.disabled = false;
         console.error('Error:', err);
-        showToast('❌ Ошибка при обновлении статуса: ' + err.message, 'error');
+        showToast('Ошибка при обновлении', 'error');
         checkbox.checked = !isChecked;
     });
 }
@@ -580,7 +508,6 @@ function updateTaskVisual(taskId, paramName, paramValue) {
         if (select) select.value = paramValue;
     }
     
-    // Добавляем обработку описания
     if (paramName === 'description') {
         updateTaskDescriptionDisplay(taskId, paramValue);
     }
@@ -608,7 +535,6 @@ function deleteElement(type, id, confirmMessage = null) {
                 element.style.opacity = '0';
                 setTimeout(() => {
                     element.remove();
-                    // Обновляем прогресс
                     if (type === 'task') {
                         const areaCard = element.closest('.area-card');
                         if (areaCard) {
