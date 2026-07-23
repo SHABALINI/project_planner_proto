@@ -19,17 +19,20 @@ function createProject() {
         btn.disabled = true;
     }
     
-    // Берём URL, переданный из Twig шаблона
-    const createUrl = window.APP_ROUTES ? window.APP_ROUTES.projectCreate : '/dashboard/project/create';
-    
-    fetch(createUrl, { 
+    fetch('/dashboard/project/create', { 
         method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }, 
         body: JSON.stringify({ title: titleValue }) 
     })
-    .then(res => {
-        if (!res.ok) throw new Error('Server error: ' + res.status);
-        return res.json();
+    .then(async res => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || 'Server error: ' + res.status);
+        }
+        return data;
     })
     .then(data => {
         if (btn) {
@@ -50,7 +53,7 @@ function createProject() {
             btn.disabled = false;
         }
         console.error('Error:', err);
-        alert('Не удалось создать проект. Проверьте консоль.');
+        alert('Не удалось создать проект: ' + err.message);
     });
 }
 

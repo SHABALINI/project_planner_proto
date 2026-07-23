@@ -142,14 +142,14 @@
                     </span>
                 </div>
             </div>
+            {% block javascripts_body %}
+                <script>
+                    window.APP_ROUTES = {
+                        projectCreate: "{{ path('api_project_create') }}"
+                    };
+                </script>
+                <script src="{{ asset('js/dashboard.js') }}"></script>
+            {% endblock %}
         </div>
     {% endmacro %}
-{% endblock %}
-{% block javascripts_body %}
-    <script>
-        window.APP_ROUTES = {
-            projectCreate: "{{ path('api_project_create') }}"
-        };
-    </script>
-    <script src="{{ asset('js/dashboard.js') }}"></script>
 {% endblock %}
