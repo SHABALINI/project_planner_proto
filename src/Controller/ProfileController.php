@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Profile;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\ProfileService;
@@ -18,15 +17,15 @@ class ProfileController extends AbstractController
 {
     public function __construct(private ProfileService $profileService) {}
 
-    #[Route('', name: 'app_profile')]
+    #[Route('', name: 'app_profile', methods: ['GET'])]
     public function index(): Response
     {
+        /** @var User $user */
         $user = $this->getUser();
         if (!$user) {
             return $this->redirectToRoute('app_login');
         }
 
-        /** @var User $user */
         $profile = $user->getProfile();
         $totalProjects = $user->getProjects()->count();
 
@@ -38,7 +37,7 @@ class ProfileController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_profile_view')]
+    #[Route('/{id}', name: 'app_profile_view', methods: ['GET'])]
     public function view(int $id, UserRepository $userRepository): Response
     {
         /** @var User $currentUser */
@@ -55,7 +54,6 @@ class ProfileController extends AbstractController
         $profile = $user->getProfile();
         $totalProjects = $user->getProjects()->count();
 
-        // Проверяем, является ли это профилем текущего пользователя
         $isOwnProfile = ($user->getId() === $currentUser->getId());
 
         return $this->render('profile/view.html.twig', [
@@ -69,6 +67,7 @@ class ProfileController extends AbstractController
     #[Route('/update', name: 'api_profile_update', methods: ['POST'])]
     public function update(Request $request): JsonResponse
     {
+        /** @var User $user */
         $user = $this->getUser();
         if (!$user) {
             return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
@@ -87,7 +86,7 @@ class ProfileController extends AbstractController
     #[Route('/upload-avatar', name: 'api_profile_upload_avatar', methods: ['POST'])]
     public function uploadAvatar(Request $request): JsonResponse
     {
-        /** @var \App\Entity\User $user */
+        /** @var User $user */
         $user = $this->getUser();
         if (!$user) {
             return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
@@ -96,6 +95,17 @@ class ProfileController extends AbstractController
         $file = $request->files->get('avatar');
         if (!$file) {
             return new JsonResponse(['success' => false, 'error' => 'No file uploaded'], 400);
+        }
+
+        // Проверка размера файла
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return new JsonResponse(['success' => false, 'error' => 'File too large. Max size: 5MB'], 400);
+        }
+
+        // Проверка типа файла
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file->getMimeType(), $allowedTypes)) {
+            return new JsonResponse(['success' => false, 'error' => 'Invalid file type. Allowed: JPEG, PNG, GIF, WEBP'], 400);
         }
 
         try {

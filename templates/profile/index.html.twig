@@ -172,6 +172,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const file = this.files[0];
         if (!file) return;
 
+        // Проверка размера
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('❌ Файл слишком большой. Максимум 5MB', 'error');
+            this.value = '';
+            return;
+        }
+
+        // Проверка типа
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            showToast('❌ Неподдерживаемый формат. Разрешены: JPEG, PNG, GIF, WEBP', 'error');
+            this.value = '';
+            return;
+        }
+
         const formData = new FormData();
         formData.append('avatar', file);
 
@@ -180,11 +195,25 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.textContent = '⏳ Загрузка...';
         btn.disabled = true;
 
-        fetch('/dashboard/profile/upload-avatar', {
+        // Используем правильный URL
+        const url = '{{ path('api_profile_upload_avatar') }}';
+        
+        fetch(url, {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
-        .then(res => res.json())
+        .then(async response => {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Server response:', text);
+                throw new Error('Server returned invalid JSON');
+            }
+        })
         .then(data => {
             btn.textContent = originalText;
             btn.disabled = false;
@@ -205,64 +234,99 @@ document.addEventListener('DOMContentLoaded', function() {
                     img.src = data.avatar + '?t=' + Date.now();
                     wrapper.appendChild(img);
                 }
-                showToast(' Аватар обновлен!', 'success');
+                showToast('✅ Аватар обновлен!', 'success');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                showToast('❌ Ошибка: ' + data.error, 'error');
+                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
             }
         })
         .catch(err => {
             btn.textContent = originalText;
             btn.disabled = false;
             console.error('Error:', err);
-            showToast('❌ Ошибка при загрузке аватара', 'error');
+            showToast('❌ Ошибка при загрузке аватара: ' + err.message, 'error');
         });
     });
 
     // Сохранение профиля
-    document.getElementById('profileForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    // Загрузка аватара
+    document.getElementById('avatarInput').addEventListener('change', function(e) {
+        const file = this.files[0];
+        if (!file) return;
 
-        const data = {
-            fullName: document.getElementById('fullName').value,
-            company: document.getElementById('company').value,
-            position: document.getElementById('position').value,
-            university: document.getElementById('university').value,
-            specialty: document.getElementById('specialty').value,
-            educationLevel: document.getElementById('educationLevel').value,
-            bio: document.getElementById('bio').value,
-            telegram: document.getElementById('telegram').value,
-            github: document.getElementById('github').value,
-            linkedin: document.getElementById('linkedin').value,
-            website: document.getElementById('website').value
-        };
+        // Проверка размера
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('❌ Файл слишком большой. Максимум 5MB', 'error');
+            this.value = '';
+            return;
+        }
 
-        const btn = this.querySelector('button[type="submit"]');
+        // Проверка типа
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            showToast('❌ Неподдерживаемый формат. Разрешены: JPEG, PNG, GIF, WEBP', 'error');
+            this.value = '';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const btn = document.querySelector('[onclick*="avatarInput"]');
         const originalText = btn.textContent;
-        btn.textContent = '⏳ Сохранение...';
+        btn.textContent = '⏳ Загрузка...';
         btn.disabled = true;
 
-        fetch('/dashboard/profile/update', {
+        const url = '{{ path('api_profile_upload_avatar') }}';
+        
+        fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
-        .then(res => res.json())
+        .then(async response => {
+            const text = await response.text();
+            console.log('Server response:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Failed to parse JSON:', text);
+                throw new Error('Server returned invalid response');
+            }
+        })
         .then(data => {
             btn.textContent = originalText;
             btn.disabled = false;
 
             if (data.success) {
-                showToast(' Профиль обновлен!', 'success');
+                const preview = document.getElementById('avatarPreview');
+                if (preview) {
+                    preview.src = data.avatar + '?t=' + Date.now();
+                } else {
+                    const wrapper = document.querySelector('.avatar-wrapper');
+                    const placeholder = wrapper.querySelector('.avatar-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                    const img = document.createElement('img');
+                    img.id = 'avatarPreview';
+                    img.className = 'avatar-image';
+                    img.src = data.avatar + '?t=' + Date.now();
+                    wrapper.appendChild(img);
+                }
+                showToast('✅ Аватар обновлен!', 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast('❌ Ошибка: ' + data.error, 'error');
+                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
             }
         })
         .catch(err => {
             btn.textContent = originalText;
             btn.disabled = false;
             console.error('Error:', err);
-            showToast('❌ Ошибка при сохранении профиля', 'error');
+            showToast('❌ Ошибка при загрузке аватара: ' + err.message, 'error');
         });
     });
 });
