@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\CommentRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
@@ -56,4 +57,11 @@ class Comment
     public function isImage(): ?bool { return $this->isImage; }
     public function setIsImage(?bool $isImage): self { $this->isImage = $isImage; return $this; }
     public function getCreatedAt(): ?\DateTimeInterface { return $this->createdAt; }
+
+    public function setCreatedAt(\DateTime $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
 }

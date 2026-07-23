@@ -42,6 +42,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'json')]
     private array $pinnedProjectIds = [];
 
+    #[ORM\OneToOne(targetEntity: Profile::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private ?Profile $profile = null;
+
     public function __construct()
     {
         $this->projects = new ArrayCollection();
@@ -194,5 +197,25 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             $this->pinProject($projectId);
             return true;
         }
+    }
+
+    public function getProfile(): ?Profile
+    {
+        return $this->profile;
+    }
+
+    public function setProfile(?Profile $profile): self
+    {
+        $this->profile = $profile;
+        return $this;
+    }
+
+    // Добавляем метод для получения полного имени
+    public function getDisplayName(): string
+    {
+        if ($this->profile && $this->profile->getFullName()) {
+            return $this->profile->getFullName();
+        }
+        return $this->email;
     }
 }

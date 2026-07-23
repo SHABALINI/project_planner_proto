@@ -1,0 +1,270 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Мой профиль — Планировщик{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/profile.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="profile-header">
+        <h1><span style ='color: #6400fa;'>{{ source('icons/user.svg')|raw }}</span> Мой профиль</h1>
+        <p>Управляйте своей информацией</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="avatar-wrapper">
+                        {% if profile and profile.avatar %}
+                            <img src="{{ profile.avatar }}" alt="Avatar" class="avatar-image" id="avatarPreview">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                {{ user.email|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <form id="avatarForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <input type="file" id="avatarInput" name="avatar" accept="image/*" class="form-control form-control-sm" style="display: none;">
+                            <button type="button" class="btn btn-purple btn-sm mt-2" onclick="document.getElementById('avatarInput').click()">
+                                <span style ='color: #fcfbfc;'>{{ source('icons/right.svg')|raw }}</span> Сменить аватар
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+                    
+                    <div class="stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ totalProjects }}</span>
+                            <span class="stat-label">Проектов</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ user.projects|reduce((carry, p) => carry + p.areas|length, 0) }}</span>
+                            <span class="stat-label">Областей</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ user.projects|reduce((carry, p) => carry + p.areas|reduce((c, a) => c + a.tasks|length, 0), 0) }}</span>
+                            <span class="stat-label">Задач</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form id="profileForm">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="fullName" 
+                                   value="{{ profile ? profile.fullName : '' }}" 
+                                   placeholder="Введите ваше полное имя">
+                        </div>
+
+                        <hr>
+
+                        <h5 class="mb-3"><span style ='color: #6400fa;'>{{ source('icons/worker.svg')|raw }}</span> Работа</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Компания</label>
+                                <input type="text" class="form-control" id="company" 
+                                       value="{{ profile ? profile.company : '' }}" 
+                                       placeholder="Название компании">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Должность</label>
+                                <input type="text" class="form-control" id="position" 
+                                       value="{{ profile ? profile.position : '' }}" 
+                                       placeholder="Ваша должность">
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <h5 class="mb-3"><span style ='color: #6400fa;'>{{ source('icons/book.svg')|raw }}</span> Образование</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Университет/Вуз</label>
+                                <input type="text" class="form-control" id="university" 
+                                       value="{{ profile ? profile.university : '' }}" 
+                                       placeholder="Название учебного заведения">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Специальность</label>
+                                <input type="text" class="form-control" id="specialty" 
+                                       value="{{ profile ? profile.specialty : '' }}" 
+                                       placeholder="Ваша специальность">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Уровень образования</label>
+                            <select class="form-control" id="educationLevel">
+                                <option value="">Выберите...</option>
+                                <option value="bachelor" {% if profile and profile.educationLevel == 'bachelor' %}selected{% endif %}>Бакалавр</option>
+                                <option value="master" {% if profile and profile.educationLevel == 'master' %}selected{% endif %}>Магистр</option>
+                                <option value="phd" {% if profile and profile.educationLevel == 'phd' %}selected{% endif %}>PhD</option>
+                            </select>
+                        </div>
+
+                        <hr>
+
+                        <h5 class="mb-3"><span style ='color: #6400fa;'>{{ source('icons/describtion.svg')|raw }}</span> О себе</h5>
+                        <div class="mb-3">
+                            <textarea class="form-control" id="bio" rows="3" 
+                                      placeholder="Расскажите о себе...">{{ profile ? profile.bio : '' }}</textarea>
+                        </div>
+
+                        <hr>
+
+                        <h5 class="mb-3"><span style ='color: #6400fa;'>{{ source('icons/github.svg')|raw }}</span> Социальные <span style ='color: #6400fa;'>{{ source('icons/link.svg')|raw }}</span> сети <span style ='color: #6400fa;'>{{ source('icons/gitlab.svg')|raw }}</span></h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Telegram</label>
+                                <input type="text" class="form-control" id="telegram" 
+                                       value="{{ profile ? profile.telegram : '' }}" 
+                                       placeholder="@username">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">GitHub</label>
+                                <input type="text" class="form-control" id="github" 
+                                       value="{{ profile ? profile.github : '' }}" 
+                                       placeholder="username">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">LinkedIn</label>
+                                <input type="text" class="form-control" id="linkedin" 
+                                       value="{{ profile ? profile.linkedin : '' }}" 
+                                       placeholder="linkedin.com/in/username">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Веб-сайт</label>
+                                <input type="text" class="form-control" id="website" 
+                                       value="{{ profile ? profile.website : '' }}" 
+                                       placeholder="https://example.com">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-purple w-100"><span style ='color: #fdfcff;'>{{ source('icons/send.svg')|raw }}</span> Сохранить профиль</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Загрузка аватара
+    document.getElementById('avatarInput').addEventListener('change', function(e) {
+        const file = this.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const btn = document.querySelector('[onclick*="avatarInput"]');
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Загрузка...';
+        btn.disabled = true;
+
+        fetch('/dashboard/profile/upload-avatar', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+
+            if (data.success) {
+                const preview = document.getElementById('avatarPreview');
+                if (preview) {
+                    preview.src = data.avatar + '?t=' + Date.now();
+                } else {
+                    const wrapper = document.querySelector('.avatar-wrapper');
+                    const placeholder = wrapper.querySelector('.avatar-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                    const img = document.createElement('img');
+                    img.id = 'avatarPreview';
+                    img.className = 'avatar-image';
+                    img.src = data.avatar + '?t=' + Date.now();
+                    wrapper.appendChild(img);
+                }
+                showToast(' Аватар обновлен!', 'success');
+            } else {
+                showToast('❌ Ошибка: ' + data.error, 'error');
+            }
+        })
+        .catch(err => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            console.error('Error:', err);
+            showToast('❌ Ошибка при загрузке аватара', 'error');
+        });
+    });
+
+    // Сохранение профиля
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const data = {
+            fullName: document.getElementById('fullName').value,
+            company: document.getElementById('company').value,
+            position: document.getElementById('position').value,
+            university: document.getElementById('university').value,
+            specialty: document.getElementById('specialty').value,
+            educationLevel: document.getElementById('educationLevel').value,
+            bio: document.getElementById('bio').value,
+            telegram: document.getElementById('telegram').value,
+            github: document.getElementById('github').value,
+            linkedin: document.getElementById('linkedin').value,
+            website: document.getElementById('website').value
+        };
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Сохранение...';
+        btn.disabled = true;
+
+        fetch('/dashboard/profile/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+
+            if (data.success) {
+                showToast(' Профиль обновлен!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('❌ Ошибка: ' + data.error, 'error');
+            }
+        })
+        .catch(err => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            console.error('Error:', err);
+            showToast('❌ Ошибка при сохранении профиля', 'error');
+        });
+    });
+});
+</script>
+{% endblock %}
