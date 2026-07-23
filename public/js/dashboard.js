@@ -1,5 +1,8 @@
 // public/js/dashboard.js
 
+// Глобальная переменная для маршрутов (будет переопределена из шаблона)
+window.APP_ROUTES = window.APP_ROUTES || {};
+
 function createProject() {
     const titleInput = document.getElementById('projectTitle');
     if (!titleInput) return;
@@ -19,7 +22,10 @@ function createProject() {
         btn.disabled = true;
     }
     
-    fetch('/dashboard/project/create', { 
+    // Используем правильный URL
+    const url = window.APP_ROUTES.projectCreate || '/dashboard/project/create';
+    
+    fetch(url, {
         method: 'POST', 
         headers: { 
             'Content-Type': 'application/json',
@@ -42,7 +48,10 @@ function createProject() {
         
         if (data.success) {
             titleInput.value = '';
-            location.reload();
+            // Показываем успешное создание
+            showToast('Проект «' + data.title + '» создан!', 'success');
+            // Перезагружаем страницу через секунду
+            setTimeout(() => location.reload(), 500);
         } else {
             alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
         }

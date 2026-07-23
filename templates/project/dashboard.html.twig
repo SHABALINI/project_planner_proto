@@ -7,6 +7,13 @@
 {% endblock %}
 
 {% block body %}
+    {# Глобальные маршруты для JS - всегда доступны #}
+    <script>
+        window.APP_ROUTES = {
+            projectCreate: "{{ path('api_project_create_new') }}"
+        };
+    </script>
+
     <div class="container mt-4" style="max-width: 1000px;">
         {# Шапка дашборда #}
         <div class="dashboard-header">
@@ -142,14 +149,9 @@
                     </span>
                 </div>
             </div>
-            {% block javascripts_body %}
-                <script>
-                    window.APP_ROUTES = {
-                        projectCreate: "{{ path('api_project_create') }}"
-                    };
-                </script>
-                <script src="{{ asset('js/dashboard.js') }}"></script>
-            {% endblock %}
         </div>
     {% endmacro %}
+
+    {# Подключаем JS только один раз в конце #}
+    <script src="{{ asset('js/dashboard.js') }}"></script>
 {% endblock %}
