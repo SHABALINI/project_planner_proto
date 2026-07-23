@@ -59,6 +59,15 @@ function renderUsersList(users, isOwner) {
             statusClass = 'bg-danger';
         }
         
+        // Добавляем аватар в список пользователей
+        const hasAvatar = user.avatar && user.avatar !== '';
+        let avatarHtml;
+        if (hasAvatar) {
+            avatarHtml = `<img src="${user.avatar}" alt="${user.email}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 8px;">`;
+        } else {
+            avatarHtml = `<span style="display: inline-block; width: 24px; height: 24px; border-radius: 50%; background: #6d28d9; color: white; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold; margin-right: 8px;">${user.email[0].toUpperCase()}</span>`;
+        }
+        
         btn.className = `user-search-item p-2 mb-1 rounded border d-flex justify-content-between align-items-center ` + 
                         `${isMember ? 'bg-success-subtle border-success' : 'bg-white border-secondary'}`;
         btn.setAttribute('data-email', user.email.toLowerCase());
@@ -68,8 +77,13 @@ function renderUsersList(users, isOwner) {
         btn.style.opacity = isAdmin && !isOwner ? '0.7' : '1';
         btn.style.transition = 'all 0.2s';
         
+        const displayName = user.fullName || user.email;
+        
         btn.innerHTML = `
-            <span>${user.email}</span>
+            <span style="display: flex; align-items: center;">
+                ${avatarHtml}
+                ${displayName}
+            </span>
             <span class="badge ${statusClass}">${statusText}</span>
         `;
         
@@ -252,10 +266,23 @@ function updateMembersPanel(members, total) {
     members.forEach(member => {
         const isOwnerMember = member.isOwner;
         const firstLetter = member.email.charAt(0).toUpperCase();
-        const bgColor = isOwnerMember ? 'bg-primary' : 
-                    (member.role === 'admin' ? 'bg-danger' : 
-                    (member.role === 'manager' ? 'bg-primary' : 
-                    (member.role === 'executor' ? 'bg-success' : 'bg-secondary')));
+        
+        // Проверяем наличие аватара
+        const hasAvatar = member.avatar && member.avatar !== '';
+        
+        // Генерируем HTML для аватара
+        let avatarHtml;
+        if (hasAvatar) {
+            avatarHtml = `<img src="${member.avatar}" alt="${member.email}" class="rounded-circle member-avatar">`;
+        } else {
+            const bgColor = isOwnerMember ? 'bg-primary' : 
+                        (member.role === 'admin' ? 'bg-danger' : 
+                        (member.role === 'manager' ? 'bg-primary' : 
+                        (member.role === 'executor' ? 'bg-success' : 'bg-secondary')));
+            avatarHtml = `<div class="rounded-circle ${bgColor} text-white d-flex align-items-center justify-content-center member-avatar-placeholder">
+                            ${firstLetter}
+                        </div>`;
+        }
         
         const roleBadge = isOwnerMember ? 
             '<span class="badge bg-warning text-dark">👑 Владелец</span>' :
@@ -279,24 +306,32 @@ function updateMembersPanel(members, total) {
         
         const deleteButton = showDeleteButton ?
             `<button class="btn btn-sm btn-outline-danger ms-1" 
-                    onclick="removeMember(${member.userId})" 
+                    onclick="event.stopPropagation(); removeMember(${member.userId})" 
                     title="Удалить участника"
                     style="padding: 2px 6px; font-size: 12px;">
-                ×
+                ✕
             </button>` : '';
         
+        // Создаем элемент с ссылкой на профиль
+        const displayName = member.fullName || member.email;
+        
+        // Добавляем иконку перехода для всех кроме владельца
+        const viewIcon = !isOwnerMember ? `<span class="view-icon">→</span>` : '';
+        
         panelBody.innerHTML += `
-            <div class="d-flex align-items-center p-2 mb-1 rounded hover-bg-light">
+            <div class="d-flex align-items-center p-2 mb-1 rounded hover-bg-light member-item" 
+                 onclick="window.location.href='/dashboard/profile/${member.userId}'"
+                 style="cursor: pointer; transition: all 0.2s ease;">
                 <div class="position-relative">
-                    <div class="rounded-circle ${bgColor} text-white d-flex align-items-center justify-content-center" 
-                        style="width: 40px; height: 40px; font-size: 18px; font-weight: bold;">
-                        ${firstLetter}
-                    </div>
+                    ${avatarHtml}
                     <span class="position-absolute bottom-0 end-0" 
                         style="width: 12px; height: 12px; background: #23a55a; border: 2px solid white; border-radius: 50%;"></span>
                 </div>
-                <div class="ms-2 flex-grow-1">
-                    <div class="fw-bold small text-truncate" style="max-width: 120px;">${member.email}</div>
+                <div class="ms-2 flex-grow-1" style="min-width: 0;">
+                    <div class="fw-bold small text-truncate" style="max-width: 120px;">
+                        ${displayName}
+                        ${viewIcon}
+                    </div>
                     <div class="text-muted small">
                         ${roleBadge}
                         ${extraInfo}

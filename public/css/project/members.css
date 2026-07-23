@@ -73,3 +73,128 @@
 #projectAccessTree.executor-mode .subtask-item {
     display: flex !important;
 }
+
+/* public/css/project/members.css */
+
+/* Стили для панели участников */
+.member-item {
+    transition: all 0.2s ease;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.member-item:hover {
+    background: #f3f4f6 !important;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.member-item:active {
+    transform: scale(0.98);
+}
+
+.member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.member-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.view-icon {
+    display: inline-block;
+    margin-left: 4px;
+    color: #6d28d9;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.member-item:hover .view-icon {
+    transform: translateX(4px);
+    color: #4c1d95;
+}
+
+/* Стили для онлайн статуса */
+.position-relative .online-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background: #23a55a;
+    border: 2px solid white;
+    border-radius: 50%;
+}
+
+/* Анимация при загрузке */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.member-item {
+    animation: fadeInUp 0.3s ease forwards;
+}
+
+/* Задержки для анимации */
+.member-item:nth-child(1) { animation-delay: 0.05s; }
+.member-item:nth-child(2) { animation-delay: 0.1s; }
+.member-item:nth-child(3) { animation-delay: 0.15s; }
+.member-item:nth-child(4) { animation-delay: 0.2s; }
+.member-item:nth-child(5) { animation-delay: 0.25s; }
+.member-item:nth-child(6) { animation-delay: 0.3s; }
+.member-item:nth-child(7) { animation-delay: 0.35s; }
+.member-item:nth-child(8) { animation-delay: 0.4s; }
+.member-item:nth-child(9) { animation-delay: 0.45s; }
+.member-item:nth-child(10) { animation-delay: 0.5s; }
+
+/* Стили для модалки */
+.user-search-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.user-search-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Прокрутка */
+#membersPanelBody::-webkit-scrollbar {
+    width: 4px;
+}
+
+#membersPanelBody::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#membersPanelBody::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+#membersPanelBody::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 767.98px) {
+    .member-item .fw-bold {
+        max-width: 80px !important;
+    }
+}

@@ -203,7 +203,7 @@ class ProjectMemberService
         $this->entityManager->flush();
     }
 
-    public function getMembersPanelData(int $projectId): array
+     public function getMembersPanelData(int $projectId): array
     {
         $project = $this->entityManager->getRepository(Project::class)->find($projectId);
         if (!$project) {
@@ -215,10 +215,15 @@ class ProjectMemberService
 
         $membersData = [];
         foreach ($members as $member) {
+            $user = $member->getUser();
+            $profile = $user->getProfile();
+            
             $membersData[] = [
                 'id' => $member->getId(),
-                'userId' => $member->getUser()->getId(),
-                'email' => $member->getUser()->getEmail(),
+                'userId' => $user->getId(),
+                'email' => $user->getEmail(),
+                'fullName' => $profile ? $profile->getFullName() : null,
+                'avatar' => $profile ? $profile->getAvatar() : null,
                 'role' => $member->getRole(),
                 'roleLabel' => $this->getRoleLabel($member->getRole()),
                 'areasCount' => $member->getAreas()->count(),
@@ -227,10 +232,15 @@ class ProjectMemberService
             ];
         }
 
+        $owner = $project->getOwner();
+        $ownerProfile = $owner->getProfile();
+        
         $ownerData = [
             'id' => null,
-            'userId' => $project->getOwner()->getId(),
-            'email' => $project->getOwner()->getEmail(),
+            'userId' => $owner->getId(),
+            'email' => $owner->getEmail(),
+            'fullName' => $ownerProfile ? $ownerProfile->getFullName() : null,
+            'avatar' => $ownerProfile ? $ownerProfile->getAvatar() : null,
             'role' => 'owner',
             'roleLabel' => '👑 Владелец',
             'areasCount' => 0,
@@ -242,6 +252,7 @@ class ProjectMemberService
 
         return $membersData;
     }
+
 
     private function getRoleLabel(string $role): string
     {

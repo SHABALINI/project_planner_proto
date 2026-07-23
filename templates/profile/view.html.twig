@@ -1,0 +1,240 @@
+{# templates/profile/view.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ user.displayName }} — Профиль{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/profile.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="profile-header">
+        <div class="d-flex align-items-center gap-3">
+            <a href="javascript:history.back()" class="btn-back" title="Назад">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <h1><span style='color: #6400fa;'>{{ source('icons/user.svg')|raw }}</span> Профиль</h1>
+                <p>Информация о пользователе</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="avatar-wrapper">
+                        {% if profile and profile.avatar %}
+                            <img src="{{ profile.avatar }}" alt="Avatar" class="avatar-image">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                {{ user.email|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h5 class="mt-2 mb-1">{{ user.displayName }}</h5>
+                    <p class="text-muted small">{{ user.email }}</p>
+
+                    {% if isOwnProfile %}
+                        <a href="{{ path('app_profile') }}" class="btn btn-purple btn-sm">
+                            <span style='color: #fcfbfc;'>{{ source('icons/right.svg')|raw }}</span> Редактировать
+                        </a>
+                    {% endif %}
+
+                    <hr>
+                    
+                    <div class="stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ totalProjects }}</span>
+                            <span class="stat-label">Проектов</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ user.projects|reduce((carry, p) => carry + p.areas|length, 0) }}</span>
+                            <span class="stat-label">Областей</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ user.projects|reduce((carry, p) => carry + p.areas|reduce((c, a) => c + a.tasks|length, 0), 0) }}</span>
+                            <span class="stat-label">Задач</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="mb-3"><span style='color: #6400fa;'>{{ source('icons/describtion.svg')|raw }}</span> Информация</h5>
+
+                    {% if profile %}
+                        <div class="info-row">
+                            <span class="info-label"><span style='color: #000000;'>{{ source('icons/mail.svg')|raw }}</span> Email</span>
+                            <span class="info-value">{{ user.email }}</span>
+                        </div>
+
+                        {% if profile.fullName %}
+                            <div class="info-row">
+                                <span class="info-label"><span style='color: #000000;'>{{ source('icons/user.svg')|raw }}</span> Полное имя</span>
+                                <span class="info-value">{{ profile.fullName }}</span>
+                            </div>
+                        {% endif %}
+
+                        {% if profile.company or profile.position %}
+                            <hr>
+                            <h6 class="mb-2"><span style='color: #6400fa;'>{{ source('icons/worker.svg')|raw }}</span> Работа</h6>
+                            {% if profile.company %}
+                                <div class="info-row">
+                                    <span class="info-label"><span style ='color: #000000;'>{{ source('icons/coffee.svg')|raw }}</span> Компания</span>
+                                    <span class="info-value">{{ profile.company }}</span>
+                                </div>
+                            {% endif %}
+                            {% if profile.position %}
+                                <div class="info-row">
+                                    <span class="info-label"><span style ='color: #000000;'>{{ source('icons/anchor.svg')|raw }}</span> Должность</span>
+                                    <span class="info-value">{{ profile.position }}</span>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if profile.university or profile.specialty %}
+                            <hr>
+                            <h6 class="mb-2"><span style='color: #6400fa;'>{{ source('icons/book.svg')|raw }}</span> Образование</h6>
+                            {% if profile.university %}
+                                <div class="info-row">
+                                    <span class="info-label"><span style ='color: #000000;'>{{ source('icons/home.svg')|raw }}</span> Университет</span>
+                                    <span class="info-value">{{ profile.university }}</span>
+                                </div>
+                            {% endif %}
+                            {% if profile.specialty %}
+                                <div class="info-row">
+                                    <span class="info-label"><span style ='color: #000000;'>{{ source('icons/compass.svg')|raw }}</span> Специальность</span>
+                                    <span class="info-value">{{ profile.specialty }}</span>
+                                </div>
+                            {% endif %}
+                            {% if profile.educationLevel %}
+                                <div class="info-row">
+                                    <span class="info-label"><span style ='color: #000000;'>{{ source('icons/award.svg')|raw }}</span> Уровень</span>
+                                    <span class="info-value">
+                                        {% if profile.educationLevel == 'bachelor' %}Бакалавр
+                                        {% elseif profile.educationLevel == 'master' %}Магистр
+                                        {% elseif profile.educationLevel == 'phd' %}PhD
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if profile.bio %}
+                            <hr>
+                            <h6 class="mb-2"><span style='color: #6400fa;'>{{ source('icons/describtion.svg')|raw }}</span> О себе</h6>
+                            <p class="bio-text">{{ profile.bio|nl2br }}</p>
+                        {% endif %}
+
+                        {% if profile.telegram or profile.github or profile.linkedin or profile.website %}
+                            <hr>
+                            <h6 class="mb-2"><span style='color: #6400fa;'>{{ source('icons/link.svg')|raw }}</span> Социальные сети</h6>
+                            <div class="social-links">
+                                {% if profile.telegram %}
+                                    <a href="https://t.me/{{ profile.telegram }}" target="_blank" class="social-link">
+                                        <span style ='color: #000000;'>{{ source('icons/send.svg')|raw }}</span> Telegram
+                                    </a>
+                                {% endif %}
+                                {% if profile.github %}
+                                    <a href="https://github.com/{{ profile.github }}" target="_blank" class="social-link">
+                                        <span style ='color: #000000;'>{{ source('icons/github.svg')|raw }}</span> GitHub
+                                    </a>
+                                {% endif %}
+                                {% if profile.linkedin %}
+                                    <a href="https://linkedin.com/in/{{ profile.linkedin }}" target="_blank" class="social-link">
+                                        💼 LinkedIn
+                                    </a>
+                                {% endif %}
+                                {% if profile.website %}
+                                    <a href="{{ profile.website }}" target="_blank" class="social-link">
+                                        🌐 Website
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <span style="font-size: 3rem;">👤</span>
+                            <p class="mt-2">Пользователь еще не заполнил профиль</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.info-row:last-child {
+    border-bottom: none;
+}
+.info-label {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+.info-value {
+    color: #1a1a2e;
+    font-weight: 500;
+}
+.bio-text {
+    color: #374151;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+.social-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+.social-link:hover {
+    background: #6d28d9;
+    color: white;
+    transform: translateY(-2px);
+}
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #374151;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.btn-back:hover {
+    background: #6d28d9;
+    color: white;
+    transform: translateX(-4px);
+}
+</style>
+{% endblock %}

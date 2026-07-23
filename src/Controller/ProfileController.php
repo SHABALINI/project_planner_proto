@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Profile;
 use App\Entity\User;
+use App\Repository\UserRepository;
 use App\Service\ProfileService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,26 +21,54 @@ class ProfileController extends AbstractController
     #[Route('', name: 'app_profile')]
     public function index(): Response
     {
-        /** @var \App\Entity\User $user */
         $user = $this->getUser();
         if (!$user) {
             return $this->redirectToRoute('app_login');
         }
 
+        /** @var User $user */
         $profile = $user->getProfile();
         $totalProjects = $user->getProjects()->count();
 
-        return $this->render('project/profile.html.twig', [
+        return $this->render('profile/index.html.twig', [
             'profile' => $profile,
             'totalProjects' => $totalProjects,
-            'user' => $user
+            'user' => $user,
+            'isOwnProfile' => true
+        ]);
+    }
+
+    #[Route('/{id}', name: 'app_profile_view')]
+    public function view(int $id, UserRepository $userRepository): Response
+    {
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+        if (!$currentUser) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        $user = $userRepository->find($id);
+        if (!$user) {
+            throw new NotFoundHttpException('Пользователь не найден');
+        }
+
+        $profile = $user->getProfile();
+        $totalProjects = $user->getProjects()->count();
+
+        // Проверяем, является ли это профилем текущего пользователя
+        $isOwnProfile = ($user->getId() === $currentUser->getId());
+
+        return $this->render('profile/view.html.twig', [
+            'user' => $user,
+            'profile' => $profile,
+            'totalProjects' => $totalProjects,
+            'isOwnProfile' => $isOwnProfile
         ]);
     }
 
     #[Route('/update', name: 'api_profile_update', methods: ['POST'])]
     public function update(Request $request): JsonResponse
     {
-        /** @var \App\Entity\User $user */
         $user = $this->getUser();
         if (!$user) {
             return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
