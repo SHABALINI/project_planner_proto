@@ -74,10 +74,18 @@ class ProfileController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
+
+        if ($data === null) {
+            return new JsonResponse(['success' => false, 'error' => 'Invalid JSON data'], 400);
+        }
         
         try {
-            $this->profileService->updateProfile($user, $data);
-            return new JsonResponse(['success' => true]);
+            $profile = $this->profileService->updateProfile($user, $data);
+            if ($profile) {
+                return new JsonResponse(['success' => true, 'message' => 'Profile updated successfully']);
+            } else {
+                return new JsonResponse(['success' => false, 'error' => 'Failed to update profile'], 500);
+            }
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }

@@ -19,9 +19,11 @@ class ProfileService
 
     public function updateProfile(User $user, array $data): Profile
     {
+        $this->logger->info('Updating profile for user: ' . $user->getId(), ['data' => $data]);
         $profile = $user->getProfile();
         
         if (!$profile) {
+            $this->logger->info('Creating new profile for user: ' . $user->getId());
             $profile = new Profile();
             $profile->setUser($user);
             $this->entityManager->persist($profile);
@@ -63,7 +65,13 @@ class ProfileService
 
         $profile->setUpdatedAtValue();
 
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->flush();
+            $this->logger->info('Profile saved successfully for user: ' . $user->getId());
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to save profile: ' . $e->getMessage());
+            throw $e;
+        }
 
         return $profile;
     }

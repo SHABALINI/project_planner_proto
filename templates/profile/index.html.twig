@@ -321,6 +321,66 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('❌ Ошибка при загрузке аватара: ' + err.message, 'error');
         });
     });
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const data = {
+            fullName: document.getElementById('fullName').value,
+            company: document.getElementById('company').value,
+            position: document.getElementById('position').value,
+            university: document.getElementById('university').value,
+            specialty: document.getElementById('specialty').value,
+            educationLevel: document.getElementById('educationLevel').value,
+            bio: document.getElementById('bio').value,
+            telegram: document.getElementById('telegram').value,
+            github: document.getElementById('github').value,
+            linkedin: document.getElementById('linkedin').value,
+            website: document.getElementById('website').value
+        };
+
+        console.log('Sending data:', data); // Отладка
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Сохранение...';
+        btn.disabled = true;
+
+        const url = '{{ path('api_profile_update') }}';
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(async response => {
+            const text = await response.text();
+            console.log('Server response:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Failed to parse JSON:', text);
+                throw new Error('Server returned invalid response');
+            }
+        })
+        .then(data => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+
+            if (data.success) {
+                showToast('✅ Профиль обновлен!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+            }
+        })
+        .catch(err => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            console.error('Error:', err);
+            showToast('❌ Ошибка при сохранении профиля: ' + err.message, 'error');
+        });
+    });
+
 });
 </script>
 {% endblock %}
