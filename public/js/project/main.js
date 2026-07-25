@@ -1,6 +1,3 @@
-// public/js/project/main.js
-//  ОСНОВНОЙ JS ДЛЯ СТРАНИЦЫ ПРОЕКТА 
-
 function toggleArea(areaId) {
     const body = document.getElementById(`area-body-${areaId}`);
     const toggle = document.getElementById(`area-toggle-${areaId}`);
@@ -86,15 +83,12 @@ function restoreAreaState() {
 
 function initCommentForms() {
     document.querySelectorAll('form[data-ajax="true"]').forEach(form => {
-        // Удаляем старый обработчик, чтобы не было дублей
         form.removeEventListener('submit', handleCommentSubmit);
         form.addEventListener('submit', handleCommentSubmit);
     });
 }
 
-//  ИНИЦИАЛИЗАЦИЯ 
 document.addEventListener('DOMContentLoaded', function() {
-    // Открываем первую область
     const firstAreaBody = document.querySelector('.area-body');
     if (firstAreaBody && !localStorage.getItem(`areaStates_${window.projectId}`)) {
         firstAreaBody.classList.add('open');
@@ -105,13 +99,11 @@ document.addEventListener('DOMContentLoaded', function() {
     restoreAreaState();
     refreshMembersPanel();
     
-    // Обработчики форм комментариев
     document.querySelectorAll('form[action*="api_comment_create"]').forEach(form => {
         form.removeEventListener('submit', handleCommentSubmit);
         form.addEventListener('submit', handleCommentSubmit);
     });
     
-    // Поиск в модалке
     const searchInput = document.getElementById('userSearchInput');
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
@@ -129,12 +121,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     initCommentForms();
 
-    // Наблюдаем за изменениями DOM для новых форм
     const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
             if (mutation.addedNodes.length) {
                 mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) { // Element
+                    if (node.nodeType === 1) {
                         const forms = node.querySelectorAll ? node.querySelectorAll('form[data-ajax="true"]') : [];
                         if (forms.length) {
                             initCommentForms();
@@ -151,7 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Переопределяем toggleArea с сохранением
 const originalToggleArea = toggleArea;
 toggleArea = function(areaId) {
     originalToggleArea(areaId);

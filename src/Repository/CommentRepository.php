@@ -15,45 +15,4 @@ class CommentRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Comment::class);
     }
-
-    /**
-     * Получить комментарии по задаче, отсортированные по дате
-     */
-    public function findByTaskOrdered($task): array
-    {
-        return $this->createQueryBuilder('c')
-            ->where('c.task = :task')
-            ->setParameter('task', $task)
-            ->orderBy('c.createdAt', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Получить новые комментарии (новее указанного ID)
-     */
-    public function findNewerThan($task, int $lastId): array
-    {
-        return $this->createQueryBuilder('c')
-            ->where('c.task = :task')
-            ->andWhere('c.id > :lastId')
-            ->setParameter('task', $task)
-            ->setParameter('lastId', $lastId)
-            ->orderBy('c.id', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Подсчитать комментарии по задаче
-     */
-    public function countByTask($task): int
-    {
-        return $this->createQueryBuilder('c')
-            ->select('COUNT(c.id)')
-            ->where('c.task = :task')
-            ->setParameter('task', $task)
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
 }

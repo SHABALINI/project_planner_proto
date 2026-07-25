@@ -167,19 +167,16 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Загрузка аватара
     document.getElementById('avatarInput').addEventListener('change', function(e) {
         const file = this.files[0];
         if (!file) return;
 
-        // Проверка размера
         if (file.size > 5 * 1024 * 1024) {
             showToast('❌ Файл слишком большой. Максимум 5MB', 'error');
             this.value = '';
             return;
         }
 
-        // Проверка типа
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
             showToast('❌ Неподдерживаемый формат. Разрешены: JPEG, PNG, GIF, WEBP', 'error');
@@ -195,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.textContent = '⏳ Загрузка...';
         btn.disabled = true;
 
-        // Используем правильный URL
         const url = '{{ path('api_profile_upload_avatar') }}';
         
         fetch(url, {
@@ -248,20 +244,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Сохранение профиля
-    // Загрузка аватара
     document.getElementById('avatarInput').addEventListener('change', function(e) {
         const file = this.files[0];
         if (!file) return;
 
-        // Проверка размера
         if (file.size > 5 * 1024 * 1024) {
             showToast('❌ Файл слишком большой. Максимум 5MB', 'error');
             this.value = '';
             return;
         }
 
-        // Проверка типа
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
             showToast('❌ Неподдерживаемый формат. Разрешены: JPEG, PNG, GIF, WEBP', 'error');

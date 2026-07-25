@@ -51,7 +51,6 @@ class SubtaskController extends AbstractController
             $field = $data['field'] ?? 'status';
             $value = $data['value'] ?? null;
             
-            // Для поля description, значение может быть null или пустой строкой
             if ($field === 'description' && $value === null) {
                 $value = '';
             }

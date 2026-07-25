@@ -27,7 +27,6 @@ function deleteComment(commentId) {
                 setTimeout(() => {
                     commentItem.remove();
                     
-                    // Проверяем, остались ли комментарии
                     const container = commentItem.closest('.comments-container');
                     if (container && container.children.length === 0) {
                         const emptyMsg = document.createElement('div');
@@ -100,22 +99,18 @@ function handleCommentSubmit(e) {
             const taskItem = form.closest('.task-item');
             if (!taskItem) return;
             
-            // Ищем или создаем контейнер для комментариев
             let commentsContainer = document.getElementById(`comments-container-${taskId}`);
             if (!commentsContainer) {
                 commentsContainer = document.createElement('div');
                 commentsContainer.className = 'comments-container';
                 commentsContainer.id = `comments-container-${taskId}`;
                 
-                // Находим место для вставки
                 const formParent = form.parentElement;
                 const parent = formParent.parentElement;
                 const commentsBlock = parent.querySelector('.mt-3.pt-3');
                 if (commentsBlock) {
-                    // Вставляем контейнер перед формой
                     commentsBlock.insertBefore(commentsContainer, formParent);
                 } else {
-                    // Если нет блока, создаем его
                     const newBlock = document.createElement('div');
                     newBlock.className = 'mt-3 pt-3';
                     newBlock.style.cssText = 'border-top: 1px solid #f0f0f0;';
@@ -127,11 +122,9 @@ function handleCommentSubmit(e) {
                 }
             }
             
-            // Удаляем сообщение "Нет комментариев"
             const emptyMsg = commentsContainer.querySelector('.comments-empty');
             if (emptyMsg) emptyMsg.remove();
             
-            // Создаем новый комментарий
             const newComment = document.createElement('div');
             newComment.className = 'comment-item new-comment';
             newComment.id = `comment-${data.id}`;
@@ -179,26 +172,21 @@ function handleCommentSubmit(e) {
                 ${fileHtml}
             `;
             
-            // Добавляем в конец контейнера (снизу)
             commentsContainer.appendChild(newComment);
             
-            // Прокручиваем к новому комментарию
             setTimeout(() => {
                 commentsContainer.scrollTop = commentsContainer.scrollHeight;
             }, 100);
             
-            // Убираем подсветку через 3 секунды
             setTimeout(() => {
                 newComment.classList.remove('new-comment');
             }, 3000);
             
-            // Очищаем форму
             const textInput = form.querySelector('input[name="text"]');
             if (textInput) textInput.value = '';
             const fileInput = form.querySelector('input[type="file"]');
             if (fileInput) fileInput.value = '';
             
-            // Фокусируем поле ввода
             if (textInput) textInput.focus();
         } else {
             showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');

@@ -71,12 +71,10 @@ class SubtaskService
             throw new AccessDeniedHttpException('Forbidden');
         }
 
-        // Обработка всех полей
         if ($field === 'description') {
             $subtask->setDescription($value ?: null);
             $this->entityManager->flush();
             
-            // Отправляем уведомление об изменении описания
             try {
                 $changeText = "→ обновил(а) описание у подзадачи «" . $subtask->getTitle() . "»";
                 $this->notificationService->notifySubtaskChange($subtask, $user, $changeText);
@@ -85,7 +83,7 @@ class SubtaskService
                 $this->logger->error('Notification error: ' . $e->getMessage());
             }
             
-            return false; // Показываем, что обновления статуса не было
+            return false; 
         } 
         elseif ($field === 'status') {
             $oldStatus = $subtask->getStatus();
@@ -111,7 +109,6 @@ class SubtaskService
             return false;
         }
         else {
-            // Если поле неизвестно, выбрасываем исключение
             throw new \InvalidArgumentException('Unknown field: ' . $field);
         }
     }

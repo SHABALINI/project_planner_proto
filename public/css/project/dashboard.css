@@ -1,4 +1,4 @@
-/* public/css/project/dashboard.css */
+
 
 .dashboard-header {
     background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
@@ -73,7 +73,7 @@
     font-weight: 700;
 }
 
-/* Карточка создания проекта */
+
 .create-card {
     background: white;
     border-radius: 16px;
@@ -131,7 +131,7 @@
     transform: scale(1.02);
 }
 
-/* Секции проектов */
+
 .section-title {
     display: flex;
     align-items: center;
@@ -151,7 +151,7 @@
     font-weight: 600;
 }
 
-/* Карточка проекта */
+
 .project-card {
     background: white;
     border-radius: 16px;
@@ -258,7 +258,7 @@
     transform: scale(1.15);
 }
 
-/* Прогресс */
+
 .project-progress {
     margin: 12px 0 16px;
 }
@@ -285,7 +285,7 @@
     transition: width 0.6s ease;
 }
 
-/* Статистика проекта */
+
 .project-stats {
     display: flex;
     gap: 16px;
@@ -312,7 +312,7 @@
     font-weight: 600;
 }
 
-/* Пустое состояние */
+
 .empty-state {
     text-align: center;
     padding: 60px 20px;

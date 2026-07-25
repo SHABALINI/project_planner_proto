@@ -27,7 +27,6 @@ class ProfileService
             $this->entityManager->persist($profile);
         }
 
-        // Обновляем поля
         if (isset($data['fullName'])) {
             $profile->setFullName($data['fullName']);
         }
@@ -71,55 +70,45 @@ class ProfileService
 
     public function uploadAvatar(User $user, UploadedFile $file): string
     {
-        // Получаем или создаем профиль
         $profile = $user->getProfile();
         if (!$profile) {
-            // Создаем профиль, если его нет
             $profile = new Profile();
             $profile->setUser($user);
             $this->entityManager->persist($profile);
             $this->entityManager->flush();
         }
 
-        // Проверяем тип файла
         $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!in_array($file->getMimeType(), $allowedMimeTypes)) {
             throw new BadRequestHttpException('Invalid file type. Allowed: JPEG, PNG, GIF, WEBP');
         }
 
-        // Проверяем размер (макс 5MB)
         if ($file->getSize() > 5 * 1024 * 1024) {
             throw new BadRequestHttpException('File too large. Max size: 5MB');
         }
 
         $uploadsDirectory = $this->kernelProjectDir . '/public/uploads/avatars';
         
-        // Создаем директорию если не существует
         if (!is_dir($uploadsDirectory)) {
             if (!mkdir($uploadsDirectory, 0777, true)) {
                 throw new \RuntimeException('Failed to create upload directory');
             }
         }
 
-        // Проверяем, что директория доступна для записи
         if (!is_writable($uploadsDirectory)) {
             throw new \RuntimeException('Upload directory is not writable');
         }
 
-        // Генерируем имя файла
         $extension = $file->guessExtension() ?: 'jpg';
         $filename = 'avatar_' . $user->getId() . '_' . uniqid() . '.' . $extension;
         $avatarPath = '/uploads/avatars/' . $filename;
         $fullPath = $uploadsDirectory . '/' . $filename;
         
         try {
-            // Перемещаем файл
             $file->move($uploadsDirectory, $filename);
 
-            // Оптимизируем изображение (уменьшаем размер до 300px)
             $this->optimizeImage($fullPath);
 
-            // Удаляем старый аватар если есть
             if ($profile->getAvatar()) {
                 $oldAvatarPath = $this->kernelProjectDir . '/public' . $profile->getAvatar();
                 if (file_exists($oldAvatarPath) && is_file($oldAvatarPath)) {
@@ -144,7 +133,6 @@ class ProfileService
 
     private function optimizeImage(string $path): void
     {
-        // Проверяем, что GD расширение установлено
         if (!extension_loaded('gd')) {
             $this->logger->warning('GD extension not loaded, skipping image optimization');
             return;
@@ -160,12 +148,10 @@ class ProfileService
             $width = $imageInfo[0];
             $height = $imageInfo[1];
 
-            // Если изображение уже меньше максимального размера, ничего не делаем
             if ($width <= $maxSize && $height <= $maxSize) {
                 return;
             }
 
-            // Создаем изображение в зависимости от типа
             $image = null;
             switch ($imageInfo[2]) {
                 case IMAGETYPE_JPEG:
@@ -190,15 +176,12 @@ class ProfileService
                 return;
             }
 
-            // Вычисляем новые размеры
             $ratio = min($maxSize / $width, $maxSize / $height);
             $newWidth = max(1, round($width * $ratio));
             $newHeight = max(1, round($height * $ratio));
 
-            // Создаем оптимизированное изображение
             $resized = imagecreatetruecolor($newWidth, $newHeight);
             
-            // Сохраняем прозрачность для PNG
             if ($imageInfo[2] === IMAGETYPE_PNG) {
                 imagealphablending($resized, false);
                 imagesavealpha($resized, true);
@@ -208,7 +191,6 @@ class ProfileService
 
             imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
             
-            // Сохраняем оптимизированное изображение
             switch ($imageInfo[2]) {
                 case IMAGETYPE_JPEG:
                     imagejpeg($resized, $path, 85);
@@ -231,7 +213,6 @@ class ProfileService
 
         } catch (\Exception $e) {
             $this->logger->warning('Image optimization failed: ' . $e->getMessage());
-            // Не критично, продолжаем без оптимизации
         }
     }
 }

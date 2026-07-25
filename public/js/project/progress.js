@@ -1,7 +1,3 @@
-// public/js/project/progress.js
-// ОБНОВЛЕНИЕ ПРОГРЕССОВ
-
-// Обновление статистики после изменения статуса задачи
 function updateTaskStats(taskId, newStatus, oldStatus) {
     const taskItem = document.getElementById(`task-node-${taskId}`);
     if (!taskItem) return;
@@ -22,7 +18,6 @@ function updateTaskStats(taskId, newStatus, oldStatus) {
         else if (newStatus === 'progress') stats.totalProgress++;
     }
     
-    // Обновляем общую статистику проекта
     if (window.projectStats) {
         if (oldStatus === 'done') window.projectStats.totalDone--;
         else if (oldStatus === 'progress') window.projectStats.totalProgress--;
@@ -31,12 +26,10 @@ function updateTaskStats(taskId, newStatus, oldStatus) {
         else if (newStatus === 'progress') window.projectStats.totalProgress++;
     }
     
-    // Обновляем UI
     updateAreaProgress(areaCard);
     updateProjectProgress();
 }
 
-// Прогресс области
 function updateAreaProgress(areaCard) {
     const areaId = areaCard.id.replace('area-', '');
     const stats = window.areaStats ? window.areaStats[areaId] : null;
@@ -88,7 +81,6 @@ function updateAreaProgressUI(areaCard, done, progress, total) {
     if (areaIcon) areaIcon.textContent = percent === 100 ? '✅' : '📋';
 }
 
-// Прогресс проекта
 function updateProjectProgress() {
     const stats = window.projectStats;
     

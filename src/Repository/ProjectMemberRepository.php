@@ -18,20 +18,6 @@ class ProjectMemberRepository extends ServiceEntityRepository
         parent::__construct($registry, ProjectMember::class);
     }
 
-    /**
-     * Найти участника в проекте по пользователю
-     */
-    public function findMember(Project $project, User $user): ?ProjectMember
-    {
-        return $this->findOneBy([
-            'project' => $project,
-            'user' => $user
-        ]);
-    }
-
-    /**
-     * Получить всех участников проекта (кроме владельца)
-     */
     public function findMembersWithoutOwner(Project $project): array
     {
         return $this->createQueryBuilder('m')
@@ -43,20 +29,6 @@ class ProjectMemberRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * Получить участников с определенной ролью
-     */
-    public function findByRole(Project $project, string $role): array
-    {
-        return $this->findBy([
-            'project' => $project,
-            'role' => $role
-        ]);
-    }
-
-    /**
-     * Проверить, является ли пользователь участником проекта
-     */
     public function isMember(Project $project, User $user): bool
     {
         return $this->findOneBy([

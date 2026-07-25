@@ -9,7 +9,6 @@
 
 {% block body %}
 <div class="notifications-container">
-    {# Шапка #}
     <div class="notifications-header">
         <div class="notifications-header-left">
             <h1><span style ='color: #6400fa;'>{{ source('icons/notification.svg')|raw }}</span> Уведомления</h1>
@@ -28,7 +27,6 @@
         </div>
     </div>
 
-    {# Фильтры - выпадающий список #}
     <div class="notifications-filters">
         <div class="filter-select-wrapper">
             <select class="filter-select" id="filterSelect" onchange="filterNotificationsBySelect(this.value)">
@@ -48,7 +46,6 @@
             </select>
         </div>
         
-        {# Быстрые фильтры для часто используемых проектов (макс 3) #}
         {% if groupedProjects|length <= 3 %}
             <div class="quick-filters">
                 {% for pId, data in groupedProjects %}
@@ -63,7 +60,6 @@
         {% endif %}
     </div>
 
-    {# Список уведомлений #}
     <div class="notifications-list" id="notificationsList">
         {% if allNotifications|length > 0 %}
             {% for n in allNotifications %}
@@ -79,9 +75,7 @@
     </div>
 </div>
 
-{# Макрос для рендеринга уведомления #}
 {% macro renderNotification(n) %}
-    {# ВЫБИРАЕМ ИКОНКУ ЧЕРЕЗ УСЛОВИЯ #}
     {% set iconType = n.type|default('system') %}
     
     <div class="notification-item {% if not n.isRead %}unread{% endif %}" 
@@ -132,7 +126,6 @@
 {% endmacro %}
 
 <script>
-    //  ФИЛЬТРАЦИЯ ЧЕРЕЗ ВЫПАДАЮЩИЙ СПИСОК 
     function filterNotificationsBySelect(value) {
         // Обновляем активные кнопки
         document.querySelectorAll('.quick-filters .filter-btn').forEach(b => {
@@ -142,13 +135,10 @@
         filterNotifications(value, null);
     }
 
-    //  ФИЛЬТРАЦИЯ 
     function filterNotifications(filter, btn) {
-        // Обновляем активную кнопку (если есть)
         if (btn) {
             document.querySelectorAll('.quick-filters .filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            // Обновляем выпадающий список
             const select = document.getElementById('filterSelect');
             if (select) select.value = filter;
         }
@@ -178,7 +168,6 @@
             }
         });
 
-        // Показываем сообщение если ничего не найдено
         const list = document.getElementById('notificationsList');
         let emptyMsg = list.querySelector('.empty-notifications');
         
@@ -198,7 +187,6 @@
         }
     }
 
-    //  ОТМЕТКА ОДНОГО УВЕДОМЛЕНИЯ КАК ПРОЧИТАННОГО 
     function markAsRead(id) {
         fetch(`/dashboard/notifications/read/${id}`, { method: 'POST' })
             .then(res => res.json())
@@ -219,7 +207,6 @@
             .catch(err => console.error('Error:', err));
     }
 
-    //  ОТМЕТКА ВСЕХ КАК ПРОЧИТАННЫХ 
     function markAllAsRead() {
         const btn = document.getElementById('markAllReadBtn');
         const originalText = btn.textContent;
@@ -259,9 +246,7 @@
             });
     }
 
-    //  ПЕРЕХОД ПО УВЕДОМЛЕНИЮ 
     function goToNotification(id, url) {
-        // Сначала отмечаем как прочитанное
         fetch(`/dashboard/notifications/read/${id}`, { method: 'POST' })
             .then(() => {
                 window.location.href = url;
@@ -271,12 +256,10 @@
             });
     }
 
-    //  ОБНОВЛЕНИЕ СЧЕТЧИКОВ 
     function updateCounters() {
         const unreadItems = document.querySelectorAll('.notification-item[data-read="false"]');
         const unreadCount = unreadItems.length;
 
-        // Обновляем бейдж в шапке
         const unreadBadge = document.getElementById('unreadCount');
         if (unreadBadge) {
             if (unreadCount > 0) {
@@ -286,13 +269,11 @@
             }
         }
 
-        // Обновляем кнопку "Отметить все"
         const markAllBtn = document.getElementById('markAllReadBtn');
         if (markAllBtn) {
             markAllBtn.disabled = unreadCount === 0;
         }
 
-        // Обновляем фильтры
         document.querySelectorAll('.filter-btn').forEach(btn => {
             const filter = btn.dataset.filter;
             if (filter === 'unread') {
@@ -310,27 +291,20 @@
             }
         });
 
-        // Обновляем счетчик в сайдбаре (глобальная функция из base.html.twig)
         if (typeof refreshNotificationCounter === 'function') {
             refreshNotificationCounter();
         }
     }
 
-    //  ИНИЦИАЛИЗАЦИЯ 
     document.addEventListener('DOMContentLoaded', function() {
-        // Обновляем счетчики при загрузке
         updateCounters();
 
-        // Автообновление каждые 30 секунд
         setInterval(() => {
-            // Проверяем новые уведомления
             fetch('/dashboard/notifications/unread-count-api', { method: 'GET' })
                 .then(res => res.json())
                 .then(data => {
-                    // Если есть изменения, обновляем счетчики
                     const currentUnread = document.querySelectorAll('.notification-item[data-read="false"]').length;
                     if (currentUnread !== data.count) {
-                        // Можно добавить логику для загрузки новых уведомлений
                     }
                 })
                 .catch(() => {});

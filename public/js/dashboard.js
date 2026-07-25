@@ -1,6 +1,3 @@
-// public/js/dashboard.js
-
-// Глобальная переменная для маршрутов (будет переопределена из шаблона)
 window.APP_ROUTES = window.APP_ROUTES || {};
 
 function createProject() {
@@ -21,8 +18,7 @@ function createProject() {
         btn.textContent = '⏳ Создание...';
         btn.disabled = true;
     }
-    
-    // Используем правильный URL
+
     const url = window.APP_ROUTES.projectCreate || '/dashboard/project/create';
     
     fetch(url, {
@@ -132,7 +128,6 @@ function togglePin(projectId) {
     });
 }
 
-// Анимация карточек при загрузке
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.project-card').forEach((card, i) => {
         card.style.opacity = '0';

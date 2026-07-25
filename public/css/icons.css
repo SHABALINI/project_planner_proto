@@ -1,13 +1,8 @@
-/* ============================================
-   ICONS — Универсальная система иконок
-   ============================================ */
-
-/* ---------- БАЗОВЫЕ ПЕРЕМЕННЫЕ ---------- */
 :root {
     --icon-size: 24px;
     --icon-color: currentColor;
     
-    /* Цвета */
+    
     --icon-primary: #6366f1;
     --icon-success: #10b981;
     --icon-danger: #ef4444;
@@ -17,7 +12,7 @@
     --icon-muted: rgba(255, 255, 255, 0.5);
 }
 
-/* ---------- БАЗОВЫЙ СТИЛЬ ---------- */
+
 svg {
     width: var(--icon-size);
     height: var(--icon-size);
@@ -26,7 +21,7 @@ svg {
     transition: all 0.2s ease;
 }
 
-/* ---------- РАЗМЕРЫ ---------- */
+
 .icon-sm svg { --icon-size: 16px; }
 .icon-md svg { --icon-size: 24px; }
 .icon-lg svg { --icon-size: 32px; }
@@ -35,7 +30,7 @@ svg {
 .icon-3xl svg { --icon-size: 80px; }
 .icon-4xl svg { --icon-size: 96px; }
 
-/* ---------- ЦВЕТА (через переменные) ---------- */
+
 .icon-primary svg { color: var(--icon-primary); }
 .icon-success svg { color: var(--icon-success); }
 .icon-danger svg { color: var(--icon-danger); }
@@ -44,12 +39,12 @@ svg {
 .icon-dark svg { color: var(--icon-dark); }
 .icon-muted svg { color: var(--icon-muted); }
 
-/* ---------- ЦВЕТА ПРИ НАВЕДЕНИИ ---------- */
+
 .icon-hover-primary:hover svg { color: var(--icon-primary); }
 .icon-hover-danger:hover svg { color: var(--icon-danger); }
 .icon-hover-success:hover svg { color: var(--icon-success); }
 
-/* ---------- СТИЛИ ДЛЯ ПУСТЫХ СОСТОЯНИЙ ---------- */
+
 .empty-icon svg {
     opacity: 0.3;
     margin-bottom: 16px;
@@ -60,7 +55,7 @@ svg {
     height: 64px;
 }
 
-/* ---------- АНИМАЦИИ ---------- */
+
 .icon-spin svg {
     animation: iconSpin 1s linear infinite;
 }
@@ -78,19 +73,19 @@ svg {
     50% { opacity: 0.6; transform: scale(0.95); }
 }
 
-/* Большая иконка */
+
 .icon-large svg {
     width: 48px !important;
     height: 48px !important;
 }
 
-/* Очень большая иконка */
+
 .icon-xlarge svg {
     width: 64px !important;
     height: 64px !important;
 }
 
-/* Для пустой области */
+
 .empty-icon svg {
     width: 80px !important;
     height: 80px !important;

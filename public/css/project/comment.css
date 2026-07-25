@@ -1,4 +1,4 @@
-/* public/css/project/comment.css */
+
 
 .comments-container {
     max-height: 300px;
@@ -87,7 +87,7 @@
     line-height: 1.5;
 }
 
-/* Изображения в комментариях */
+
 .comment-image-wrapper {
     display: inline-block;
     border-radius: 8px;
@@ -110,7 +110,7 @@
     transform: scale(1.02);
 }
 
-/* Модалка для изображений */
+
 .image-modal {
     display: none;
     position: fixed;

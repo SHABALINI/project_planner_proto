@@ -1,4 +1,4 @@
-/* public/css/project/notifications.css */
+
 
 .notifications-container {
     max-width: 1100px;
@@ -6,7 +6,7 @@
     padding: 24px 20px;
 }
 
-/* Шапка */
+
 .notifications-header {
     display: flex;
     justify-content: space-between;
@@ -71,7 +71,7 @@
     transform: none;
 }
 
-/* Фильтры */
+
 .notifications-filters {
     display: flex;
     gap: 12px;
@@ -170,7 +170,7 @@
     text-align: center;
 }
 
-/* Список уведомлений */
+
 .notifications-list {
     display: flex;
     flex-direction: column;
@@ -341,7 +341,7 @@
     transform: scale(1.02);
 }
 
-/* Пустое состояние */
+
 .empty-notifications {
     text-align: center;
     padding: 60px 20px;
@@ -370,7 +370,7 @@
     margin: 0 auto;
 }
 
-/* Анимация */
+
 @keyframes slideInNotification {
     from {
         opacity: 0;

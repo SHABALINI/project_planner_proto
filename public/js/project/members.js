@@ -59,7 +59,6 @@ function renderUsersList(users, isOwner) {
             statusClass = 'bg-danger';
         }
         
-        // Добавляем аватар в список пользователей
         const hasAvatar = user.avatar && user.avatar !== '';
         let avatarHtml;
         if (hasAvatar) {
@@ -111,7 +110,6 @@ function selectUserForEdition(user) {
     
     const isOwner = window.projectOwnerId === window.currentUserId;
     
-    // Удаляем старое предупреждение
     const oldWarning = document.getElementById('adminWarning');
     if (oldWarning) oldWarning.remove();
     
@@ -140,7 +138,6 @@ function selectUserForEdition(user) {
         }
     }
 
-    // Снимаем все галочки
     document.querySelectorAll('.form-check-input').forEach(cb => cb.checked = false);
     
     user.areas.forEach(id => {
@@ -267,10 +264,8 @@ function updateMembersPanel(members, total) {
         const isOwnerMember = member.isOwner;
         const firstLetter = member.email.charAt(0).toUpperCase();
         
-        // Проверяем наличие аватара
         const hasAvatar = member.avatar && member.avatar !== '';
         
-        // Генерируем HTML для аватара
         let avatarHtml;
         if (hasAvatar) {
             avatarHtml = `<img src="${member.avatar}" alt="${member.email}" class="rounded-circle member-avatar">`;
@@ -312,10 +307,8 @@ function updateMembersPanel(members, total) {
                 ✕
             </button>` : '';
         
-        // Создаем элемент с ссылкой на профиль
         const displayName = member.fullName || member.email;
         
-        // Добавляем иконку перехода для всех кроме владельца
         const viewIcon = !isOwnerMember ? `<span class="view-icon">→</span>` : '';
         
         panelBody.innerHTML += `

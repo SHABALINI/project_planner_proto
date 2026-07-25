@@ -26,7 +26,6 @@ class Area
     #[MyMapping\JoinColumn(nullable: false)]
     private ?Project $project = null;
 
-    // ИСПРАВЛЕНО: Явно задаем инициализацию коллекции прямо при объявлении свойства
     #[MyMapping\OneToMany(targetEntity: Task::class, mappedBy: 'area', orphanRemoval: true)]
     private Collection $tasks;
 
@@ -94,7 +93,6 @@ class Area
     public function removeTask(Task $task): static
     {
         if ($this->tasks->removeElement($task)) {
-            // set the owning side to null (unless already changed)
             if ($task->getArea() === $this) {
                 $task->setArea(null);
             }

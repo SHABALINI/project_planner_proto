@@ -97,12 +97,10 @@ class ProfileController extends AbstractController
             return new JsonResponse(['success' => false, 'error' => 'No file uploaded'], 400);
         }
 
-        // Проверка размера файла
         if ($file->getSize() > 5 * 1024 * 1024) {
             return new JsonResponse(['success' => false, 'error' => 'File too large. Max size: 5MB'], 400);
         }
 
-        // Проверка типа файла
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!in_array($file->getMimeType(), $allowedTypes)) {
             return new JsonResponse(['success' => false, 'error' => 'Invalid file type. Allowed: JPEG, PNG, GIF, WEBP'], 400);

@@ -7,7 +7,6 @@
 {% endblock %}
 
 {% block body %}
-    {# Глобальные маршруты для JS - всегда доступны #}
     <script>
         window.APP_ROUTES = {
             projectCreate: "{{ path('api_project_create_new') }}"
@@ -15,7 +14,6 @@
     </script>
 
     <div class="container mt-4" style="max-width: 1000px;">
-        {# Шапка дашборда #}
         <div class="dashboard-header">
             <div>
                 <h1> Мои проекты</h1>
@@ -68,7 +66,6 @@
             </div>
         {% endif %}
 
-        {# Если нет проектов #}
         {% if projects|length == 0 %}
             <div class="empty-state">
                 <span class="empty-icon icon-xlarge">
@@ -80,7 +77,6 @@
         {% endif %}
     </div>
 
-    {# Макрос для отображения карточки проекта #}
     {% macro renderProjectCard(project, currentUser) %}
         {% set totalTasks = 0 %}
         {% set doneTasks = 0 %}
@@ -138,7 +134,7 @@
 
                 <div class="project-stats">
                     <span class="stat">
-                        <span class="icon"><span style ='color: #6400fa;'>{{ source('icons/project.svg')|raw }}</span></span>
+                        <span class="icon"><span style ='color: #6400fa;'>{{ source('icons/area.svg')|raw }}</span></span>
                         <strong>{{ totalAreas }}</strong> областей
                     </span>
                     <span class="stat">
@@ -161,6 +157,5 @@
         </div>
     {% endmacro %}
 
-    {# Подключаем JS только один раз в конце #}
     <script src="{{ asset('js/dashboard.js') }}"></script>
 {% endblock %}

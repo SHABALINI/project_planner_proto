@@ -40,7 +40,7 @@ class Profile
     private ?string $specialty = null;
 
     #[ORM\Column(length: 20, nullable: true)]
-    private ?string $educationLevel = null; // bachelor, master, phd
+    private ?string $educationLevel = null; 
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $bio = null;

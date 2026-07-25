@@ -75,14 +75,11 @@
                 </div>
             </div>
 
-            {# Подключаем общий JS #}
             <script src="{{ asset('js/app.js') }}"></script>
 
-            {# Блок для дополнительных скриптов в body #}
             {% block javascripts_body %}{% endblock %}
         {% endif %}
 
-        {# Основное содержимое страницы #}
         {% block body %}{% endblock %}
 
         <script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>

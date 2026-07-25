@@ -1,6 +1,3 @@
-// public/js/components/utils.js
-
-// МОДАЛЬНОЕ ОКНО ДЛЯ ИЗОБРАЖЕНИЙ 
 function openImageModal(imageUrl) {
     let modal = document.getElementById('imageModal');
     if (!modal) {

@@ -1,5 +1,3 @@
-// public/js/project/tasks.js
-
 function createTask(areaId) {
     const titleInput = document.getElementById(`taskTitle-${areaId}`);
     const deadlineInput = document.getElementById(`taskDeadline-${areaId}`);
@@ -391,12 +389,10 @@ function updateTaskParam(taskId, paramName, paramValue) {
     });
 }
 
-// ⭐ НОВАЯ ФУНКЦИЯ - обновление отображения описания задачи
 function updateTaskDescriptionDisplay(taskId, description) {
     const taskItem = document.getElementById(`task-node-${taskId}`);
     if (!taskItem) return;
     
-    // Находим блок с описанием
     const descBlock = taskItem.querySelector('.task-description');
     if (descBlock) {
         const descSpan = descBlock.querySelector('span');
@@ -409,7 +405,6 @@ function updateTaskDescriptionDisplay(taskId, description) {
         }
     }
     
-    // Обновляем индикатор в мета-данных задачи
     const taskMain = taskItem.querySelector('.task-main');
     if (taskMain) {
         const metaDiv = taskMain.querySelector('.task-meta');

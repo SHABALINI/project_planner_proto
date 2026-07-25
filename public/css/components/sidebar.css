@@ -1,4 +1,4 @@
-/* public/css/components/sidebar.css */
+
 
 :root {
     --sidebar-width: 280px;
@@ -38,7 +38,7 @@ body.sidebar-collapsed .custom-sidebar {
     width: var(--sidebar-collapsed-width);
 }
 
-/* Бренд */
+
 .sidebar-brand {
     padding: 16px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -122,7 +122,7 @@ body.sidebar-collapsed .sidebar-brand .collapse-btn {
     transform: rotate(180deg);
 }
 
-/* Навигация */
+
 .sidebar-nav {
     flex: 1;
     overflow-y: auto;
@@ -282,7 +282,7 @@ body.sidebar-collapsed .sidebar-nav .nav-link:hover::after {
     color: var(--primary-purple-light);
 }
 
-/* Футер */
+
 .sidebar-footer {
     padding: 12px 16px 16px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -395,7 +395,7 @@ body.sidebar-collapsed .sidebar-footer .logout-btn {
     padding: 8px;
 }
 
-/* Бургер-меню */
+
 .burger-menu-btn {
     position: fixed;
     top: 16px;
@@ -433,7 +433,7 @@ body.sidebar-collapsed .sidebar-footer .logout-btn {
     line-height: 18px;
 }
 
-/* Мобильная адаптивность */
+
 @media (max-width: 767.98px) {
     body.with-sidebar {
         padding-left: 0 !important;
