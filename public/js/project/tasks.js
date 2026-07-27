@@ -409,11 +409,9 @@ function updateTaskDescriptionDisplay(taskId, description) {
     if (taskMain) {
         const metaDiv = taskMain.querySelector('.task-meta');
         if (metaDiv) {
-            // Удаляем старый индикатор
             const oldIndicator = metaDiv.querySelector('.text-muted[title="Есть описание"]');
             if (oldIndicator) oldIndicator.remove();
             
-            // Добавляем новый если есть описание
             if (description && description.trim()) {
                 const indicator = document.createElement('span');
                 indicator.className = 'text-muted';

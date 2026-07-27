@@ -75,12 +75,10 @@ function showComingSoon(section) {
 }
 
 function processLinksInText(selector = '.comment-text') {
-    const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+    const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])(?!(?:[^<]*>|[^<>]*<\/a>))/ig;
     document.querySelectorAll(selector).forEach(el => {
         let rawText = el.innerHTML;
-        let processedText = rawText.replace(urlPattern, 
-            '<a href="$1" target="_blank" class="text-primary text-decoration-underline">$1</a>'
-        );
+        let processedText = rawText.replace(urlPattern, '<a href="$1" target="_blank" class="text-primary text-decoration-underline">$1</a>');
         el.innerHTML = processedText;
     });
 }

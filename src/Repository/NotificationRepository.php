@@ -1,5 +1,4 @@
 <?php
-// src/Repository/NotificationRepository.php
 namespace App\Repository;
 
 use App\Entity\Notification;

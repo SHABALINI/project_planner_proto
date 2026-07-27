@@ -280,7 +280,6 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(async response => {
             const text = await response.text();
-            console.log('Server response:', text);
             try {
                 return JSON.parse(text);
             } catch (e) {
@@ -338,8 +337,6 @@ document.addEventListener('DOMContentLoaded', function() {
             website: document.getElementById('website').value
         };
 
-        console.log('Sending data:', data); // Отладка
-
         const btn = this.querySelector('button[type="submit"]');
         const originalText = btn.textContent;
         btn.textContent = '⏳ Сохранение...';
@@ -354,7 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(async response => {
             const text = await response.text();
-            console.log('Server response:', text);
             try {
                 return JSON.parse(text);
             } catch (e) {

@@ -1,4 +1,34 @@
-// public/js/project/comments.js
+function processLinksInText(text) {
+    if (!text) return text;
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    let decodedText = textarea.value;
+    
+    const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+    
+    return decodedText.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-underline">$1</a>');
+}
+
+function processCommentLinks(container) {
+    const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+    
+    const elements = container ? 
+        container.querySelectorAll('.comment-text') : 
+        document.querySelectorAll('.comment-text');
+    
+    elements.forEach(el => {
+        let rawText = el.innerHTML;
+        if (!rawText.includes('target="_blank"')) {
+            let processedText = rawText.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-underline">$1</a>');
+            if (processedText !== rawText) {
+                el.innerHTML = processedText;
+            }
+        }
+    });
+}
+
+window.processCommentLinks = processCommentLinks;
+window.processLinksInText = processLinksInText;
 
 function deleteComment(commentId) {
     if (!confirm('Вы действительно хотите удалить этот комментарий?')) return;
@@ -62,7 +92,7 @@ function handleCommentSubmit(e) {
     
     const form = this;
     const formData = new FormData(form);
-    const text = formData.get('text');
+    const text = formData.get('text') || '';
     const file = formData.get('file');
     const taskId = form.querySelector('input[name="task_id"]').value;
     
@@ -155,10 +185,9 @@ function handleCommentSubmit(e) {
             const currentUserEmail = window.currentUserEmail;
             const canDelete = isAdmin || data.author === currentUserEmail;
             
-            const deleteBtn = canDelete ? 
-                `<button class="btn btn-sm text-danger ms-2" style="border: none; background: none; font-size: 12px;" onclick="deleteComment(${data.id})">✕</button>` : '';
+            const deleteBtn = canDelete ? `<button class="btn btn-sm text-danger ms-2" style="border: none; background: none; font-size: 12px;" onclick="deleteComment(${data.id})">✕</button>` : '';
             
-            const safeText = (text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const processedText = processLinksInText(text);
             
             newComment.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
@@ -168,11 +197,17 @@ function handleCommentSubmit(e) {
                         ${deleteBtn}
                     </div>
                 </div>
-                <p class="comment-text">${safeText}</p>
+                <p class="comment-text">${processedText}</p>
                 ${fileHtml}
             `;
             
             commentsContainer.appendChild(newComment);
+            
+            const commentTextElement = newComment.querySelector('.comment-text');
+            
+            if (commentTextElement && !commentTextElement.innerHTML.includes('target="_blank"')) {
+                processCommentLinks(newComment);
+            }
             
             setTimeout(() => {
                 commentsContainer.scrollTop = commentsContainer.scrollHeight;
@@ -199,3 +234,7 @@ function handleCommentSubmit(e) {
         showToast('Ошибка при отправке комментария', 'error');
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    processCommentLinks();
+});

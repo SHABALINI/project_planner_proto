@@ -25,6 +25,6 @@ class SecurityController extends AbstractController
     #[Route(path: '/logout', name: 'app_logout')]
     public function logout(): void
     {
-        throw new \LogicException('Это метод заглушка, так как symfony выполняет logout на увровне firewall');
+        throw new \LogicException('Это метод заглушка');
     }
 }
