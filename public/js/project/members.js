@@ -1,7 +1,5 @@
-// public/js/project/members.js
-//  УПРАВЛЕНИЕ УЧАСТНИКАМИ 
-
 let currentSelectedUserId = null;
+let currentUsersList = [];
 
 function openMembersModal() {
     const settingsZone = document.getElementById('memberSettingsZone');
@@ -10,7 +8,7 @@ function openMembersModal() {
     
     if (settingsZone) settingsZone.classList.add('d-none');
     if (searchInput) searchInput.value = '';
-    if (list) list.innerHTML = '<div class="text-muted small p-2">⏳ Загрузка...</div>';
+    if (list) list.innerHTML = `<div class="text-muted small p-2">${AppIcons.get('wait', 'icon-muted')} Загрузка...</div>`;
     
     const isOwner = window.projectOwnerId === window.currentUserId;
     
@@ -20,12 +18,97 @@ function openMembersModal() {
             return res.json();
         })
         .then(users => {
+            currentUsersList = users;
             renderUsersList(users, isOwner);
         })
         .catch(err => {
             console.error('Error loading users:', err);
             if (list) list.innerHTML = '<div class="text-muted small p-2 text-danger">❌ Ошибка загрузки</div>';
         });
+    
+    refreshProjectTree();
+}
+
+function refreshProjectTree() {
+    const treeContainer = document.getElementById('projectAccessTree');
+    if (!treeContainer) return;
+    
+    fetch(`/dashboard/project/${window.projectId}/areas-tasks`)
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP error! status: ' + res.status);
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                renderProjectTree(data.areas);
+            }
+        })
+        .catch(err => {
+            console.error('Error loading project tree:', err);
+        });
+}
+
+function renderProjectTree(areas) {
+    const treeContainer = document.getElementById('projectAccessTree');
+    if (!treeContainer) return;
+    
+    const selectedAreas = new Set();
+    const selectedTasks = new Set();
+    
+    document.querySelectorAll('.area-cb:checked').forEach(cb => {
+        selectedAreas.add(parseInt(cb.value));
+    });
+    document.querySelectorAll('.task-cb:checked').forEach(cb => {
+        selectedTasks.add(parseInt(cb.value));
+    });
+    
+    let html = '<label class="fw-bold mb-2 d-block">Зоны ответственности в проекте:</label>';
+    
+    if (!areas || areas.length === 0) {
+        html += '<div class="text-muted small">Нет областей в проекте</div>';
+    } else {
+        areas.forEach(area => {
+            const areaChecked = selectedAreas.has(area.id) ? 'checked' : '';
+            html += `
+                <div class="mb-2 ms-2 area-node">
+                    <div class="form-check">
+                        <input class="form-check-input area-cb" type="checkbox" value="${area.id}" 
+                               id="cb-area-${area.id}" ${areaChecked}
+                               onchange="handleAreaCbChange(${area.id}, this.checked)">
+                        <label class="form-check-label fw-bold text-success" for="cb-area-${area.id}">
+                            ${AppIcons.get('area', 'icon-primary')} ${escapeHtml(area.title)}
+                        </label>
+                    </div>
+            `;
+            
+            if (area.tasks && area.tasks.length > 0) {
+                area.tasks.forEach(task => {
+                    const taskChecked = selectedTasks.has(task.id) ? 'checked' : '';
+                    html += `
+                        <div class="ms-4 task-node">
+                            <div class="form-check">
+                                <input class="form-check-input task-cb" type="checkbox" value="${task.id}" 
+                                       id="cb-task-${task.id}" data-area="${area.id}" ${taskChecked}
+                                       onchange="handleTaskCbChange(${task.id}, this.checked)">
+                                <label class="form-check-label text-dark" for="cb-task-${task.id}">
+                                    ${AppIcons.get('right', 'icon-dark')} ${escapeHtml(task.title)}
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `</div>`;
+        });
+    }
+    
+    treeContainer.innerHTML = html;
+    
+    const roleSelect = document.getElementById('memberRoleSelect');
+    if (roleSelect) {
+        toggleRoleInterface(roleSelect.value);
+    }
 }
 
 function renderUsersList(users, isOwner) {
@@ -55,7 +138,7 @@ function renderUsersList(users, isOwner) {
         let statusClass = isMember ? 'bg-success' : 'bg-secondary';
         
         if (isAdmin && !isOwner) {
-            statusText = '🔒 Админ (только владелец)';
+            statusText = `${AppIcons.get('pin', 'icon-sm')}  Админ (только владелец)`;
             statusClass = 'bg-danger';
         }
         
@@ -76,12 +159,10 @@ function renderUsersList(users, isOwner) {
         btn.style.opacity = isAdmin && !isOwner ? '0.7' : '1';
         btn.style.transition = 'all 0.2s';
         
-        const displayName = user.fullName || user.email;
-        
         btn.innerHTML = `
             <span style="display: flex; align-items: center;">
                 ${avatarHtml}
-                ${displayName}
+                ${user.email}
             </span>
             <span class="badge ${statusClass}">${statusText}</span>
         `;
@@ -117,7 +198,7 @@ function selectUserForEdition(user) {
         if (roleSelect) roleSelect.disabled = true;
         if (saveBtn) {
             saveBtn.disabled = true;
-            saveBtn.textContent = '⛔ Только владелец может изменять админа';
+            saveBtn.textContent = `${AppIcons.get('alert', 'icon-danger')}  Только владелец может изменять админа`;
             saveBtn.classList.add('btn-secondary');
             saveBtn.classList.remove('btn-primary');
         }
@@ -126,7 +207,7 @@ function selectUserForEdition(user) {
         warning.id = 'adminWarning';
         warning.className = 'alert alert-warning mt-2';
         warning.role = 'alert';
-        warning.innerHTML = '⚠️ <strong>Внимание!</strong> Только владелец проекта может изменять права администратора.';
+        warning.innerHTML = `${AppIcons.get('alert', 'icon-danger')} <strong>Внимание!</strong> Только владелец проекта может изменять права администратора.`;
         if (roleSelect) roleSelect.parentElement.appendChild(warning);
     } else {
         if (roleSelect) roleSelect.disabled = false;
@@ -171,7 +252,7 @@ function saveMemberData() {
     const saveBtn = document.querySelector('#memberSettingsZone .btn-primary');
     const originalText = saveBtn ? saveBtn.textContent : 'Сохранить';
     if (saveBtn) {
-        saveBtn.textContent = '⏳ Сохранение...';
+        saveBtn.innerHTML = `${AppIcons.get('wait', 'icon-muted')} Сохранение...`;
         saveBtn.disabled = true;
     }
 
@@ -195,7 +276,17 @@ function saveMemberData() {
         if (data.success) {
             const settingsZone = document.getElementById('memberSettingsZone');
             if (settingsZone) settingsZone.classList.add('d-none');
+            
             refreshMembersPanel();
+            
+            const isOwner = window.projectOwnerId === window.currentUserId;
+            const userIndex = currentUsersList.findIndex(u => u.id === currentSelectedUserId);
+            if (userIndex !== -1) {
+                currentUsersList[userIndex].isMember = true;
+                currentUsersList[userIndex].role = role;
+            }
+            renderUsersList(currentUsersList, isOwner);
+            
             showToast('Права успешно обновлены!', 'success');
         } else {
             showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
@@ -221,6 +312,15 @@ function removeMember(userId) {
     .then(data => {
         if (data.success) {
             refreshMembersPanel();
+            
+            const isOwner = window.projectOwnerId === window.currentUserId;
+            const userIndex = currentUsersList.findIndex(u => u.id === userId);
+            if (userIndex !== -1) {
+                currentUsersList[userIndex].isMember = false;
+                currentUsersList[userIndex].role = 'viewer';
+            }
+            renderUsersList(currentUsersList, isOwner);
+            
             showToast('Участник удален!', 'success');
         } else {
             showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
@@ -280,7 +380,7 @@ function updateMembersPanel(members, total) {
         }
         
         const roleBadge = isOwnerMember ? 
-            '<span class="badge bg-warning text-dark">👑 Владелец</span>' :
+            `<span class="badge bg-warning text-dark">${AppIcons.get('owner', 'icon-sm')} Владелец</span>`  :
             `<span class="badge bg-${member.role === 'admin' ? 'danger' : member.role === 'manager' ? 'primary' : member.role === 'executor' ? 'success' : 'secondary'}">${member.roleLabel}</span>`;
         
         const extraInfo = !isOwnerMember && member.role === 'manager' ?
@@ -307,7 +407,7 @@ function updateMembersPanel(members, total) {
                 ✕
             </button>` : '';
         
-        const displayName = member.fullName || member.email;
+        const displayName = member.email;
         
         const viewIcon = !isOwnerMember ? `<span class="view-icon">→</span>` : '';
         
@@ -317,8 +417,6 @@ function updateMembersPanel(members, total) {
                  style="cursor: pointer; transition: all 0.2s ease;">
                 <div class="position-relative">
                     ${avatarHtml}
-                    <span class="position-absolute bottom-0 end-0" 
-                        style="width: 12px; height: 12px; background: #23a55a; border: 2px solid white; border-radius: 50%;"></span>
                 </div>
                 <div class="ms-2 flex-grow-1" style="min-width: 0;">
                     <div class="fw-bold small text-truncate" style="max-width: 120px;">
@@ -392,3 +490,9 @@ function handleTaskCbChange(taskId, isChecked) {
     const allChecked = Array.from(tasksInArea).every(cb => cb.checked);
     areaCb.checked = allChecked;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.projectId) {
+        refreshMembersPanel();
+    }
+});

@@ -24,7 +24,7 @@ class ProjectMember
     private ?User $user = null;
 
     #[ORM\Column(length: 20)]
-    private string $role = 'viewer'; // 'admin', 'manager', 'executor', 'viewer'
+    private string $role = 'viewer'; 
 
     #[ORM\ManyToMany(targetEntity: Area::class)]
     private Collection $areas;

@@ -191,7 +191,7 @@ function handleCommentSubmit(e) {
             
             newComment.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
-                    <span class="comment-author">👤 ${data.author}</span>
+                    <span class="comment-author">${AppIcons.get('user', 'icon-sm')} ${data.author}</span>
                     <div>
                         <span class="comment-time">${timeStr}</span>
                         ${deleteBtn}

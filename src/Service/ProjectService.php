@@ -123,4 +123,40 @@ class ProjectService
 
         return $isPinned;
     }
+
+    public function getProjectAreasTasks(int $projectId, User $currentUser): array
+    {
+        $project = $this->entityManager->getRepository(Project::class)->find($projectId);
+        if (!$project) {
+            throw new NotFoundHttpException('Проект не найден.');
+        }
+
+        $isOwner = ($project->getOwner() === $currentUser);
+        $memberInfo = $this->entityManager->getRepository(ProjectMember::class)->findOneBy([
+            'project' => $project, 
+            'user' => $currentUser
+        ]);
+
+        if (!$isOwner && !$memberInfo) {
+            throw new AccessDeniedHttpException('У вас нет доступа к этому проекту.');
+        }
+
+        $areas = [];
+        foreach ($project->getAreas() as $area) {
+            $tasks = [];
+            foreach ($area->getTasks() as $task) {
+                $tasks[] = [
+                    'id' => $task->getId(),
+                    'title' => $task->getTitle()
+                ];
+            }
+            $areas[] = [
+                'id' => $area->getId(),
+                'title' => $area->getTitle(),
+                'tasks' => $tasks
+            ];
+        }
+
+        return $areas;
+    }
 }

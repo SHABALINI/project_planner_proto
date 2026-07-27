@@ -87,4 +87,22 @@ class ProjectControllerNew extends AbstractController
             return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 403);
         }
     }
+
+    #[Route('/project/{id}/areas-tasks', name: 'api_project_areas_tasks', methods: ['GET'])]
+    public function getAreasTasks(int $id): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+        }
+
+        try {
+            $areas = $this->projectService->getProjectAreasTasks($id, $user);
+            return new JsonResponse(['success' => true, 'areas' => $areas]);
+        } catch (NotFoundHttpException $e) {
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 404);
+        } catch (AccessDeniedHttpException $e) {
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 403);
+        }
+    }
 }
