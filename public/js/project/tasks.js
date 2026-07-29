@@ -9,7 +9,7 @@ function createTask(areaId) {
     
     const btn = titleInput.closest('.row').querySelector('.btn');
     const originalText = btn.textContent;
-    btn.innerHTML = $AppIcons.get('wait', 'icon-muted');
+    btn.innerHTML = AppIcons.get('wait', 'icon-muted');
     btn.disabled = true;
     
     const title = titleInput.value.trim();
