@@ -1,17 +1,14 @@
 :root {
     --icon-size: 24px;
     --icon-color: currentColor;
-    
-    
     --icon-primary: #6400fa;
-    --icon-success: #10b981;
+    --icon-success: #12cb8e;
     --icon-danger: #ef4444;
     --icon-warning: #f59e0b;
     --icon-light: #ffffff;
     --icon-dark: #1f2937;
     --icon-muted: rgba(255, 255, 255, 0.5);
 }
-
 
 svg {
     width: var(--icon-size);
@@ -21,23 +18,21 @@ svg {
     transition: all 0.2s ease;
 }
 
+.icon-sm { --icon-size: 16px; }
+.icon-md { --icon-size: 24px; }
+.icon-lg { --icon-size: 32px; }
+.icon-xl { --icon-size: 48px; }
+.icon-2xl { --icon-size: 64px; }
+.icon-3xl { --icon-size: 80px; }
+.icon-4xl { --icon-size: 96px; }
 
-.icon-sm svg { --icon-size: 16px; }
-.icon-md svg { --icon-size: 24px; }
-.icon-lg svg { --icon-size: 32px; }
-.icon-xl svg { --icon-size: 48px; }
-.icon-2xl svg { --icon-size: 64px; }
-.icon-3xl svg { --icon-size: 80px; }
-.icon-4xl svg { --icon-size: 96px; }
-
-
-.icon-primary svg { color: var(--icon-primary); }
-.icon-success svg { color: var(--icon-success); }
-.icon-danger svg { color: var(--icon-danger); }
-.icon-warning svg { color: var(--icon-warning); }
-.icon-light svg { color: var(--icon-light); }
-.icon-dark svg { color: var(--icon-dark); }
-.icon-muted svg { color: var(--icon-muted); }
+.icon-primary { color: var(--icon-primary); }
+.icon-success { color: var(--icon-success); }
+.icon-danger { color: var(--icon-danger); }
+.icon-warning { color: var(--icon-warning); }
+.icon-light { color: var(--icon-light); }
+.icon-dark { color: var(--icon-dark); }
+.icon-muted { color: var(--icon-muted); }
 
 
 .icon-hover-primary:hover svg { color: var(--icon-primary); }

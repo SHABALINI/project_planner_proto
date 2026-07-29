@@ -71,14 +71,14 @@ function updateAreaProgressUI(areaCard, done, progress, total) {
     if (total === 0) {
         if (progressBar) progressBar.style.width = '0%';
         if (progressText) progressText.textContent = '0%';
-        if (areaIcon) areaIcon.textContent = '📋';
+        if (areaIcon) areaIcon.innerHTML = `${AppIcons.get('main-logo', 'icon-sm')}`;
         return;
     }
     
     const percent = Math.round(((done + progress * 0.5) / total) * 100);
     if (progressBar) progressBar.style.width = percent + '%';
     if (progressText) progressText.textContent = percent + '%';
-    if (areaIcon) areaIcon.textContent = percent === 100 ? '✅' : '📋';
+    if (areaIcon) areaIcon.innerHTML = percent === 100 ? AppIcons.get('done', 'icon-success') : AppIcons.get('area', 'icon-light');
 }
 
 function updateProjectProgress() {

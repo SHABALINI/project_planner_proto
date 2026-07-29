@@ -23,7 +23,7 @@ function openMembersModal() {
         })
         .catch(err => {
             console.error('Error loading users:', err);
-            if (list) list.innerHTML = '<div class="text-muted small p-2 text-danger">❌ Ошибка загрузки</div>';
+            if (list) list.innerHTML = `<div class="text-muted small p-2 text-danger">${AppIcons.get('x', 'icon-sm')} Ошибка загрузки</div>`;
         });
     
     refreshProjectTree();
@@ -374,9 +374,7 @@ function updateMembersPanel(members, total) {
                         (member.role === 'admin' ? 'bg-danger' : 
                         (member.role === 'manager' ? 'bg-primary' : 
                         (member.role === 'executor' ? 'bg-success' : 'bg-secondary')));
-            avatarHtml = `<div class="rounded-circle ${bgColor} text-white d-flex align-items-center justify-content-center member-avatar-placeholder">
-                            ${firstLetter}
-                        </div>`;
+            avatarHtml = `<div class="rounded-circle ${bgColor} text-white d-flex align-items-center justify-content-center member-avatar-placeholder">${firstLetter}</div>`;
         }
         
         const roleBadge = isOwnerMember ? 

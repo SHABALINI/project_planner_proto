@@ -67,7 +67,7 @@
             {% endfor %}
         {% else %}
             <div class="empty-notifications">
-                <span class="empty-icon">🎉</span>
+                <span class="empty-icon"><span style = 'color: #211668;'>{{ source('icons/checkTask.svg')|raw }}</span></span>
                 <h3>У вас нет уведомлений</h3>
                 <p>Когда появятся новые уведомления, они будут отображаться здесь</p>
             </div>
@@ -210,7 +210,7 @@
     function markAllAsRead() {
         const btn = document.getElementById('markAllReadBtn');
         const originalText = btn.textContent;
-        btn.textContent = '⏳ Обновление...';
+        btn.innerHTML = `${AppIcons.get('wait', 'icon-sm')} Обновление...`;
         btn.disabled = true;
 
         fetch(`/dashboard/notifications/read-all/0`, { method: 'POST' })
@@ -227,7 +227,7 @@
                     });
                     updateCounters();
                     
-                    btn.textContent = '✅ Все прочитаны';
+                    btn.innerHTML = `${AppIcons.get('check', 'icon-success')} Все прочитаны`;
                     setTimeout(() => {
                         btn.textContent = originalText;
                         btn.disabled = false;
@@ -265,7 +265,7 @@
             if (unreadCount > 0) {
                 unreadBadge.textContent = `${unreadCount} непрочитанных`;
             } else {
-                unreadBadge.textContent = 'Все прочитано ✨';
+                unreadBadge.innerHTML = `Все прочитано ${AppIcons.get('check', 'icon-success')}`;
             }
         }
 

@@ -9,7 +9,7 @@ function createTask(areaId) {
     
     const btn = titleInput.closest('.row').querySelector('.btn');
     const originalText = btn.textContent;
-    btn.textContent = '⏳';
+    btn.innerHTML = $AppIcons.get('wait', 'icon-muted');
     btn.disabled = true;
     
     const title = titleInput.value.trim();
@@ -159,7 +159,7 @@ function createSubtask(taskId) {
     
     const btn = titleInput.nextElementSibling;
     const originalText = btn.textContent;
-    btn.textContent = '⏳';
+    btn.innerHTML = AppIcons.get('wait', 'icon-sm');
     btn.disabled = true;
     
     const title = titleInput.value.trim();
@@ -217,7 +217,7 @@ function createSubtask(taskId) {
                             <button class="btn btn-sm btn-outline-secondary" 
                                     onclick="updateSubtaskDescription(${data.id}, document.getElementById('subtaskDescription-${data.id}').value)"
                                     style="padding: 2px 6px; font-size: 12px;">
-                                💾
+                                    ${AppIcons.get('done', 'icon-dark')}
                             </button>
                         </div>
                         <div class="d-flex align-items-center gap-1">
@@ -264,7 +264,7 @@ function updateSubtaskDescription(subtaskId, description) {
     
     if (btn) {
         const originalText = btn.textContent;
-        btn.textContent = '⏳';
+        btn.innerHTML = AppIcons.get('wait', 'icon-sm');
         btn.disabled = true;
     }
     
@@ -285,7 +285,7 @@ function updateSubtaskDescription(subtaskId, description) {
     })
     .then(data => {
         if (btn) {
-            btn.textContent = '💾';
+            btn.innerHTML = AppIcons.get('done', 'icon-dark');
             btn.disabled = false;
         }
         
@@ -303,7 +303,7 @@ function updateSubtaskDescription(subtaskId, description) {
                         icon.className = 'text-muted';
                         icon.style.cssText = 'font-size: 10px; margin-left: 4px;';
                         icon.title = 'Есть описание';
-                        icon.textContent = '📝';
+                        icon.innerHTML = `$AppIcons.get('describtion', 'icon-sm')`;
                         label.after(icon);
                     }
                 } else {
@@ -316,7 +316,7 @@ function updateSubtaskDescription(subtaskId, description) {
     })
     .catch(err => {
         if (btn) {
-            btn.textContent = '💾';
+            btn.innerHTML = AppIcons.get('done', 'icon-dark');
             btn.disabled = false;
         }
         console.error('Error:', err);
@@ -417,7 +417,7 @@ function updateTaskDescriptionDisplay(taskId, description) {
                 indicator.className = 'text-muted';
                 indicator.style.cssText = 'font-size: 11px;';
                 indicator.title = 'Есть описание';
-                indicator.textContent = '📝';
+                indicator.innerHTML = `$AppIcons.get('describtion', 'icon-sm')`;
                 metaDiv.appendChild(indicator);
             }
         }

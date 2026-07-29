@@ -6,12 +6,17 @@ function showToast(message, type = 'success') {
         document.body.appendChild(container);
     }
     
-    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    const icons = {
+        success: `${AppIcons.get('check', 'icon-success')}`,
+        error: `${AppIcons.get('x', 'icon-danger')}`,
+        warning: `${AppIcons.get('alert', 'icon-warning')}`,
+        info: `${AppIcons.get('help', 'icon-primary')}`
+    };
     
     const toast = document.createElement('div');
     toast.className = `toast-custom ${type}`;
     toast.innerHTML = `
-        <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+        <span class="toast-icon">${icons[type] || `${AppIcons.get('help', 'icon-dark')}`}</span>
         <span class="toast-message">${message}</span>
         <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
     `;

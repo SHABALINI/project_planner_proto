@@ -103,7 +103,7 @@ function handleCommentSubmit(e) {
     
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = '⏳';
+    submitBtn.innerHTML = AppIcons.get('wait', 'icon-muted');
     submitBtn.disabled = true;
     
     fetch('/dashboard/comment/create', {
@@ -178,7 +178,7 @@ function handleCommentSubmit(e) {
                         </div>
                     `;
                 } else {
-                    fileHtml = `<a href="${data.filePath}" target="_blank" class="text-purple" style="font-size: 12px;">📎 ${data.fileName}</a>`;
+                    fileHtml = `<a href="${data.filePath}" target="_blank" class="text-purple" style="font-size: 12px;">${AppIcons.get('clip', 'icon-sm')} ${data.fileName}</a>`;
                 }
             }
             const isAdmin = window.userRole === 'admin';

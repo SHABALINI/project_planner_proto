@@ -151,19 +151,19 @@
                                 {% endif %}
                                 {% if profile.linkedin %}
                                     <a href="https://linkedin.com/in/{{ profile.linkedin }}" target="_blank" class="social-link">
-                                        💼 LinkedIn
+                                        <span style = 'color: #000000;'>{{ source('icons/linkedin.svg')|raw }}</span> LinkedIn
                                     </a>
                                 {% endif %}
                                 {% if profile.website %}
                                     <a href="{{ profile.website }}" target="_blank" class="social-link">
-                                        🌐 Website
+                                        <span style = 'color: #000000;'>{{ source('icons/globe.svg')|raw }}</span> Website
                                     </a>
                                 {% endif %}
                             </div>
                         {% endif %}
                     {% else %}
                         <div class="text-center text-muted py-5">
-                            <span style="font-size: 3rem;">👤</span>
+                            <span style="font-size: 3rem;"><span style = 'color: #6400fa;'>{{ source('icons/user.svg')|raw }}</span></span>
                             <p class="mt-2">Пользователь еще не заполнил профиль</p>
                         </div>
                     {% endif %}

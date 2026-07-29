@@ -172,14 +172,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!file) return;
 
         if (file.size > 5 * 1024 * 1024) {
-            showToast('❌ Файл слишком большой. Максимум 5MB', 'error');
+            showToast(`${AppIcons.get('x', 'icon-danger')} Файл слишком большой. Максимум 5MB`, 'error');
             this.value = '';
             return;
         }
 
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
-            showToast('❌ Неподдерживаемый формат. Разрешены: JPEG, PNG, GIF, WEBP', 'error');
+            showToast(`${AppIcons.get('x', 'icon-danger')} Неподдерживаемый формат. Разрешены: JPEG, PNG, GIF, WEBP`, 'error');
             this.value = '';
             return;
         }
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const btn = document.querySelector('[onclick*="avatarInput"]');
         const originalText = btn.textContent;
-        btn.textContent = '⏳ Загрузка...';
+        btn.innerHTML = `${AppIcons.get('wait', 'icon-sm')} Загрузка...`;
         btn.disabled = true;
 
         const url = '{{ path('api_profile_upload_avatar') }}';
@@ -230,17 +230,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     img.src = data.avatar + '?t=' + Date.now();
                     wrapper.appendChild(img);
                 }
-                showToast('✅ Аватар обновлен!', 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                showToast(`${AppIcons.get('area', 'icon-danger')} Ошибка: ` + (data.error || 'Неизвестная ошибка'), 'error');
             }
         })
         .catch(err => {
             btn.textContent = originalText;
             btn.disabled = false;
             console.error('Error:', err);
-            showToast('❌ Ошибка при загрузке аватара: ' + err.message, 'error');
+            showToast(`${AppIcons.get('area', 'icon-danger')} Ошибка при загрузке аватара: ` + err.message, 'error');
         });
     });
 
@@ -249,14 +248,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!file) return;
 
         if (file.size > 5 * 1024 * 1024) {
-            showToast('❌ Файл слишком большой. Максимум 5MB', 'error');
+            showToast(`${AppIcons.get('area', 'icon-danger')} Файл слишком большой. Максимум 5MB`, 'error');
             this.value = '';
             return;
         }
 
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
-            showToast('❌ Неподдерживаемый формат. Разрешены: JPEG, PNG, GIF, WEBP', 'error');
+            showToast(`${AppIcons.get('area', 'icon-danger')} Неподдерживаемый формат. Разрешены: JPEG, PNG, GIF, WEBP`, 'error');
             this.value = '';
             return;
         }
@@ -266,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const btn = document.querySelector('[onclick*="avatarInput"]');
         const originalText = btn.textContent;
-        btn.textContent = '⏳ Загрузка...';
+        btn.innerHTML = `${AppIcons.get('wait', 'icon-muted')} Загрузка...`;
         btn.disabled = true;
 
         const url = '{{ path('api_profile_upload_avatar') }}';
@@ -307,17 +306,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     img.src = data.avatar + '?t=' + Date.now();
                     wrapper.appendChild(img);
                 }
-                showToast('✅ Аватар обновлен!', 'success');
+                showToast(`${AppIcons.get('done', 'icon-succes')} Аватар обновлен!`, 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                showToast(`${AppIcons.get('area', 'icon-danger')} Ошибка: ` + (data.error || 'Неизвестная ошибка'), 'error');
             }
         })
         .catch(err => {
             btn.textContent = originalText;
             btn.disabled = false;
             console.error('Error:', err);
-            showToast('❌ Ошибка при загрузке аватара: ' + err.message, 'error');
+            showToast(`${AppIcons.get('area', 'icon-danger')} Ошибка при загрузке аватара: ` + err.message, 'error');
         });
     });
     document.getElementById('profileForm').addEventListener('submit', function(e) {
@@ -339,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const btn = this.querySelector('button[type="submit"]');
         const originalText = btn.textContent;
-        btn.textContent = '⏳ Сохранение...';
+        btn.innerHTML = `${AppIcons.get('wait', 'icon-muted')} Сохранение...`;
         btn.disabled = true;
 
         const url = '{{ path('api_profile_update') }}';
@@ -363,17 +362,17 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.disabled = false;
 
             if (data.success) {
-                showToast('✅ Профиль обновлен!', 'success');
+                showToast(`${AppIcons.get('area', 'icon-succes')} Профиль обновлен!`, 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showToast('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                showToast(`${AppIcons.get('area', 'icon-danger')} Ошибка: ` + (data.error || 'Неизвестная ошибка'), 'error');
             }
         })
         .catch(err => {
             btn.textContent = originalText;
             btn.disabled = false;
             console.error('Error:', err);
-            showToast('❌ Ошибка при сохранении профиля: ' + err.message, 'error');
+            showToast(`${AppIcons.get('area', 'icon-danger')} Ошибка при сохранении профиля: ` + err.message, 'error');
         });
     });
 

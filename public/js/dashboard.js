@@ -15,7 +15,7 @@ function createProject() {
     const btn = document.querySelector('.create-card .input-group button');
     const originalText = btn ? btn.textContent : '';
     if (btn) {
-        btn.textContent = '⏳ Создание...';
+        btn.innerHTML = `$AppIcons.get('wait', 'icon-muted') Создание...`;
         btn.disabled = true;
     }
 
@@ -44,9 +44,7 @@ function createProject() {
         
         if (data.success) {
             titleInput.value = '';
-            // Показываем успешное создание
-            showToast('Проект «' + data.title + '» создан!', 'success');
-            // Перезагружаем страницу через секунду
+            showToast('Проект создан!', 'success');
             setTimeout(() => location.reload(), 500);
         } else {
             alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
@@ -98,7 +96,7 @@ function deleteElement(type, id, confirmMessage = null) {
 function togglePin(projectId) {
     const btn = document.querySelector(`#project-card-${projectId} .pin-btn`);
     if (btn) {
-        btn.textContent = '⏳';
+        btn.innerHTML = AppIcons.get('wait', 'icon-muted');
         btn.disabled = true;
     }
     
@@ -113,7 +111,7 @@ function togglePin(projectId) {
         } else {
             alert('Ошибка: ' + (data.error || 'Не удалось закрепить проект'));
             if (btn) {
-                btn.textContent = '📌';
+                btn.innerHTML = `$AppIcons.get('pinned', 'icon-sm')`;
                 btn.disabled = false;
             }
         }
@@ -122,7 +120,7 @@ function togglePin(projectId) {
         console.error('Error:', err);
         alert('Ошибка при закреплении проекта');
         if (btn) {
-            btn.textContent = '📌';
+            btn.innerHTML = `$AppIcons.get('pinned', 'icon-sm')`;
             btn.disabled = false;
         }
     });

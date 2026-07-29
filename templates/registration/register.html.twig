@@ -10,26 +10,21 @@
 {% block body %}
 <div class="auth-container">
     <div class="auth-card">
-        <!-- Логотип -->
         <div class="auth-logo"><span>{{ source('icons/globe.svg')|raw }}</span></div>
 
-        <!-- Заголовки -->
         <h1 class="auth-title">Создать аккаунт</h1>
         <p class="auth-subtitle">
             Начни управлять проектами уже сегодня
         </p>
 
-        <!-- Форма -->
         {{ form_start(registrationForm, { 'attr': { 'class': 'auth-form' } }) }}
 
-        <!-- Ошибки формы -->
         {% if registrationForm.vars.errors|length > 0 %}
             <div class="auth-error">
                 {{ form_errors(registrationForm) }}
             </div>
         {% endif %}
 
-        <!-- Email -->
         <div class="form-group">
             {{ form_label(registrationForm.email, 'Email') }}
             {{ form_widget(registrationForm.email, { 
@@ -42,7 +37,6 @@
             {{ form_errors(registrationForm.email) }}
         </div>
 
-        <!-- Пароль -->
         <div class="form-group">
             {{ form_label(registrationForm.plainPassword, 'Пароль') }}
             {{ form_widget(registrationForm.plainPassword, { 
@@ -54,19 +48,16 @@
             {{ form_errors(registrationForm.plainPassword) }}
         </div>
 
-        <!-- Agree Terms -->
         <div class="checkbox-group">
             {{ form_widget(registrationForm.agreeTerms) }}
             {{ form_label(registrationForm.agreeTerms, 'Я согласен(на) с условиями использования') }}
         </div>
         {{ form_errors(registrationForm.agreeTerms) }}
 
-        <!-- Кнопка -->
         <button class="auth-btn" type="submit">
             Зарегистрироваться
         </button>
 
-        <!-- Ссылка на вход -->
         <div class="auth-footer">
             Уже есть аккаунт? <a href="{{ path('app_login') }}">Войти</a>
         </div>
